@@ -1,7 +1,6 @@
 // ===== Client config =====
-// רץ על אותו דומיין (Render) => /api
 const API_BASE = window.location.origin.replace(/\/$/, "");
-const BOT_USERNAME = "TeamBattle_vBot"; // ← עדכן לשם המדויק של הבוט שלך
+const BOT_USERNAME = "TeamBattle_vBot";
 
 // ==== I18N ====
 const I18N = {
@@ -26,50 +25,6 @@ const I18N = {
     myTaps: (x, m) => `👆 טאפים היום: ${x}/${m}`,
     share: "📤 שתף בטלגרם",
     leaders: "שחקנים מובילים",
-  },
-  en: {
-    israel: "🇮🇱 Israel",
-    gaza: "🇵🇸 Gaza",
-    tap: "Tap (+1)",
-    super: "Super Boost (+25)",
-    rules:
-      "⭐ 1 = 2 pts • 💥 300 taps/day • ⚡ Super Boost: +25 once/day",
-    chooseIL: "Join Team Israel 🇮🇱",
-    chooseGA: "Join Team Gaza 🇵🇸",
-    donate: "Donate Stars",
-    progress: (x, m) => `${x} / ${m} taps today`,
-    toastCopy: "Link copied",
-    mustChoose: "Pick a team first",
-    confirmSwitch: "Switch team? This affects your next points.",
-    you: "You",
-    myPanel: "My Panel",
-    myStars: (n) => `⭐ Stars I donated: ${n}`,
-    myBonus: (n) => `🎁 Referral bonus I got: ${n}⭐`,
-    myTaps: (x, m) => `👆 Taps today: ${x}/${m}`,
-    share: "📤 Share on Telegram",
-    leaders: "Top Players",
-  },
-  ar: {
-    israel: "🇮🇱 إسرائيل",
-    gaza: "🇵🇸 غزة",
-    tap: "نقرة تعزيز (+1)",
-    super: "تعزيز سوبر (+25)",
-    rules:
-      "⭐ 1 = نقطتان • 💥 ٣٠٠ نقرة/يوم • ⚡ سوبر: +25 مرة/يوم",
-    chooseIL: "انضم لفريق إسرائيل 🇮🇱",
-    chooseGA: "انضم لفريق غزة 🇵🇸",
-    donate: "تبرع بالنجوم",
-    progress: (x, m) => `${x} / ${m} نقرات اليوم`,
-    toastCopy: "تم نسخ الرابط",
-    mustChoose: "اختر فريقًا أولًا",
-    confirmSwitch: "هل تريد تغيير الفريق؟",
-    you: "أنت",
-    myPanel: "لوحتي",
-    myStars: (n) => `⭐ النجوم التي تبرعت بها: ${n}`,
-    myBonus: (n) => `🎁 مكافأة الإحالة: ${n}⭐`,
-    myTaps: (x, m) => `👆 نقرات اليوم: ${x}/${m}`,
-    share: "📤 شارك على تيليجرام",
-    leaders: "اللاعبون المتصدرون",
   },
 };
 
@@ -123,39 +78,16 @@ if (!USER_ID) {
   }
 }
 
+// ==== Helpers ====
 function buildRefLink(uid = USER_ID) {
   return `https://t.me/${BOT_USERNAME}?start=ref_${uid}`;
 }
-
 function toast(msg) {
   if (!elToast) { alert(msg); return; }
   elToast.textContent = msg;
   elToast.hidden = false;
   setTimeout(() => (elToast.hidden = true), 1600);
 }
-
-// ==== Language ====
-function applyLangTexts() {
-  const t = I18N[LANG];
-  qs("#team-israel") && (qs("#team-israel").textContent = t.israel);
-  qs("#team-gaza")   && (qs("#team-gaza").textContent   = t.gaza);
-  elTap && (elTap.textContent = t.tap);
-  elSuper && (elSuper.textContent = t.super);
-  elRules && (elRules.textContent = t.rules);
-  elChooseIL && (elChooseIL.textContent = t.chooseIL);
-  elChooseGA && (elChooseGA.textContent = t.chooseGA);
-  elDonate && (elDonate.textContent = t.donate);
-  elProg && (elProg.textContent = t.progress(tapsToday, tapsLimit));
-  elShare && (elShare.textContent = t.share);
-  qs("#leaders-title") && (qs("#leaders-title").textContent = t.leaders);
-  qs("#my-panel-title") && (qs("#my-panel-title").textContent = t.myPanel);
-}
-qsa(".lang-buttons button").forEach((b) =>
-  b.addEventListener("click", () => {
-    LANG = b.dataset.lang;
-    applyLangTexts();
-  })
-);
 
 // ==== API helpers ====
 async function apiGet(path) {
@@ -171,18 +103,15 @@ async function apiPost(path, body) {
   return r.json().catch(() => ({}));
 }
 
-// ==== State ====
+// ==== Fetch functions ====
 async function fetchState() {
   const j = await apiGet("/api/state");
   if (j?.ok && j.scores) {
-    if (elScoreIL) elScoreIL.textContent = j.scores.israel ?? 0;
-    if (elScoreGA) elScoreGA.textContent = j.scores.gaza ?? 0;
+    elScoreIL.textContent = j.scores.israel ?? 0;
+    elScoreGA.textContent = j.scores.gaza ?? 0;
   }
 }
-fetchState();
-setInterval(fetchState, 10000);
 
-// ==== My panel ====
 async function fetchMe() {
   const j = await apiGet(`/api/me?userId=${encodeURIComponent(USER_ID)}`);
   if (!j?.ok || !j.me) return;
@@ -192,20 +121,17 @@ async function fetchMe() {
   tapsLimit = j.limit ?? tapsLimit;
 
   if (TEAM) {
-    elTeamChooser && (elTeamChooser.style.display = "none");
+    elTeamChooser.style.display = "none";
     elTap.disabled = elSuper.disabled = elDonate.disabled = false;
   }
 
-  elMeStars && (elMeStars.textContent = I18N[LANG].myStars(me.starsDonated ?? 0));
-  elMeBonus && (elMeBonus.textContent = I18N[LANG].myBonus(me.bonusStars ?? 0));
-  elMeTaps && (elMeTaps.textContent = I18N[LANG].myTaps(tapsToday, tapsLimit));
-  elProg && (elProg.textContent = I18N[LANG].progress(tapsToday, tapsLimit));
+  elMeStars.textContent = I18N[LANG].myStars(me.starsDonated ?? 0);
+  elMeBonus.textContent = I18N[LANG].myBonus(me.bonusStars ?? 0);
+  elMeTaps.textContent = I18N[LANG].myTaps(tapsToday, tapsLimit);
+  elProg.textContent = I18N[LANG].progress(tapsToday, tapsLimit);
 }
-fetchMe();
 
-// ==== Leaderboard ====
 async function fetchLeaders() {
-  if (!elLeaders) return;
   const j = await apiGet("/api/leaderboard");
   if (!j?.ok || !Array.isArray(j.top)) return;
   const t = I18N[LANG];
@@ -215,33 +141,51 @@ async function fetchLeaders() {
     li.className = "leader-row";
     const rank = i + 1;
     const name =
-      u.displayName ||
-      u.username ||
-      (u.userId === USER_ID ? t.you : `Player ${u.userId?.slice(-4) || ""}`);
+      u.displayName || u.username || (u.userId === USER_ID ? t.you : `Player ${u.userId?.slice(-4)}`);
     const points = u.points ?? (u.starsDonated ? u.starsDonated * 2 : 0);
     li.textContent = `${rank}. ${name} — ${points} pts`;
     elLeaders.appendChild(li);
   });
 }
-fetchLeaders();
-setInterval(fetchLeaders, 15000);
 
-// ==== Select team ====
+// ==== Team ====
 async function selectTeam(team) {
   const j = await apiPost("/api/select-team", { userId: USER_ID, team });
   if (j.ok) {
     TEAM = team;
-    elTeamChooser && (elTeamChooser.style.display = "none");
+    elTeamChooser.style.display = "none";
     elTap.disabled = elSuper.disabled = elDonate.disabled = false;
     elRefInput.value = buildRefLink(USER_ID);
     fetchState();
     fetchMe();
   }
 }
-elChooseIL && (elChooseIL.onclick = () => selectTeam("israel"));
-elChooseGA && (elChooseGA.onclick = () => selectTeam("gaza"));
+elChooseIL.onclick = () => selectTeam("israel");
+elChooseGA.onclick = () => selectTeam("gaza");
 
-// ==== Donate Stars (fixed) ====
+// ==== Tap ====
+elTap.onclick = async () => {
+  if (!TEAM) return toast(I18N[LANG].mustChoose);
+  const j = await apiPost("/api/tap", { userId: USER_ID });
+  if (j.ok) {
+    fetchState();
+    fetchMe();
+    fetchLeaders();
+  } else if (j.error === "limit") toast("הגעת למגבלת הטאפים היומית");
+};
+
+// ==== Super Boost ====
+elSuper.onclick = async () => {
+  if (!TEAM) return toast(I18N[LANG].mustChoose);
+  const j = await apiPost("/api/super", { userId: USER_ID });
+  if (j.ok) {
+    fetchState();
+    fetchMe();
+    fetchLeaders();
+  } else if (j.error === "limit") toast("השתמשת כבר בסופר-בוסט היום");
+};
+
+// ==== Donation ====
 async function openInvoice(url) {
   try {
     if (window.Telegram?.WebApp?.openInvoice) {
@@ -258,7 +202,7 @@ async function openInvoice(url) {
   return true;
 }
 
-elDonate && (elDonate.onclick = async () => {
+elDonate.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const stars = Math.max(1, parseInt(elStars?.value || "1", 10));
   const j = await apiPost("/api/create-invoice", { userId: USER_ID, team: TEAM, stars });
@@ -270,19 +214,12 @@ elDonate && (elDonate.onclick = async () => {
       toast("התשלום בוטל או נכשל");
     }
   } else toast("שגיאה ביצירת חשבונית");
-});
-
-// ==== Copy & Share ====
-if (elRefInput) elRefInput.value = buildRefLink(USER_ID);
-elCopy && (elCopy.onclick = async () => {
-  try { await navigator.clipboard.writeText(elRefInput.value); toast(I18N[LANG].toastCopy); }
-  catch { toast("לא הצלחתי להעתיק"); }
-});
-elShare && (elShare.onclick = async () => {
-  const link = buildRefLink(USER_ID);
-  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("בואו לשחק איתי ב-TeamBattle!")}`;
-  window.open(url, "_blank");
-});
+};
 
 // ==== Init ====
 applyLangTexts();
+fetchState();
+fetchMe();
+fetchLeaders();
+setInterval(fetchState, 10000);
+setInterval(fetchLeaders, 15000);
