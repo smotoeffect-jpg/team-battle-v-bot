@@ -8,7 +8,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-const BOT_TOKEN = "REPLACE_WITH_YOUR_TOKEN";
+const BOT_TOKEN = "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_URL = "https://team-battle-v-bot.onrender.com/webhook";
 
