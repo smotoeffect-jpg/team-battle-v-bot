@@ -1,2 +1,36 @@
-body{background:black;color:white;text-align:center;font-family:sans-serif;padding:50px;}
-button{background:#ff3ea5;color:white;border:none;padding:10px 20px;font-size:20px;border-radius:10px;}
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
+  background: #0b1020; color: #fff;
+}
+.container { max-width: 720px; margin: 0 auto; padding: 18px; }
+h1 { text-align: center; margin: 8px 0 16px; letter-spacing: .5px; }
+
+.lang { position: relative; display: flex; justify-content: center; }
+.lang-btn { background:#1c2540; color:#fff; border:0; padding:10px 16px; border-radius:12px; cursor:pointer; }
+.lang-menu { position:absolute; top:46px; background:#141b33; border-radius:12px; overflow: hidden; min-width: 180px; }
+.lang-menu div { padding:10px 14px; border-bottom:1px solid #1f2747; cursor:pointer; }
+.lang-menu div:last-child { border-bottom:0; }
+.hidden { display:none; }
+
+.board { display:flex; gap:14px; }
+.team {
+  flex:1; background:#121a2e; padding:16px; border-radius:18px; text-align:center;
+}
+.team-name { font-size:22px; opacity:.9; margin-bottom:6px; }
+.score { font-size:60px; font-weight:800; }
+
+.actions { display:grid; gap:12px; margin:16px 0; }
+.primary { background:#1768ff; color:#fff; border:0; padding:16px; border-radius:14px; font-size:18px; }
+.secondary { background:#ff3ea7; color:#fff; border:0; padding:16px; border-radius:14px; font-size:18px; }
+
+.donate { display:flex; gap:10px; align-items:center; }
+.donate input { width:90px; padding:12px; border-radius:12px; border:1px solid #334; background:#0f1630; color:#fff; text-align:center; }
+.gold { background: #ffcc33; color:#000; border:0; padding:14px 16px; border-radius:12px; font-weight:700; }
+
+.note { opacity:.85; margin:10px 2px 20px; }
+#newsTitle { margin:16px 0 6px; }
+#news { list-style:none; padding:0; margin:0; }
+#news li { background:#0e142a; padding:10px 12px; border-radius:12px; margin-bottom:8px; font-size:14px; opacity:.95; }
+
+footer { margin-top:26px; text-align:center; opacity:.6; }
