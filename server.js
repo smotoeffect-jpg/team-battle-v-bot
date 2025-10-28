@@ -11,21 +11,25 @@ app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }))
 app.use(express.urlencoded({ extended: false }));
 
 // ====== CONFIG ======
-// מומלץ לשמור ב-ENV ב-Render: BOT_TOKEN, WEBHOOK_DOMAIN, MINI_APP_URL
-const BOT_TOKEN = process.env.BOT_TOKEN || "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
-const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
-const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
+// מומלץ לשמור ב-ENV ב-Render: BOT_TOKEN, WEBHOOK_DOMAIN, MINI_APP_URL, DATA_DIR
+const BOT_TOKEN       = process.env.BOT_TOKEN       || "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
+const TG_API          = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const WEBHOOK_DOMAIN  = process.env.WEBHOOK_DOMAIN  || "https://team-battle-v-bot.onrender.com";
+const MINI_APP_URL    = process.env.MINI_APP_URL    || "https://team-battle-v-bot.onrender.com/";
+const DATA_DIR        = process.env.DATA_DIR        || "/data"; // ← הדיסק הקבוע ב-Render
 
 // משחק
 const STAR_TO_POINTS   = 2;     // 1⭐ = 2 נק'
 const SUPER_POINTS     = 25;    // סופר-בוסט
 const DAILY_TAPS       = 300;   // מגבלת טאפים ליום
-const AFFILIATE_BONUS  = 0.10;  // 10% כוכבים למזמין (ככוכבים → נקודות)
+const AFFILIATE_BONUS  = 0.10;  // 10% כוכבים למזמין
 
-// ====== JSON Storage ======
-const SCORES_FILE = path.join(__dirname, "scores.json");
-const USERS_FILE  = path.join(__dirname, "users.json");
+// ====== JSON Storage to /data ======
+if (!fs.existsSync(DATA_DIR)) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
+}
+const SCORES_FILE = path.join(DATA_DIR, "scores.json");
+const USERS_FILE  = path.join(DATA_DIR, "users.json");
 
 function readJSON(file, fallback) {
   try {
@@ -50,22 +54,17 @@ function ensureUser(userId) {
   if (!users[userId]) {
     users[userId] = {
       team: null,
-
       tapsDate: null,
       tapsToday: 0,
-
       superDate: null,
       superUsed: 0,
-
       refBy: null,
       starsDonated: 0,
       bonusStars: 0,
-
       username: null,
       first_name: null,
       last_name: null,
       displayName: null,
-
       history: [], // {ts,type,stars,points,team,from}
     };
   }
@@ -76,15 +75,12 @@ function updateUserProfileFromTG(from) {
   if (!from?.id) return;
   const uid = String(from.id);
   const u = ensureUser(uid);
-
   if (from.username) u.username = from.username;
   if (from.first_name !== undefined) u.first_name = from.first_name;
   if (from.last_name  !== undefined) u.last_name  = from.last_name;
-
   const fn = u.first_name || "";
   const ln = u.last_name || "";
   u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : (u.username ? `@${u.username}` : u.displayName);
-
   writeJSON(USERS_FILE, users);
 }
 
@@ -94,74 +90,59 @@ const tgPost = (m, d) =>
   });
 
 // ================== API (Mini App) ==================
-
-// מצב גלובלי
 app.get("/api/state", (_, res) => res.json({ ok: true, scores }));
 
-// בחירת/עדכון קבוצה
 app.post("/api/select-team", (req, res) => {
   const { userId, team } = req.body || {};
   if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
-
   const u = ensureUser(userId);
   u.team = team;
   writeJSON(USERS_FILE, users);
   res.json({ ok:true });
 });
 
-// החלפת קבוצה (כפתור "החלף קבוצה")
 app.post("/api/switch-team", (req, res) => {
   const { userId, newTeam } = req.body || {};
   if (!userId || !["israel","gaza"].includes(newTeam)) return res.status(400).json({ ok:false });
-
   const u = ensureUser(userId);
   u.team = newTeam;
   writeJSON(USERS_FILE, users);
   res.json({ ok:true, team:newTeam });
 });
 
-// טאפ רגיל
 app.post("/api/tap", (req, res) => {
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
-
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
   if (u.tapsToday >= DAILY_TAPS) return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
-
   u.tapsToday += 1;
   scores[u.team] = (scores[u.team] || 0) + 1;
-
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS });
 });
 
-// סופר-בוסט פעם ביום
 app.post("/api/super", (req, res) => {
   const { userId } = req.body || {};
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
-
   const today = todayStr();
   if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
   if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
-
   u.superUsed += 1;
   scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
-
   u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team });
   if (u.history.length > 200) u.history.shift();
-
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
 });
 
-// יצירת חשבונית בכוכבי טלגרם (XTR)
+// תרומה – נשמר כפי שעבד לך (createInvoiceLink)
 app.post("/api/create-invoice", async (req, res) => {
   try {
     const { userId, team, stars } = req.body || {};
@@ -191,15 +172,12 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
-// הפרופיל שלי (לוח שלי)
 app.get("/api/me", (req, res) => {
   const userId = String(req.query.userId || "");
   if (!userId) return res.json({ ok:false });
-
   const u = ensureUser(userId);
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
-
   res.json({
     ok: true,
     me: {
@@ -217,7 +195,6 @@ app.get("/api/me", (req, res) => {
   });
 });
 
-// לוח מובילים
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
@@ -240,11 +217,9 @@ app.post("/webhook", async (req, res) => {
   try {
     const update = req.body;
 
-    // שמירת פרופיל מהודעה/כפתור
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
 
-    // אישור תשלום (Stars)
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
         pre_checkout_query_id: update.pre_checkout_query.id,
@@ -252,7 +227,6 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    // תשלום הצליח
     if (update.message?.successful_payment) {
       const sp = update.message.successful_payment;
       const userId = String(update.message.from.id);
@@ -264,13 +238,11 @@ app.post("/webhook", async (req, res) => {
       const team = u.team || payload.team || "israel";
       const pts  = stars * STAR_TO_POINTS;
 
-      // ניקוד לתורם
       scores[team] = (scores[team] || 0) + pts;
       u.starsDonated += stars;
       u.history.push({ ts: nowTs(), type:"donation", stars, points: pts, team });
       if (u.history.length > 200) u.history.shift();
 
-      // בונוס שותפים
       if (u.refBy) {
         const inviterId  = String(u.refBy);
         const inv = ensureUser(inviterId);
@@ -294,13 +266,11 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    // /start + Referral
     if (update.message?.text) {
       const chatId = update.message.chat.id;
       const text   = (update.message.text || "").trim();
       const userId = String(update.message.from.id);
 
-      // /start ref_XXXX
       const parts = text.split(" ");
       if (parts[1] && parts[1].startsWith("ref_")) {
         const refBy = parts[1].slice(4);
@@ -327,7 +297,6 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // שינוי שפה
     if (update.callback_query) {
       const cq = update.callback_query;
       const chatId = cq.message.chat.id;
@@ -398,13 +367,10 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// GET /webhook – למנוע טעינת HTML
+// בריאות + webhook helper
 app.get("/webhook", (_, res) => res.status(405).json({ ok:true }));
-
-// בריאות (לRender)
 app.get("/healthz", (_, res) => res.json({ ok:true }));
 
-// ============== Webhook setup ==============
 app.get("/setup-webhook", async (_, res) => {
   try {
     const url = `${WEBHOOK_DOMAIN}/webhook`;
@@ -424,4 +390,4 @@ app.get("*", (_, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on :${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
