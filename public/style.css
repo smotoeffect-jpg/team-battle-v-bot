@@ -1,34 +1,195 @@
-*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Heebo,Arial}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Heebo,Arial}
 body{background:#0e0f13;color:#e9ecf1}
 .container{max-width:720px;margin:22px auto;padding:16px}
-.title{text-align:center;margin:0 0 16px;font-weight:800;
-  font-size:28px;color:#ff5bd8;text-shadow:0 0 18px rgba(255,91,216,.6)}
+
+/* === כותרת ראשית === */
+.title{
+  text-align:center;
+  margin:0 0 16px;
+  font-weight:800;
+  font-size:28px;
+  color:#ff5bd8;
+  text-shadow:0 0 18px rgba(255,91,216,.6)
+}
+
+/* === כפתורי שפה === */
 .lang-buttons{display:flex;gap:10px;justify-content:center;margin:8px 0 18px}
-.lang-buttons button{padding:8px 14px;border-radius:12px;border:1px solid #2b2f3a;background:#151823;color:#dfe4ec}
-.lang-buttons button:focus{outline:none;border-color:#6f9cff}
+.lang-buttons button{
+  padding:8px 14px;
+  border-radius:12px;
+  border:1px solid #2b2f3a;
+  background:#151823;
+  color:#dfe4ec;
+  cursor:pointer;
+  transition:.2s
+}
+.lang-buttons button:hover{background:#1f2535}
+
+/* === ניקוד קבוצות === */
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
-.team{background:#111420;border:1px solid #22283a;border-radius:16px;padding:14px;text-align:center}
+.team{
+  background:#111420;
+  border:1px solid #22283a;
+  border-radius:16px;
+  padding:14px;
+  text-align:center
+}
 .team h2{margin:0 0 8px;font-size:20px;color:#b9c6ff}
-.score{font-size:52px;font-weight:900;color:#ffd84d;text-shadow:0 0 16px rgba(255,216,77,.45)}
+.score{
+  font-size:52px;
+  font-weight:900;
+  color:#ffd84d;
+  text-shadow:0 0 16px rgba(255,216,77,.45)
+}
+
+/* === חוקים === */
 .rules{text-align:center;margin:10px 0 16px;color:#aab3c2}
+
+/* === בחירת קבוצה === */
 .team-chooser{display:flex;gap:12px;justify-content:center;margin:14px 0 8px}
-.choose{flex:1;border-radius:14px;padding:12px 14px;border:0;color:#fff;font-weight:700}
+.choose{
+  flex:1;border-radius:14px;padding:12px 14px;border:0;color:#fff;font-weight:700;cursor:pointer
+}
 .choose.blue{background:#2a74ff}
 .choose.green{background:#0fb16d}
-.btn-group{display:flex;gap:12px;margin:16px 0}
-.tap-btn,.super-btn{flex:1;border-radius:14px;padding:14px;border:0;font-weight:800;color:#fff;cursor:pointer}
+
+/* === כפתורים ראשיים === */
+.btn-group{display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;justify-content:center}
+.tap-btn,.super-btn,.switch-btn{
+  border-radius:14px;
+  padding:14px 18px;
+  border:0;
+  font-weight:800;
+  color:#fff;
+  cursor:pointer;
+  transition:.2s;
+  flex:1
+}
 .tap-btn{background:#2f7bff;box-shadow:0 6px 20px rgba(47,123,255,.25)}
 .super-btn{background:#ff5bb1;box-shadow:0 6px 20px rgba(255,91,177,.25)}
+.switch-btn{background:#33384a;box-shadow:0 4px 14px rgba(255,255,255,.1)}
+.switch-btn:hover{background:#3c4153}
 .tap-btn:disabled,.super-btn:disabled,.donate-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* === התקדמות === */
 #progress{display:flex;justify-content:center}
-#progress-text{background:#151823;border:1px solid #2b2f3a;color:#9fb2d7;border-radius:12px;padding:8px 12px}
+#progress-text{
+  background:#151823;
+  border:1px solid #2b2f3a;
+  color:#9fb2d7;
+  border-radius:12px;
+  padding:8px 12px
+}
+
+/* === תרומות === */
 .donate{display:flex;align-items:center;gap:10px;margin:18px 0}
-.donate input{flex:1;min-width:120px;border-radius:12px;border:1px solid #2b2f3a;background:#0f121a;color:#e7ecf6;padding:12px;text-align:center;font-size:16px}
-.donate-btn{flex:2;background:#ffd84d;color:#111;font-weight:900;border:0;border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(255,216,77,.25)}
+.donate input{
+  flex:1;min-width:120px;
+  border-radius:12px;
+  border:1px solid #2b2f3a;
+  background:#0f121a;
+  color:#e7ecf6;
+  padding:12px;
+  text-align:center;
+  font-size:16px
+}
+.donate-btn{
+  flex:2;
+  background:#ffd84d;
+  color:#111;
+  font-weight:900;
+  border:0;
+  border-radius:14px;
+  padding:14px;
+  box-shadow:0 6px 20px rgba(255,216,77,.25)
+}
+
+/* === תוכנית שותפים === */
 .affiliate-title{margin:10px 0 4px;text-align:center;color:#ff9ad6}
 #affiliate-info{text-align:center;color:#c9d1e2;margin:0 0 10px}
-.affiliate-link{display:flex;gap:8px}
-.affiliate-link input{flex:1;border-radius:12px;border:1px solid #2b2f3a;background:#0f121a;color:#e7ecf6;padding:12px}
-#copy-link{border-radius:12px;border:0;background:#363f5a;color:#e7ecf6;padding:12px 14px;font-weight:700}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#1b2338;color:#e7ecf6;border:1px solid #334061;padding:10px 14px;border-radius:12px}
-@media (max-width:520px){.score{font-size:42px}.title{font-size:24px}}
+.affiliate-link{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.affiliate-link input{
+  flex:1;
+  border-radius:12px;
+  border:1px solid #2b2f3a;
+  background:#0f121a;
+  color:#e7ecf6;
+  padding:12px
+}
+#copy-link,#share-btn{
+  border-radius:12px;
+  border:0;
+  background:#363f5a;
+  color:#e7ecf6;
+  padding:12px 14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.2s
+}
+#share-btn{background:#ff5bd8;color:#fff;text-shadow:0 0 10px rgba(255,91,216,.6)}
+#copy-link:hover,#share-btn:hover{opacity:.8}
+
+/* === הלוח שלי === */
+.my-panel{
+  background:#13161f;
+  border:1px solid #2b2f3a;
+  border-radius:16px;
+  padding:14px 18px;
+  margin-top:24px;
+  text-align:right;
+  color:#e0e4f2
+}
+#my-panel-title{text-align:center;color:#ff9ad6;margin-bottom:8px;text-shadow:0 0 12px rgba(255,91,216,.3)}
+.my-panel p{margin:6px 0;font-size:15px}
+
+/* === לוח מובילים === */
+.leaders-section{
+  margin-top:26px;
+  background:#13161f;
+  border:1px solid #2b2f3a;
+  border-radius:16px;
+  padding:16px
+}
+#leaders-title{text-align:center;color:#ffd84d;margin:0 0 12px}
+.leaderboard{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  color:#dfe4ec;
+  font-size:15px
+}
+.leader-row{
+  background:#181b26;
+  border:1px solid #272c3f;
+  border-radius:10px;
+  padding:8px 12px
+}
+.leader-row:nth-child(1){border-color:#ffd84d;color:#ffd84d;font-weight:800}
+.leader-row:nth-child(2){border-color:#c0c6ff;color:#c0c6ff}
+.leader-row:nth-child(3){border-color:#ff9ad6;color:#ff9ad6}
+
+/* === Toast === */
+.toast{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:18px;
+  background:#1b2338;
+  color:#e7ecf6;
+  border:1px solid #334061;
+  padding:10px 14px;
+  border-radius:12px;
+  opacity:0;
+  transition:opacity .3s ease, bottom .3s ease;
+  pointer-events:none;
+}
+.toast[hidden]{opacity:0;bottom:12px}
+.toast:not([hidden]){opacity:1;bottom:24px}
+
+/* === רספונסיביות === */
+@media (max-width:520px){
+  .score{font-size:42px}
+  .title{font-size:24px}
+  .tap-btn,.super-btn,.switch-btn{padding:12px;font-size:15px}
+}
