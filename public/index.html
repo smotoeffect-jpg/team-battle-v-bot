@@ -1,49 +1,71 @@
 <!DOCTYPE html>
 <html lang="he">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TeamBattle - Israel Vs Gaza</title>
-<link rel="stylesheet" href="style.css?v=5">
-</head>
-<body>
-  <div id="app">
-    <h1>TeamBattle - Israel Vs Gaza</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Team Battle: Israel Vs Gaza</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-    <div class="lang-buttons">
-      <button onclick="setLang('he')">עברית</button>
-      <button onclick="setLang('en')">English</button>
-      <button onclick="setLang('ar')">العربية</button>
-    </div>
+  <body>
+    <div class="container">
+      <h1 class="title">TeamBattle - Israel Vs Gaza</h1>
 
-    <div id="scores">
-      <div class="team">
-        <h2 id="teamA-label">ישראל</h2>
-        <div id="teamA-score">0</div>
+      <div class="lang-buttons">
+        <button data-lang="he">עברית</button>
+        <button data-lang="en">English</button>
+        <button data-lang="ar">العربية</button>
       </div>
-      <div class="team">
-        <h2 id="teamB-label">עזה</h2>
-        <div id="teamB-score">0</div>
+
+      <div class="teams">
+        <div class="team">
+          <h2 id="team-israel">🇮🇱 ישראל</h2>
+          <div id="score-israel" class="score">0</div>
+        </div>
+        <div class="team">
+          <h2 id="team-gaza">🇵🇸 עזה</h2>
+          <div id="score-gaza" class="score">0</div>
+        </div>
       </div>
+
+      <p id="rules" class="rules">
+        ⭐ 1 = 2 נקודות • 💥 מגבלה 300 טאפים ביום • ⚡ סופר-בוסט: +25 פעם ביום
+      </p>
+
+      <div id="team-chooser" class="team-chooser">
+        <button id="choose-israel" class="choose blue">בחר צוות ישראל 🇮🇱</button>
+        <button id="choose-gaza" class="choose green">בחר צוות עזה 🇵🇸</button>
+      </div>
+
+      <div class="btn-group">
+        <button id="tap-btn" class="tap-btn" disabled>טאפ להגברה (+1)</button>
+        <button id="super-btn" class="super-btn" disabled>סופר-בוסט (+25)</button>
+      </div>
+
+      <div id="progress">
+        <p id="progress-text">0 / 300 טאפים היום</p>
+      </div>
+
+      <div class="donate">
+        <input type="number" id="stars" min="1" value="10" />
+        <span>⭐</span>
+        <button id="donate-btn" class="donate-btn" disabled>תרום כוכבים</button>
+      </div>
+
+      <h3 class="affiliate-title">תוכנית שותפים 🤝</h3>
+      <p id="affiliate-info">
+        הזמן חברים בעזרת הקישור האישי שלך. כאשר הם תורמים ⭐ – אתה מקבל
+        <b>10%</b> בונוס כנקודות לקבוצה שלך!
+      </p>
+
+      <div class="affiliate-link">
+        <input type="text" id="ref-link" readonly />
+        <button id="copy-link">העתק קישור</button>
+      </div>
+
+      <p id="toast" class="toast" hidden></p>
     </div>
 
-    <p id="info">⭐ כל כוכב = 2 נקודות | 💥 מגבלת 300 טאפים ביום</p>
-
-    <button id="tapBtn" class="btn blue" onclick="tap()">טאפ להגברה (+1)</button>
-    <button id="superBtn" class="btn pink" onclick="superBoost()">סופר-בוסט (+25, פעם ביום)</button>
-
-    <div id="donate">
-      <input type="number" id="stars" min="1" value="10"> ⭐
-      <button class="btn gold" onclick="donateStars()">תרום כוכבים</button>
-    </div>
-
-    <div id="ref">
-      <h3>תוכנית שותפים</h3>
-      <input type="text" id="refLink" readonly value="https://t.me/TeamBattle_vE">
-      <button class="btn gray" onclick="copyRef()">העתק קישור</button>
-    </div>
-  </div>
-
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
