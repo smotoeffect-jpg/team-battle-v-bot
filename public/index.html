@@ -11,12 +11,14 @@
     <div class="container">
       <h1 class="title">TeamBattle - Israel Vs Gaza</h1>
 
+      <!-- בחירת שפה -->
       <div class="lang-buttons">
         <button data-lang="he">עברית</button>
         <button data-lang="en">English</button>
         <button data-lang="ar">العربية</button>
       </div>
 
+      <!-- ניקוד -->
       <div class="teams">
         <div class="team">
           <h2 id="team-israel">🇮🇱 ישראל</h2>
@@ -32,26 +34,32 @@
         ⭐ 1 = 2 נקודות • 💥 מגבלה 300 טאפים ביום • ⚡ סופר-בוסט: +25 פעם ביום
       </p>
 
+      <!-- בחירת קבוצה -->
       <div id="team-chooser" class="team-chooser">
         <button id="choose-israel" class="choose blue">בחר צוות ישראל 🇮🇱</button>
         <button id="choose-gaza" class="choose green">בחר צוות עזה 🇵🇸</button>
       </div>
 
+      <!-- פעולות -->
       <div class="btn-group">
         <button id="tap-btn" class="tap-btn" disabled>טאפ להגברה (+1)</button>
         <button id="super-btn" class="super-btn" disabled>סופר-בוסט (+25)</button>
+        <button id="switch-team" class="switch-btn">🔁 החלף קבוצה</button>
       </div>
 
+      <!-- התקדמות -->
       <div id="progress">
         <p id="progress-text">0 / 300 טאפים היום</p>
       </div>
 
+      <!-- תרומת כוכבים -->
       <div class="donate">
         <input type="number" id="stars" min="1" value="10" />
         <span>⭐</span>
         <button id="donate-btn" class="donate-btn" disabled>תרום כוכבים</button>
       </div>
 
+      <!-- תוכנית שותפים -->
       <h3 class="affiliate-title">תוכנית שותפים 🤝</h3>
       <p id="affiliate-info">
         הזמן חברים בעזרת הקישור האישי שלך. כאשר הם תורמים ⭐ – אתה מקבל
@@ -61,8 +69,24 @@
       <div class="affiliate-link">
         <input type="text" id="ref-link" readonly />
         <button id="copy-link">העתק קישור</button>
+        <button id="share-btn">📤 שתף בטלגרם</button>
       </div>
 
+      <!-- הלוח שלי -->
+      <section id="my-panel" class="my-panel">
+        <h3 id="my-panel-title">הלוח שלי</h3>
+        <p id="me-stars">⭐ כוכבים שתרמתי: 0</p>
+        <p id="me-bonus">🎁 בונוס שותפים שקיבלתי: 0⭐</p>
+        <p id="me-taps">👆 טאפים היום: 0/300</p>
+      </section>
+
+      <!-- לוח מובילים -->
+      <section id="leaders-section" class="leaders-section">
+        <h3 id="leaders-title">שחקנים מובילים</h3>
+        <div id="leaderboard" class="leaderboard"></div>
+      </section>
+
+      <!-- Toast -->
       <p id="toast" class="toast" hidden></p>
     </div>
 
