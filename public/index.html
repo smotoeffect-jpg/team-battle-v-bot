@@ -1,52 +1,17 @@
 <!doctype html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TeamBattle - Israel Vs Gaza</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div class="wrap">
-    <h1>TeamBattle - Israel Vs Gaza</h1>
-
-    <div class="lang">
-      <button id="btnLang">🌐 <span id="langLabel">עברית</span></button>
-      <div id="langMenu" class="menu hidden">
-        <button data-lang="he">🇮🇱 עברית</button>
-        <button data-lang="en">🇬🇧 English</button>
-        <button data-lang="ar">🇵🇸 العربية</button>
-      </div>
-    </div>
-
-    <div class="scores">
-      <div class="card">
-        <div class="team">ישראל</div>
-        <div id="scoreIL" class="score">0</div>
-      </div>
-      <div class="card">
-        <div class="team">עזה</div>
-        <div id="scoreGA" class="score">0</div>
-      </div>
-    </div>
-
-    <button id="btnTap" class="btn primary">(1+) טאפ להגברה</button>
-    <button id="btnBoost" class="btn pink">(25+) סופר-בוסט</button>
-
-    <div class="stars">
-      <input id="starsAmount" type="number" min="5" step="5" value="5" />
-      <button id="btnStars" class="btn yellow">תרום כוכבים להגברה (5⭐)</button>
-    </div>
-
-    <div class="notice" id="tapInfo"></div>
-
-    <h3>הודעות קרב:</h3>
-    <div id="feed" class="feed"></div>
-
-    <footer>© TeamBattle</footer>
-  </div>
-
-  <script src="script.js"></script>
-</body>
+<html lang="he">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TeamBattle - Israel Vs Gaza</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body class="tg-bg">
+    <div id="root">Loading…</div>
+    <script type="text/babel" src="./app.jsx"></script>
+  </body>
 </html>
