@@ -152,11 +152,10 @@ function applyLangTexts() {
   qs("#leaders-title").textContent = t.leaders;
   qs("#my-panel-title").textContent = t.myPanel;
   elProg.textContent = t.progress(tapsToday, tapsLimit);
-  elMeStars.textContent = t.myStars(elMeStars.dataset.v || 0);
-  elMeBonus.textContent = t.myBonus(elMeBonus.dataset.v || 0);
+  elMeStars.textContent = t.myStars(Number(elMeStars.dataset.v || 0));
+  elMeBonus.textContent = t.myBonus(Number(elMeBonus.dataset.v || 0));
   elMeTaps.textContent = t.myTaps(tapsToday, tapsLimit);
 }
-
 qsa(".lang-buttons button").forEach((b) =>
   b.addEventListener("click", () => {
     const lang = b.dataset.lang;
@@ -242,10 +241,10 @@ async function selectTeam(team) {
     await Promise.all([fetchState(), fetchMe()]);
   }
 }
-elChooseIL.onclick = () => selectTeam("israel");
-elChooseGA.onclick = () => selectTeam("gaza");
+elChooseIL && (elChooseIL.onclick = () => selectTeam("israel"));
+elChooseGA && (elChooseGA.onclick = () => selectTeam("gaza"));
 
-elSwitch.onclick = async () => {
+elSwitch && (elSwitch.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   if (!confirm(I18N[LANG].confirmSwitch)) return;
   const newTeam = TEAM === "israel" ? "gaza" : "israel";
@@ -255,48 +254,65 @@ elSwitch.onclick = async () => {
     toast(I18N[LANG].switched);
     await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   }
-};
+});
 
-elTap.onclick = async () => {
+elTap && (elTap.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/tap", { userId: USER_ID });
   if (j.ok) await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   else if (j.error === "limit") toast("הגעת למגבלת הטאפים היומית");
-};
+});
 
-elSuper.onclick = async () => {
+elSuper && (elSuper.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/super", { userId: USER_ID });
   if (j.ok) await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   else if (j.error === "limit") toast("השתמשת כבר בסופר-בוסט היום");
-};
+});
 
 // ==== Donation (Stars) ====
-// גרסה יציבה - נבדקה ועבדה גם באייפון וגם באנדרואיד
-async function openInvoice(url) {
+// זרימה יציבה במיוחד לאייפון: קודם openTelegramLink, אח"כ openInvoice אם נתמך, ולבסוף fallback
+async function openInvoiceRobust(url) {
   try {
-    if (window.Telegram?.WebApp?.openInvoice) {
-      await new Promise((resolve, reject) => {
-        Telegram.WebApp.openInvoice(url, (status) => {
-          if (status === "paid" || status === "pending") resolve();
-          else reject(new Error(status || "failed"));
-        });
-      });
-      return true;
+    const tg = window.Telegram?.WebApp;
+    let opened = false;
+
+    if (tg && typeof tg.openTelegramLink === "function") {
+      try { tg.openTelegramLink(url); opened = true; } catch (_) {}
     }
-  } catch (_) {}
-  // fallback
-  window.open(url, "_blank");
-  return true;
+
+    if (tg && typeof tg.openInvoice === "function") {
+      try {
+        tg.openInvoice(url, (status) => {
+          // ערכים אופייניים: "paid" / "pending" / "cancelled"
+          if (status === "paid" || status === "pending") opened = true;
+        });
+      } catch (_) {}
+    }
+
+    // fallback באייפון במקרים שהחלון לא נפתח
+    setTimeout(() => {
+      if (!opened) {
+        try { window.location.href = url; } catch { window.open(url, "_blank"); }
+      }
+    }, 1200);
+
+    return true;
+  } catch (e) {
+    console.error("Invoice open failed:", e);
+    try { window.location.href = url; } catch { window.open(url, "_blank"); }
+    return true;
+  }
 }
 
-elDonate.onclick = async () => {
+elDonate && (elDonate.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const stars = Math.max(1, parseInt(elStars?.value || "1", 10));
   const j = await apiPost("/api/create-invoice", { userId: USER_ID, team: TEAM, stars });
   if (j?.ok && j.url) {
     try {
-      await openInvoice(j.url);
+      await openInvoiceRobust(j.url);
+      // Poll קצר כדי לרענן סטטוסים אחרי תשלום
       const started = Date.now();
       const poll = async () => {
         await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
@@ -306,20 +322,22 @@ elDonate.onclick = async () => {
     } catch {
       toast("התשלום בוטל או נכשל");
     }
-  } else toast("שגיאה ביצירת חשבונית");
-};
+  } else {
+    toast("שגיאה ביצירת חשבונית");
+  }
+});
 
 // ==== Copy & Share ====
-elRefInput.value = buildRefLink(USER_ID);
-elCopy.onclick = async () => {
+if (elRefInput) elRefInput.value = buildRefLink(USER_ID);
+elCopy && (elCopy.onclick = async () => {
   try { await navigator.clipboard.writeText(elRefInput.value); toast(I18N[LANG].toastCopy); }
   catch { toast("לא הצלחתי להעתיק"); }
-};
-elShare.onclick = () => {
+});
+elShare && (elShare.onclick = () => {
   const link = buildRefLink(USER_ID);
   const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("בואו לשחק איתי ב-TeamBattle!")}`;
   window.open(url, "_blank");
-};
+});
 
 // ==== Init ====
 applyLangTexts();
