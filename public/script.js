@@ -1,6 +1,6 @@
 // ===== Client config =====
 const API_BASE = ""; // באותו דומיין (Render) /api
-const BOT_USERNAME = "@TeamBattle_vBot"; // <-- לעדכן לשם המדויק של הבוט שלך
+const BOT_USERNAME = "TeamBattle_vBot"; // <-- לעדכן לשם המדויק של הבוט שלך
 
 // שפות
 const I18N = {
