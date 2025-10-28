@@ -21,9 +21,9 @@ const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL = "https://team-battle-v-bot.onrender.com/";
 
-const STAR_TO_POINTS = 2; // 1⭐ = 2 נק'
-const SUPER_POINTS = 25; // סופר-בוסט
-const DAILY_TAPS = 300; // מגבלת טאפים ליום
+const STAR_TO_POINTS = 2;  // 1⭐ = 2 נק'
+const SUPER_POINTS = 25;   // סופר-בוסט
+const DAILY_TAPS = 300;    // מגבלת טאפים ליום
 const AFFILIATE_BONUS = 0.1; // 10% למזמין
 
 // ====== JSON Storage ======
@@ -55,32 +55,27 @@ let users = readJSON(USERS_FILE, {}); // userId -> profile
 function ensureUser(userId) {
   if (!users[userId]) {
     users[userId] = {
-      // משחק
       team: null,
       tapsDate: null,
       tapsToday: 0,
       superDate: null,
       superUsed: 0,
 
-      // מונטיזציה/שותפים
       refBy: null,
       starsDonated: 0,
       bonusStars: 0,
 
-      // פרופיל תצוגה
       username: null,
       first_name: null,
       last_name: null,
       displayName: null,
 
-      // היסטוריה בסיסית
       history: [], // {ts,type,stars,points,team,from}
     };
   }
   return users[userId];
 }
 
-// עידכון פרטי פרופיל משדה "from" של טלגרם לכל הודעה שמגיעה
 function updateUserProfileFromTG(from) {
   if (!from || !from.id) return;
   const uid = String(from.id);
@@ -90,7 +85,6 @@ function updateUserProfileFromTG(from) {
   u.first_name = from.first_name ?? u.first_name;
   u.last_name = from.last_name ?? u.last_name;
 
-  // שם תצוגה נוח
   const fn = u.first_name || "";
   const ln = u.last_name || "";
   if (fn || ln) u.displayName = `${fn} ${ln}`.trim();
@@ -105,6 +99,8 @@ const tgPost = (m, d) =>
   });
 
 // ================== API (Mini App) ==================
+
+app.get("/api/health", (_, res) => res.json({ ok: true, time: Date.now() }));
 
 // מצב גלובלי
 app.get("/api/state", (_, res) => res.json({ ok: true, scores }));
@@ -178,29 +174,57 @@ app.post("/api/super", (req, res) => {
   res.json({ ok: true, scores, superUsed: u.superUsed, limit: 1 });
 });
 
-// חשבונית אמיתית בכוכבי טלגרם (XTR)
+/**
+ * יצירת חשבונית אמיתית בכוכבי טלגרם (XTR)
+ * ברירת מחדל: createInvoiceLink -> מחזיר URL שהקליינט פותח עם openInvoice
+ * Fallback (אופציונלי): אם תשלח גם chatId, נשתמש ב-sendInvoice (כפתור תשלום בצ'אט)
+ */
 app.post("/api/create-invoice", async (req, res) => {
   try {
-    const { userId, team, stars } = req.body || {};
-    if (!userId || !team || !["israel", "gaza"].includes(team) || !stars || stars < 1)
+    const { userId, team, stars, chatId } = req.body || {};
+    if (!userId || !team || !["israel", "gaza"].includes(team) || !stars || stars < 1) {
       return res.status(400).json({ ok: false, error: "bad params" });
+    }
 
     const u = ensureUser(userId);
     if (!u.team) u.team = team;
 
-    const payload = { t: "donation", userId, team, stars };
+    const safeStars = Math.max(1, Math.floor(stars)); // integer
+    const payload = { t: "donation", userId, team, stars: safeStars };
+
+    console.log("🧾 Creating Stars invoice:", payload);
+
+    // אם יש chatId – אפשרות לשלוח חשבונית לתוך הצ'אט (Fallback)
+    if (chatId) {
+      const inv = await axios.post(`${TG_API}/sendInvoice`, {
+        chat_id: chatId,
+        title: "TeamBattle Boost",
+        description: `Donate ${safeStars}⭐ to ${team}`,
+        payload: JSON.stringify(payload).slice(0, 128),
+        currency: "XTR",
+        prices: [{ label: "Stars", amount: safeStars }],
+      });
+      console.log("sendInvoice resp:", inv.data);
+      if (!inv.data?.ok) return res.status(500).json({ ok: false, error: inv.data });
+      return res.json({ ok: true, mode: "sendInvoice" });
+    }
+
+    // ברירת מחדל: קישור חשבונית לפתיחה במיני־אפ
     const r = await axios.post(`${TG_API}/createInvoiceLink`, {
       title: "TeamBattle Boost",
-      description: `Donate ${stars}⭐ to ${team}`,
+      description: `Donate ${safeStars}⭐ to ${team}`,
       payload: JSON.stringify(payload).slice(0, 128),
       currency: "XTR", // Stars currency
-      prices: [{ label: "Stars", amount: Math.floor(stars) }], // 1 = ⭐ אחד
+      prices: [{ label: "Stars", amount: safeStars }], // 1 = ⭐ אחד
     });
 
-    if (!r.data?.ok) return res.status(500).json({ ok: false, error: r.data });
-    res.json({ ok: true, url: r.data.result });
+    console.log("createInvoiceLink resp:", r.data);
+    if (!r.data?.ok || !r.data.result) {
+      return res.status(500).json({ ok: false, error: r.data || "TG createInvoiceLink failed" });
+    }
+    res.json({ ok: true, url: r.data.result, mode: "link" });
   } catch (e) {
-    console.error("create-invoice", e?.response?.data || e.message);
+    console.error("create-invoice error:", e?.response?.data || e.message);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
@@ -256,6 +280,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.post("/webhook", async (req, res) => {
   try {
     const update = req.body;
+    console.log("📩 Update type:", Object.keys(update));
 
     // שמירת פרופיל מכל הודעה/קריאה
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
@@ -263,6 +288,7 @@ app.post("/webhook", async (req, res) => {
 
     // אישור תשלום
     if (update.pre_checkout_query) {
+      console.log("✔️ pre_checkout_query:", update.pre_checkout_query.id);
       await tgPost("answerPreCheckoutQuery", {
         pre_checkout_query_id: update.pre_checkout_query.id,
         ok: true,
@@ -278,6 +304,13 @@ app.post("/webhook", async (req, res) => {
       try {
         payload = JSON.parse(sp.invoice_payload || "{}");
       } catch {}
+
+      console.log("✅ successful_payment:", {
+        userId,
+        stars,
+        payload,
+        provider: sp.provider_payment_charge_id || "stars",
+      });
 
       const u = ensureUser(userId);
       const team = u.team || payload.team || "israel";
