@@ -1,4 +1,4 @@
-// ================== server.js (Fixed & Safe Version) ==================
+// ================== server.js (TeamBattle FINAL VERSION) ==================
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
@@ -34,13 +34,16 @@ function readJSON(file, fallback) {
     return fallback;
   }
 }
+
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// ====== In-memory cache ======
 let scores = readJSON(SCORES_FILE, { israel: 0, gaza: 0 });
 let users = readJSON(USERS_FILE, {});
 
@@ -49,6 +52,104 @@ const tgPost = (m, d) => axios.post(`${TG_API}/${m}`, d);
 // ================== BASIC ROUTES ==================
 app.get("/ping", (_, res) => res.json({ ok: true, msg: "Bot is online ✅" }));
 app.get("/api/state", (_, res) => res.json({ ok: true, scores }));
+
+// ================== TEAM SELECTION ==================
+app.post("/api/select-team", (req, res) => {
+  const { userId, team } = req.body;
+  if (!userId || !["israel", "gaza"].includes(team))
+    return res.status(400).json({ ok: false });
+
+  const u =
+    users[userId] ||
+    (users[userId] = {
+      team: null, refBy: null, tapsDate: null, tapsToday: 0,
+      superDate: null, superUsed: 0, starsDonated: 0, bonusStars: 0,
+    });
+
+  u.team = team;
+  writeJSON(USERS_FILE, users);
+  res.json({ ok: true });
+});
+
+// ================== TAPS ==================
+app.post("/api/tap", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ ok: false });
+
+  const u =
+    users[userId] ||
+    (users[userId] = {
+      team: null, refBy: null, tapsDate: null, tapsToday: 0,
+      superDate: null, superUsed: 0, starsDonated: 0, bonusStars: 0,
+    });
+
+  if (!u.team) return res.status(400).json({ ok: false });
+
+  const today = todayStr();
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
+
+  if (u.tapsToday >= DAILY_TAPS)
+    return res.json({ ok: false, error: "limit", limit: DAILY_TAPS });
+
+  u.tapsToday++;
+  scores[u.team] = (scores[u.team] || 0) + 1;
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+  res.json({ ok: true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS });
+});
+
+// ================== SUPER TAP ==================
+app.post("/api/super", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ ok: false });
+  const u =
+    users[userId] ||
+    (users[userId] = {
+      team: null, refBy: null, tapsDate: null, tapsToday: 0,
+      superDate: null, superUsed: 0, starsDonated: 0, bonusStars: 0,
+    });
+  if (!u.team) return res.status(400).json({ ok: false });
+
+  const today = todayStr();
+  if (u.superDate !== today) {
+    u.superDate = today;
+    u.superUsed = 0;
+  }
+
+  if (u.superUsed >= 1)
+    return res.json({ ok: false, error: "limit", limit: 1 });
+
+  u.superUsed++;
+  scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+  res.json({ ok: true, scores, superUsed: u.superUsed });
+});
+
+// ================== DONATIONS ==================
+app.post("/api/create-invoice", async (req, res) => {
+  try {
+    const { userId, team, stars } = req.body;
+    if (!userId || !team || !stars) return res.status(400).json({ ok: false });
+
+    const payload = { t: "donation", userId, team, stars };
+    const r = await tgPost("createInvoiceLink", {
+      title: "TeamBattle Boost",
+      description: `Donate ${stars}⭐ to ${team}`,
+      payload: JSON.stringify(payload).slice(0, 128),
+      currency: "XTR",
+      prices: [{ label: "Stars", amount: Math.floor(stars) }],
+    });
+
+    res.json({ ok: true, url: r.data.result });
+  } catch (e) {
+    console.error("Invoice error:", e.message);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 
 // ================== TELEGRAM WEBHOOK ==================
 app.post("/webhook", async (req, res) => {
@@ -91,8 +192,8 @@ app.post("/webhook", async (req, res) => {
         chat_id: chatId,
         photo: WELCOME_IMAGE_URL,
         caption:
-          "ברוך הבא ל־*TeamBattle – ישראל נגד עזה* 🇮🇱⚔️🇵🇸\nבחר שפה:",
-        parse_mode: "Markdown",
+          "ברוך הבא ל־<b>TeamBattle – ישראל נגד עזה</b> 🇮🇱⚔️🇵🇸\nבחר שפה:",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [
@@ -114,16 +215,22 @@ app.post("/webhook", async (req, res) => {
 
       const langs = {
         he: {
-          caption: "🇮🇱 ברוך הבא! פתח את המשחק עכשיו 🚀",
+          caption:
+            "🇮🇱 ברוך הבא! פתח את המשחק 🚀\n💥 300 טאפים ביום\n⚡ בוסט יומי (+25)\n⭐ כוכב = 2 נק'\n🤝 בונוס 10% מהמוזמנים שלך.",
           play: "🚀 פתח משחק",
+          change: "🌐 שנה שפה",
         },
         en: {
-          caption: "🇮🇱 Welcome! Open the game now 🚀",
+          caption:
+            "🇮🇱 Welcome! Start the battle 🚀\n💥 300 taps/day\n⚡ Daily boost (+25)\n⭐ 1 star = 2 points\n🤝 10% referral bonus.",
           play: "🚀 Start Game",
+          change: "🌐 Change Language",
         },
         ar: {
-          caption: "🇵🇸 أهلاً بك! افتح اللعبة الآن 🚀",
+          caption:
+            "🇵🇸 أهلاً بك! ابدأ المعركة 🚀\n💥 ٣٠٠ نقرة يوميًا\n⚡ تعزيز يومي (+25)\n⭐ نجمة = نقطتان\n🤝 مكافأة إحالة ١٠٪.",
           play: "🚀 ابدأ اللعبة",
+          change: "🌐 تغيير اللغة",
         },
       };
 
@@ -137,12 +244,12 @@ app.post("/webhook", async (req, res) => {
             type: "photo",
             media: WELCOME_IMAGE_URL,
             caption: l.caption,
-            parse_mode: "Markdown",
+            parse_mode: "HTML",
           },
           reply_markup: {
             inline_keyboard: [
               [{ text: l.play, web_app: { url: MINI_APP_URL } }],
-              [{ text: "🌐 שנה שפה", callback_data: "change_lang" }],
+              [{ text: l.change, callback_data: "change_lang" }],
             ],
           },
         });
@@ -156,7 +263,7 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// ================== WEBHOOK SETUP ==================
+// ================== SETUP WEBHOOK ==================
 app.get("/setup-webhook", async (_, res) => {
   const url = `${WEBHOOK_DOMAIN}/webhook`;
   const r = await tgPost("setWebhook", {
@@ -166,7 +273,9 @@ app.get("/setup-webhook", async (_, res) => {
   res.json(r.data);
 });
 
+// ================== STATIC FRONTEND ==================
 app.use(express.static(path.join(__dirname, "public")));
 app.get("*", (_, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
+// ================== START SERVER ==================
 app.listen(process.env.PORT || 3000, () => console.log("✅ Server running on port 3000"));
