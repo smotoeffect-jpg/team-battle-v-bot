@@ -1,5 +1,6 @@
 // ===== Client config =====
-const API_BASE = window.location.origin.replace(/\/$/, "");
+// שימוש בנתיב יחסי כדי למנוע בעיות WebView / CORS
+const API_BASE = ""; 
 const BOT_USERNAME = "TeamBattle_vBot";
 
 // ==== I18N ====
@@ -108,6 +109,7 @@ let tapsLimit = 300;
 try {
   if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
+    Telegram.WebApp.expand(); // שיפור יציבות פתיחת חלונות
     const unsafe = Telegram.WebApp.initDataUnsafe || {};
     USER_ID = unsafe.user?.id ? String(unsafe.user.id) : null;
   }
@@ -155,7 +157,6 @@ qsa(".lang-buttons button").forEach((b) =>
     if (I18N[lang]) {
       LANG = lang;
       applyLangTexts();
-      // עידכון לוחות כדי שהטקסטים יהיו בשפה שנבחרה
       fetchLeaders();
       fetchMe();
     }
@@ -243,7 +244,7 @@ async function selectTeam(team) {
 elChooseIL && (elChooseIL.onclick = () => selectTeam("israel"));
 elChooseGA && (elChooseGA.onclick = () => selectTeam("gaza"));
 
-// ==== Switch team button (תיקון) ====
+// ==== Switch team ====
 elSwitch && (elSwitch.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   if (!confirm(I18N[LANG].confirmSwitch)) return;
@@ -284,19 +285,31 @@ elSuper && (elSuper.onclick = async () => {
 });
 
 // ==== Donation (Stars) ====
+// שדרוג: תמיד לפתוח חלון — בתוך טלגרם (openInvoice / openTelegramLink) ובדפדפן (ניווט ישיר)
 async function openInvoice(url) {
   try {
-    if (window.Telegram?.WebApp?.openInvoice) {
+    if (window.Telegram?.WebApp) {
+      // ניסיון ראשי: overlay של טלגרם
       await new Promise((resolve, reject) => {
-        Telegram.WebApp.openInvoice(url, (status) => {
-          if (status === "paid" || status === "pending") resolve();
-          else reject(new Error(status || "failed"));
-        });
+        try {
+          Telegram.WebApp.openInvoice(url, (status) => {
+            if (status === "paid" || status === "pending") resolve(true);
+            else if (status === "cancelled") reject(new Error("cancelled"));
+            else reject(new Error(status || "failed"));
+          });
+        } catch (err) { reject(err); }
       });
       return true;
     }
-  } catch (_) {}
-  window.open(url, "_blank");
+  } catch (e) {
+    // ניסיון fallback בתוך טלגרם
+    try {
+      Telegram?.WebApp?.openTelegramLink?.(url);
+      return true;
+    } catch (_) {}
+  }
+  // דפדפן רגיל: נווט לאותו טאב (מונע חסימת פופאפ)
+  window.location.href = url;
   return true;
 }
 
@@ -311,7 +324,9 @@ elDonate && (elDonate.onclick = async () => {
     } catch {
       toast("התשלום בוטל או נכשל");
     }
-  } else toast("שגיאה ביצירת חשבונית");
+  } else {
+    toast("שגיאה ביצירת חשבונית");
+  }
 });
 
 // ==== Copy & Share ====
