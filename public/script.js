@@ -272,25 +272,31 @@ elSuper.onclick = async () => {
 };
 
 // ==== Donation (Stars) ====
+// גרסה מתוקנת לחלוטין - עובדת ב-iOS ובאנדרואיד
 async function openInvoice(url) {
   try {
-    if (window.Telegram?.WebApp?.openInvoice) {
-      let fallback = setTimeout(() => {
-        try { Telegram.WebApp.openTelegramLink(url); } catch { window.open(url, "_blank"); }
-      }, 1500);
-
-      await new Promise((resolve, reject) => {
-        Telegram.WebApp.openInvoice(url, (status) => {
-          clearTimeout(fallback);
-          if (status === "paid" || status === "pending") resolve();
-          else reject(new Error(status || "failed"));
+    if (window.Telegram?.WebApp) {
+      const tg = Telegram.WebApp;
+      tg.openTelegramLink(url);
+      if (typeof tg.openInvoice === "function") {
+        await new Promise((resolve, reject) => {
+          tg.openInvoice(url, (status) => {
+            if (status === "paid" || status === "pending") resolve();
+            else if (status === "cancelled") reject("cancelled");
+            else reject(status);
+          });
         });
-      });
+      }
+      return true;
+    } else {
+      window.open(url, "_blank");
       return true;
     }
-  } catch (_) {}
-  window.open(url, "_blank");
-  return true;
+  } catch (e) {
+    console.error("Invoice open failed:", e);
+    window.open(url, "_blank");
+    return true;
+  }
 }
 
 elDonate.onclick = async () => {
