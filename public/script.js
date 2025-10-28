@@ -1,134 +1,145 @@
-// i18n
-const L = {
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const state = {
+  userId: tg.initDataUnsafe?.user?.id,
+  team: "israel",
+  lang: "he",
+  dailyLimit: 300,
+  tapsToday: 0
+};
+
+const T = {
   he: {
-    title: "TeamBattle - Israel Vs Gaza",
-    il: "ישראל", ga: "עזה",
-    boost: "(1+) טאפ להגברה",
-    super: "(25+) סופר-בוסט",
-    donateBtn: (n)=>`תרום כוכבים להגברה (${n} ⭐)`,
-    willGive: "זה ייתן לצוות שלך 10 נקודות",
-    news: "הודעות קרב:",
-    lang: "עברית"
+    tap: "(1+) טאפ להגברה",
+    sboost: "(25+) סופר-בוסט",
+    donate: amt => `תרום כוכבים להגברה (${amt}⭐)`,
+    joined: team => `System: joined Team ${team==='israel'?'Israel':'Gaza'}`
   },
   en: {
-    title: "TeamBattle - Israel Vs Gaza",
-    il: "Israel", ga: "Gaza",
-    boost: "Tap to boost (+1)",
-    super: "Super Boost (+25)",
-    donateBtn: (n)=>`Donate Stars (${n} ⭐)`,
-    willGive: "This will give your team 10 points",
-    news: "Battle Feed:",
-    lang: "English"
+    tap: "Tap to boost (1+)",
+    sboost: "Super-Boost (25+)",
+    donate: amt => `Donate Stars (${amt}⭐)`,
+    joined: team => `System: joined Team ${team==='israel'?'Israel':'Gaza'}`
   },
   ar: {
-    title: "TeamBattle - Israel Vs غزة",
-    il: "إسرائيل", ga: "غزة",
-    boost: "تعزيز بلمسة (+1)",
-    super: "تعزيز فائق (+25)",
-    donateBtn: (n)=>`تبرع بالنجوم (${n} ⭐)`,
-    willGive: "سيمنح فريقك 10 نقاط",
-    news: "أخبار المعركة:",
-    lang: "العربية"
+    tap: "اضغط للتعزيز (1+)",
+    sboost: "سوبر بوست (25+)",
+    donate: amt => `تبرع نجوم (${amt}⭐)`,
+    joined: team => `System: joined Team ${team==='israel'?'Israel':'Gaza'}`
   }
 };
 
-const qs = (s)=>document.querySelector(s);
-const scoreIL = qs("#scoreIL");
-const scoreGA = qs("#scoreGA");
-const btnBoost = qs("#btnBoost");
-const btnSuper = qs("#btnSuper");
-const btnDonate = qs("#btnDonate");
-const donStars = qs("#donStars");
-const title = qs("#title");
-const nameIL = qs("#nameIL");
-const nameGA = qs("#nameGA");
-const dailyNote = qs("#dailyNote");
-const newsTitle = qs("#newsTitle");
-const newsList = qs("#news");
-const langBtn = qs("#btnLang");
-const langMenu = qs("#langMenu");
-const langLabel = qs("#langLabel");
+const elScoreIL = document.getElementById("scoreIL");
+const elScoreGA = document.getElementById("scoreGA");
+const elTap = document.getElementById("btnTap");
+const elBoost = document.getElementById("btnBoost");
+const elStars = document.getElementById("btnStars");
+const elStarsAmt = document.getElementById("starsAmount");
+const elFeed = document.getElementById("feed");
+const elTapInfo = document.getElementById("tapInfo");
+const elLangBtn = document.getElementById("btnLang");
+const elLangMenu = document.getElementById("langMenu");
+const elLangLabel = document.getElementById("langLabel");
 
-let lang = localStorage.getItem("tb_lang") || "he";
-let team = localStorage.getItem("tb_team") || "israel"; // ברירת מחדל
-
-function setLang(l) {
-  lang = l; localStorage.setItem("tb_lang", l);
-  const t = L[l];
-  title.textContent = t.title;
-  nameIL.textContent = t.il;
-  nameGA.textContent = t.ga;
-  btnBoost.textContent = t.boost;
-  btnSuper.textContent = t.super;
-  btnDonate.textContent = t.donateBtn(donStars.value);
-  dailyNote.textContent = t.willGive;
-  newsTitle.textContent = t.news;
-  langLabel.textContent = t.lang;
+// init language on UI
+function applyLang(){
+  const L = T[state.lang];
+  elTap.textContent = L.tap;
+  elBoost.textContent = L.sboost;
+  elStars.textContent = L.donate(Number(elStarsAmt.value||5));
+  elLangLabel.textContent = state.lang==="he" ? "עברית" : state.lang==="en" ? "English" : "العربية";
 }
+applyLang();
 
-donStars.addEventListener("input", ()=> {
-  const n = Math.max(1, parseInt(donStars.value || "1", 10));
-  donStars.value = n;
-  btnDonate.textContent = L[lang].donateBtn(n);
+elLangBtn.onclick = ()=> elLangMenu.classList.toggle("hidden");
+elLangMenu.querySelectorAll("button").forEach(b=>{
+  b.onclick = async ()=>{
+    state.lang = b.dataset.lang;
+    applyLang();
+    elLangMenu.classList.add("hidden");
+    // עדכן בשרת את השפה
+    await fetch("/api/set-lang", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ userId: state.userId, lang: state.lang })});
+  };
 });
 
-langBtn.addEventListener("click", ()=> langMenu.classList.toggle("hidden"));
-langMenu.querySelectorAll("div").forEach(el=>{
-  el.addEventListener("click", ()=>{
-    setLang(el.dataset.lang);
-    langMenu.classList.add("hidden");
+elStarsAmt.addEventListener("input", ()=> applyLang());
+
+// קובע צד כברירת מחדל לפי שפת מערכת (אפשר לשנות אם צריך)
+state.team = "israel";
+
+// הצטרפות
+(async function join(){
+  // ref מה-deeplink של ה-WebApp אם עבר דרך start? (לא חובה)
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get("ref") || null;
+
+  await fetch("/api/join", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId: state.userId, team: state.team, ref })
   });
-});
+})();
 
-async function loadState() {
-  const r = await fetch("/api/state");
-  const j = await r.json();
-  if (j.ok) {
-    scoreIL.textContent = j.teams.israel;
-    scoreGA.textContent = j.teams.gaza;
-    newsList.innerHTML = "";
-    (j.announcements || []).forEach(a=>{
-      const li = document.createElement("li");
-      li.textContent = (lang==="he"?a.text_he:lang==="en"?a.text_en:a.text_ar) || "";
-      newsList.appendChild(li);
-    });
-  }
+// משיכת מצב
+async function loadState(){
+  const j = await fetch("/api/state").then(r=>r.json());
+  elScoreIL.textContent = j.scores.israel || 0;
+  elScoreGA.textContent = j.scores.gaza || 0;
+  elFeed.innerHTML = j.feed.map(f=>`<div class="row">${new Date(f.at).toLocaleTimeString()} — ${f.text}</div>`).join("");
+  state.dailyLimit = j.dailyLimit;
 }
-
-function getUserId() {
-  // אם זה בתוך טלגרם, נשתמש ב-initDataUnsafe; אחרת אנונימי
-  try {
-    const tg = window.Telegram?.WebApp;
-    const id = tg?.initDataUnsafe?.user?.id;
-    return id || "anon";
-  } catch { return "anon"; }
-}
-
-async function tap(type) {
-  const userId = getUserId();
-  const r = await fetch("/api/tap", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ team, type, userId })
-  });
-  const j = await r.json();
-  if (j.ok) {
-    scoreIL.textContent = j.teams.israel;
-    scoreGA.textContent = j.teams.gaza;
-  }
-}
-
-// UI actions
-btnBoost.addEventListener("click", ()=> tap("free"));
-btnSuper.addEventListener("click", ()=> tap("super"));
-btnDonate.addEventListener("click", ()=> tap("super")); // דמו: כוכבים = סופר־בוסט
-
-// choose side (פשוט: לפי שפה כברירת מחדל — אפשר להרחיב ללחצני בחירה)
-team = (lang==="ar") ? "gaza" : "israel";
-localStorage.setItem("tb_team", team);
-
-setLang(lang);
 loadState();
 
-// התאמה ל־Telegram WebApp
-try { Telegram.WebApp.ready(); Telegram.WebApp.expand(); } catch {}
+elTap.onclick = async ()=>{
+  const res = await fetch("/api/tap", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId: state.userId })
+  }).then(r=>r.json());
+
+  if (!res.ok && res.reason==="limit") {
+    elTapInfo.textContent = `הגעת למכסה היומית (${res.dailyLimit}). נסה מחר.`;
+    return;
+  }
+
+  elScoreIL.textContent = res.scores.israel;
+  elScoreGA.textContent = res.scores.gaza;
+  elTapInfo.textContent = `+1 הועלה!`;
+};
+
+elBoost.onclick = async ()=>{
+  const res = await fetch("/api/super-boost", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId: state.userId })
+  }).then(r=>r.json());
+
+  if (!res.ok && res.reason==="cooldown") {
+    elTapInfo.textContent = `סופר-בוסט זמין שוב ב-${new Date(res.nextAt).toLocaleTimeString()}`;
+    return;
+  }
+  elScoreIL.textContent = res.scores.israel;
+  elScoreGA.textContent = res.scores.gaza;
+  elTapInfo.textContent = `⚡ +25 הוספו!`;
+};
+
+// כוכבים (Star Payments)
+elStars.onclick = async ()=>{
+  const stars = Number(elStarsAmt.value || 5);
+  const j = await fetch("/api/create-invoice", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ userId: state.userId, stars })
+  }).then(r=>r.json());
+
+  if (j.ok && j.link) {
+    // פותח את חלון התשלום הרשמי של טלגרם
+    tg.openInvoice(j.link, (status)=>{
+      console.log("invoice status:", status);
+      if (status === "paid") loadState();
+    });
+  } else {
+    tg.showAlert("שגיאה ביצירת בקשת תשלום");
+  }
+};
