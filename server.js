@@ -1,159 +1,219 @@
+// ================== server.js ==================
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
+const fs = require("fs");
 const cors = require("cors");
-const fs = require("fs-extra");
 
-// ====== CONFIG ======
-const BOT_TOKEN = "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA"; // שלך
-const DOMAIN = "https://team-battle-v-bot.onrender.com";           // דומיין Render שלך
-const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-
-const WELCOME_IMAGE_URL = `${DOMAIN}/05ce994d-56d2-4800-b0e3-7883cc04ffaf.jpeg`;
-const MINI_APP_URL = `${DOMAIN}/`; // נטען את public/index.html
-
-// שמירה מקומית (JSON)
-const DB_DIR = path.join(__dirname, "db");
-const TEAMS_FILE = path.join(DB_DIR, "teams.json");
-const USERS_FILE = path.join(DB_DIR, "users.json");
-const ANN_FILE = path.join(DB_DIR, "announcements.json");
-
-// הגדרות המשחק
-const FREE_TAP_VALUE = 1;
-const SUPER_TAP_VALUE = 25;
-const DAILY_FREE_TAPS_LIMIT = 300; // מקס' טאפים חינמיים ביום למשתמש
-
-// ====== HELPERS ======
-const tgPost = (method, data) => axios.post(`${TG_API}/${method}`, data);
-
-async function ensureDb() {
-  await fs.ensureDir(DB_DIR);
-  if (!(await fs.pathExists(TEAMS_FILE))) {
-    await fs.writeJson(TEAMS_FILE, { israel: 0, gaza: 0, lastReset: 0 }, { spaces: 2 });
-  }
-  if (!(await fs.pathExists(USERS_FILE))) {
-    await fs.writeJson(USERS_FILE, {}, { spaces: 2 });
-  }
-  if (!(await fs.pathExists(ANN_FILE))) {
-    await fs.writeJson(ANN_FILE, { items: [] }, { spaces: 2 });
-  }
-}
-
-async function readJson(p) { return fs.readJson(p); }
-async function writeJson(p, v) { return fs.writeJson(p, v, { spaces: 2 }); }
-
-function todayKey() {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${d.getUTCMonth()+1}-${d.getUTCDate()}`;
-}
-
-// ====== APP ======
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "public"))); // מגיש את המיני־אפליקציה
 
-// ====== API (למיני־אפליקציה) ======
-app.get("/api/state", async (req, res) => {
+// ====== CONFIG ======
+const BOT_TOKEN = "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA"; // שלך
+const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const WEBHOOK_DOMAIN = "https://team-battle-v-bot.onrender.com"; // דומיין Render
+const MINI_APP_URL = "https://team-battle-v-bot.onrender.com/";  // עמוד המיני-אפ (index.html)
+const WELCOME_IMAGE_URL = "https://files.oaiusercontent.com/file-F362F5C1-B1B9-4E69-B920-02FDECBDC094.jpeg";
+// חוקי משחק:
+const STAR_TO_POINTS = 2;     // 1⭐ = 2 נק'
+const SUPER_POINTS = 25;      // סופר-בוסט
+const DAILY_TAPS = 300;       // מגבלת טאפים ליום
+const AFFILIATE_BONUS = 0.10; // 10% למזמין
+
+// ====== Files (persist as JSON) ======
+const SCORES_FILE = path.join(__dirname, "scores.json");
+const USERS_FILE  = path.join(__dirname, "users.json");
+function readJSON(file, fallback) {
   try {
-    await ensureDb();
-    const teams = await readJson(TEAMS_FILE);
-    const anns = await readJson(ANN_FILE);
-    res.json({
-      ok: true,
-      teams,
-      announcements: anns.items.slice(-20) // אחרונות
+    if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch { return fallback; }
+}
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+// ====== Init storage ======
+let scores = readJSON(SCORES_FILE, { israel: 0, gaza: 0 });
+let users  = readJSON(USERS_FILE,  {}); // userId: { team, refBy, tapsDate, tapsToday, superDate, superUsed, starsDonated, bonusStars }
+
+// ====== Helpers ======
+const tgPost = (method, data) => axios.post(`${TG_API}/${method}`, data);
+
+// ================== API for Mini-App ==================
+
+// מצב נוכחי (למיני-אפ)
+app.get("/api/state", (req, res) => {
+  res.json({ ok: true, scores });
+});
+
+// בחירת קבוצה (נשמרת למשתמש)
+app.post("/api/select-team", (req, res) => {
+  const { userId, team } = req.body;
+  if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
+  if (!users[userId]) users[userId] = { team: null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 };
+  users[userId].team = team;
+  writeJSON(USERS_FILE, users);
+  res.json({ ok: true });
+});
+
+// טאפ רגיל (+1) עם מגבלת 300 ליום (נשמר בשרת ומעלה ניקוד גלובלי)
+app.post("/api/tap", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+  const u = users[userId] || (users[userId] = { team:null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 });
+  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+
+  const today = todayStr();
+  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
+  if (u.tapsToday >= DAILY_TAPS) return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+
+  u.tapsToday += 1;
+  scores[u.team] = (scores[u.team] || 0) + 1;
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+  res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS });
+});
+
+// סופר-בוסט (+25) פעם ביום
+app.post("/api/super", (req, res) => {
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+  const u = users[userId] || (users[userId] = { team:null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 });
+  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+
+  const today = todayStr();
+  if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
+  if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
+
+  u.superUsed += 1;
+  scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
+});
+
+// חשבונית ⭐ אמיתית (XTR) – פותח תשלום בתוך המיני-אפ
+app.post("/api/create-invoice", async (req, res) => {
+  try {
+    const { userId, team, stars } = req.body;
+    if (!userId || !team || !["israel","gaza"].includes(team) || !stars || stars < 1)
+      return res.status(400).json({ ok:false, error:"bad params" });
+
+    // נשמור מי המשתמש (אולי אין עדיין)
+    if (!users[userId]) users[userId] = { team, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 };
+    if (!users[userId].team) users[userId].team = team;
+
+    const payloadObj = { t:"donation", userId, team, stars }; // יגיע חזרה ב-successful_payment.invoice_payload
+    const tgRes = await tgPost("createInvoiceLink", {
+      title: "TeamBattle Boost",
+      description: `Donate ${stars}⭐ to ${team}`,
+      payload: JSON.stringify(payloadObj).slice(0, 128),
+      currency: "XTR",
+      prices: [{ label: "Stars", amount: Math.floor(stars) }],
     });
+    if (!tgRes.data.ok) return res.status(500).json({ ok:false, error: tgRes.data });
+    res.json({ ok:true, url: tgRes.data.result });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    console.error("create-invoice", e?.response?.data || e.message);
+    res.status(500).json({ ok:false, error: e.message });
   }
 });
 
-// שליחת טאפ +1 או +25
-app.post("/api/tap", async (req, res) => {
-  try {
-    await ensureDb();
-    const { team, type, userId } = req.body; // team: 'israel' | 'gaza'; type: 'free' | 'super'
-    if (!["israel", "gaza"].includes(team)) return res.status(400).json({ ok: false, error: "bad team" });
+// סטטי למיני-אפ
+app.use(express.static(path.join(__dirname, "public")));
 
-    const teams = await readJson(TEAMS_FILE);
-    const users = await readJson(USERS_FILE);
-
-    const uKey = String(userId || "anonymous");
-    const day = todayKey();
-    users[uKey] = users[uKey] || { daily: {}, total: 0 };
-    users[uKey].daily[day] = users[uKey].daily[day] || { freeUsed: 0, superUsed: 0 };
-
-    let inc = 0;
-    if (type === "free") {
-      if (users[uKey].daily[day].freeUsed >= DAILY_FREE_TAPS_LIMIT)
-        return res.json({ ok: false, error: "limit_reached" });
-      users[uKey].daily[day].freeUsed += 1;
-      inc = FREE_TAP_VALUE;
-    } else if (type === "super") {
-      users[uKey].daily[day].superUsed += 1;
-      inc = SUPER_TAP_VALUE;
-    } else {
-      return res.status(400).json({ ok: false, error: "bad type" });
-    }
-
-    teams[team] += inc;
-    users[uKey].total += inc;
-
-    await writeJson(TEAMS_FILE, teams);
-    await writeJson(USERS_FILE, users);
-
-    res.json({
-      ok: true,
-      inc,
-      teams,
-      user: users[uKey],
-      limits: { dailyFreeLimit: DAILY_FREE_TAPS_LIMIT }
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
-  }
-});
-
-// ====== TELEGRAM WEBHOOK ======
-// חשוב: טלגרם שולחת JSON ב-POST. GET יחזיר 405 כדי לא להפיל "wrong type".
-app.get("/webhook", (req, res) => res.status(405).json({ ok: true }));
+// ================== Telegram Webhook ==================
 app.post("/webhook", async (req, res) => {
   try {
-    if (!req.is("application/json")) return res.status(200).json({ ok: true });
     const update = req.body;
-    console.log("📩 Incoming update:", update);
 
-    // תשלום (אופציונלי)
+    // אישור תשלום
     if (update.pre_checkout_query) {
-      await tgPost("answerPreCheckoutQuery", {
-        pre_checkout_query_id: update.pre_checkout_query.id,
-        ok: true
+      await tgPost("answerPreCheckoutQuery", { pre_checkout_query_id: update.pre_checkout_query.id, ok: true });
+    }
+
+    // תשלום הצליח
+    if (update.message && update.message.successful_payment) {
+      const sp = update.message.successful_payment;
+      const userId = String(update.message.from.id);
+      const stars = sp.total_amount; // ב־XTR כל 1 = כוכב
+      const payloadRaw = sp.invoice_payload || "{}";
+      let payload = {};
+      try { payload = JSON.parse(payloadRaw); } catch {}
+
+      // נוודא שהמשתמש רשום
+      const u = users[userId] || (users[userId] = { team:null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 });
+      const team = u.team || payload.team || "israel";
+
+      // 1) נקודות לקבוצת התורם
+      const pts = stars * STAR_TO_POINTS;
+      scores[team] = (scores[team] || 0) + pts;
+
+      // 2) עידכון סטטיסטיקות
+      u.starsDonated += stars;
+
+      // 3) בונוס שותפים 10% (למזמין) → נקודות לקבוצה של המזמין (או לקבוצת התורם אם לא ידועה)
+      if (u.refBy) {
+        const inviterId = String(u.refBy);
+        const inv = users[inviterId] || (users[inviterId] = { team:null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 });
+        const bonusStars = Math.floor(stars * AFFILIATE_BONUS);
+        const bonusPts = bonusStars * STAR_TO_POINTS;
+        inv.bonusStars += bonusStars;
+        const inviterTeam = inv.team || team;
+        scores[inviterTeam] = (scores[inviterTeam] || 0) + bonusPts;
+      }
+
+      writeJSON(USERS_FILE, users);
+      writeJSON(SCORES_FILE, scores);
+
+      // פידבק למשתמש
+      await tgPost("sendMessage", {
+        chat_id: userId,
+        text: `✅ Thanks for your donation of ${stars}⭐ → +${pts} points to ${team}!`,
       });
     }
 
-    // הודעת /start
-    if (update.message && update.message.text && update.message.text.startsWith("/start")) {
+    // פקודת /start + Referral
+    if (update.message && update.message.text) {
       const chatId = update.message.chat.id;
+      const userId = String(update.message.from.id);
+      const text = update.message.text.trim();
 
-      const caption = "ברוך הבא ל־*TeamBattle – ישראל נגד עזה* 🇮🇱⚔️🇵🇸\n\nבחר את השפה שלך:";
-      await tgPost("sendPhoto", {
-        chat_id: chatId,
-        photo: WELCOME_IMAGE_URL,
-        caption,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[
-            { text: "🇮🇱 עברית", callback_data: "lang_he" },
-            { text: "🇬🇧 English", callback_data: "lang_en" },
-            { text: "🇵🇸 العربية", callback_data: "lang_ar" }
-          ]]
+      // מזהה רפרל: /start ref_12345
+      const parts = text.split(" ");
+      if (parts[1] && parts[1].startsWith("ref_")) {
+        const refBy = parts[1].slice(4);
+        if (!users[userId]) users[userId] = { team:null, refBy:null, tapsDate:null, tapsToday:0, superDate:null, superUsed:0, starsDonated:0, bonusStars:0 };
+        if (!users[userId].refBy && refBy !== userId) {
+          users[userId].refBy = refBy;
+          writeJSON(USERS_FILE, users);
         }
-      });
+      }
+
+      if (text.startsWith("/start")) {
+        // מסך בחירת שפה עם תמונה וכפתורי שינוי
+        await tgPost("sendPhoto", {
+          chat_id: chatId,
+          photo: WELCOME_IMAGE_URL,
+          caption:
+            "Welcome to *TeamBattle – Israel vs Gaza* 🇮🇱⚔️🇵🇸\n\nChoose your language:",
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [[
+              { text: "🇬🇧 English", callback_data: "lang_en" },
+              { text: "🇮🇱 עברית",  callback_data: "lang_he" },
+              { text: "🇵🇸 العربية", callback_data: "lang_ar" },
+            ]],
+          },
+        });
+      }
     }
 
-    // Callback לשינוי שפה + פתיחת משחק
+    // Callback queries: שינוי שפה → הודעת Welcome בשפה + כפתור פתיחת המיני-אפ
     if (update.callback_query) {
       const cq = update.callback_query;
       const chatId = cq.message.chat.id;
@@ -161,77 +221,100 @@ app.post("/webhook", async (req, res) => {
       const data = cq.data;
 
       const LANGS = {
-        he: {
-          caption: "🇮🇱 *צוות ישראל!* 💪\n\nטאפ להעלאה, תרום כוכבים ותהיה חלק מהניצחון!",
-          button: "🚀 פתח את המשחק",
-          change: "🌐 שינוי שפה"
-        },
         en: {
-          caption: "🇮🇱 *Team Israel!* 💪\n\nTap to boost your score and lead the battle!",
-          button: "🚀 Open Game",
-          change: "🌐 Change language"
+          caption:
+            "Welcome to *TeamBattle – Israel vs Gaza* 🇮🇱⚔️🇵🇸\n\n" +
+            "Pick a side, tap to boost, donate Stars for real points, and climb the global board!\n\n" +
+            "💥 300 taps/day\n⚡ 1 Super Boost/day (+25)\n⭐ 1 Star = 2 points\n🤝 10% affiliate bonus from your invited friends’ donations.",
+          play: "🚀 Start Game (Mini App)",
+          change: "🌐 Change language",
+        },
+        he: {
+          caption:
+            "ברוך הבא ל־*TeamBattle – ישראל נגד עזה* 🇮🇱⚔️🇵🇸\n\n" +
+            "בחר צד, בצע טאפים, תרום כוכבים לנקודות אמיתיות, וטפס בטבלה הגלובלית!\n\n" +
+            "💥 300 טאפים ביום\n⚡ סופר־בוסט פעם ביום (+25)\n⭐ כוכב = 2 נק'\n🤝 בונוס 10% מהמוזמנים שלך.",
+          play: "🚀 פתח משחק (Mini App)",
+          change: "🌐 שינוי שפה",
         },
         ar: {
-          caption: "🇵🇸 *فريق غزة!* 💪\n\nاضغط للتعزيز وانضم إلى المعركة!",
-          button: "🚀 ابدأ اللعبة",
-          change: "🌐 تغيير اللغة"
-        }
+          caption:
+            "مرحبًا بك في *TeamBattle – إسرائيل ضد غزة* 🇮🇱⚔️🇵🇸\n\n" +
+            "اختر فريقك، انقر للتعزيز، تبرّع بالنجوم لنقاط حقيقية، وتصدّر الترتيب العالمي!\n\n" +
+            "💥 ٣٠٠ نقرة/يوم\n⚡ تعزيز سوبر مرة/يوم (+25)\n⭐ النجمة = نقطتان\n🤝 ١٠٪ مكافأة إحالة من تبرعات المدعوين.",
+          play: "🚀 ابدأ اللعب (Mini App)",
+          change: "🌐 تغيير اللغة",
+        },
       };
 
-      let chosen = LANGS.he;
-      if (data === "lang_en") chosen = LANGS.en;
-      else if (data === "lang_ar") chosen = LANGS.ar;
-
-      await tgPost("editMessageMedia", {
-        chat_id: chatId,
-        message_id: messageId,
-        media: {
-          type: "photo",
-          media: WELCOME_IMAGE_URL,
-          caption: chosen.caption,
-          parse_mode: "Markdown"
-        },
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: chosen.button, web_app: { url: MINI_APP_URL } }],
-            [{ text: chosen.change, callback_data: "lang_he" },
-             { text: "EN", callback_data: "lang_en" },
-             { text: "AR", callback_data: "lang_ar" }]
-          ]
-        }
-      });
-
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
+      if (data === "lang_en" || data === "lang_he" || data === "lang_ar") {
+        const chosen = data === "lang_en" ? LANGS.en : data === "lang_he" ? LANGS.he : LANGS.ar;
+        await tgPost("editMessageMedia", {
+          chat_id: chatId,
+          message_id: messageId,
+          media: {
+            type: "photo",
+            media: WELCOME_IMAGE_URL,
+            caption: chosen.caption,
+            parse_mode: "Markdown",
+          },
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: chosen.play, web_app: { url: MINI_APP_URL } }],
+              [{ text: chosen.change, callback_data: "change_lang" }],
+            ],
+          },
+        });
+        await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
+      } else if (data === "change_lang") {
+        await tgPost("editMessageMedia", {
+          chat_id: chatId,
+          message_id: messageId,
+          media: {
+            type: "photo",
+            media: WELCOME_IMAGE_URL,
+            caption:
+              "Welcome to *TeamBattle – Israel vs Gaza* 🇮🇱⚔️🇵🇸\n\nChoose your language:",
+            parse_mode: "Markdown",
+          },
+          reply_markup: {
+            inline_keyboard: [[
+              { text: "🇬🇧 English", callback_data: "lang_en" },
+              { text: "🇮🇱 עברית",  callback_data: "lang_he" },
+              { text: "🇵🇸 العربية", callback_data: "lang_ar" },
+            ]],
+          },
+        });
+        await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
+      }
     }
 
-    res.status(200).json({ ok: true });
+    res.send("OK");
   } catch (err) {
-    console.error("❌ Webhook error:", err?.response?.data || err.message);
-    res.status(200).json({ ok: true });
+    console.error("Webhook error:", err?.response?.data || err.message);
+    res.send("OK");
   }
 });
 
-// סט־אפ webhook בלחיצה
-app.get("/setup-webhook", async (_req, res) => {
+// Webhook setup (GET)
+app.get("/setup-webhook", async (req, res) => {
   try {
+    const url = `${WEBHOOK_DOMAIN}/webhook`;
     const r = await tgPost("setWebhook", {
-      url: `${DOMAIN}/webhook`,
-      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"]
+      url,
+      allowed_updates: ["message","callback_query","pre_checkout_query","successful_payment"],
     });
     res.send(r.data);
-  } catch (e) {
-    res.status(500).send(e?.response?.data || e.message);
+  } catch (err) {
+    res.status(500).send(err?.response?.data || err.message);
   }
 });
 
-// קובץ ברירת מחדל
-app.get("*", (req, res) => {
+// fallback: mini-app
+app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// RUN
+// run
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  await ensureDb();
-  console.log(`✅ Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server on :${PORT}`));
