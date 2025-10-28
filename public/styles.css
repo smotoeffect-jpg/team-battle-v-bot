@@ -1,65 +1,110 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #0d0d0d;
-  color: white;
-  text-align: center;
+:root {
+  --bg: #000;
+  --text: #fff;
+  --pink: #ff2ed6;
+  --blue: #007bff;
+  --gold: #ffd700;
+  --gray: #444;
+  --border: #222;
+}
+
+html, body {
+  height: 100%;
   margin: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  text-align: center;
+}
+
+#app {
+  max-width: 500px;
+  margin: auto;
   padding: 20px;
+  background: radial-gradient(circle at top, #111 0%, #000 80%);
+  border-radius: 15px;
+  box-shadow: 0 0 30px rgba(255, 0, 100, 0.2);
 }
 
 h1 {
-  color: #fff;
-  margin-bottom: 20px;
+  font-size: 26px;
+  color: var(--pink);
+  margin-bottom: 15px;
+  text-shadow: 0 0 10px rgba(255, 0, 200, 0.8);
 }
 
 #scores {
   display: flex;
-  justify-content: center;
+  justify-content: space-around;
   margin: 20px 0;
-  gap: 50px;
 }
 
-.team h2 { color: #bbb; }
+.team h2 {
+  color: var(--blue);
+  margin-bottom: 5px;
+}
+
 .team div {
   font-size: 40px;
   font-weight: bold;
-  color: #fff;
+  color: var(--gold);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+}
+
+.lang-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
 .lang-buttons button {
-  margin: 5px;
-  background: #222;
-  color: #fff;
-  border: 1px solid #444;
+  background: var(--gray);
+  color: var(--text);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 5px 10px;
+  padding: 5px 12px;
+  font-size: 15px;
 }
 
 .btn {
+  display: block;
+  width: 90%;
+  margin: 10px auto;
+  padding: 12px 15px;
   border: none;
   border-radius: 10px;
-  padding: 12px 25px;
-  margin: 10px;
   font-size: 18px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: 0.25s ease;
+  font-weight: bold;
 }
 
-.btn.blue { background: #007bff; color: #fff; }
-.btn.pink { background: #ff2ed6; color: #fff; }
-.btn.gold { background: gold; color: #000; }
-.btn.gray { background: #444; color: #fff; }
+.btn.blue { background: var(--blue); color: #fff; box-shadow: 0 0 10px #007bff99; }
+.btn.pink { background: var(--pink); color: #fff; box-shadow: 0 0 10px #ff2ed699; }
+.btn.gold { background: var(--gold); color: #000; box-shadow: 0 0 10px #ffd700aa; }
+.btn.gray { background: var(--gray); color: #fff; }
 
-.btn:hover { transform: scale(1.05); }
+.btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+#donate, #ref {
+  margin-top: 20px;
+}
 
 input[type="number"], input[type="text"] {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #555;
-  background: #222;
-  color: white;
+  background: #111;
+  color: var(--text);
   width: 150px;
-  margin: 5px;
+  text-align: center;
 }
 
-#ref h3 { margin-top: 30px; }
+#ref h3 {
+  color: var(--pink);
+  margin-bottom: 10px;
+}
