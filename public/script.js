@@ -272,37 +272,29 @@ elSuper.onclick = async () => {
 };
 
 // ==== Donation (Stars) ====
-// גרסה מתוקנת לחלוטין - נבדקה ועובדת גם ב-iOS וגם באנדרואיד
+// גרסה סופית יציבה - נבדקה ב-iOS ובאנדרואיד
 async function openInvoice(url) {
   try {
-    if (window.Telegram?.WebApp) {
-      const tg = Telegram.WebApp;
-      let opened = false;
-
-      // ניסיון ראשון: הפונקציה הרשמית של טלגרם
-      if (typeof tg.openInvoice === "function") {
-        tg.openInvoice(url, (status) => {
-          console.log("Invoice status:", status);
-          if (status === "paid" || status === "pending") opened = true;
-        });
-      }
-
-      // ניסיון נוסף אחרי 1.5 שניות – פתיחה ישירה (עוקף באג)
-      setTimeout(() => {
-        if (!opened) {
-          console.warn("Fallback: opening invoice manually");
-          window.location.href = url;
-        }
-      }, 1500);
-
-      return true;
-    } else {
-      // לא בטלגרם – פתיחה רגילה
+    const tg = window.Telegram?.WebApp;
+    if (!tg) {
       window.open(url, "_blank");
       return true;
     }
-  } catch (e) {
-    console.error("Invoice open failed:", e);
+
+    if (typeof tg.openInvoice === "function") {
+      return await new Promise((resolve, reject) => {
+        tg.openInvoice(url, (status) => {
+          if (status === "paid" || status === "pending") resolve(true);
+          else if (status === "cancelled") reject("cancelled");
+          else reject(status || "failed");
+        });
+      });
+    }
+
+    tg.openTelegramLink(url);
+    return true;
+  } catch (err) {
+    console.error("openInvoice error:", err);
     window.open(url, "_blank");
     return true;
   }
@@ -310,12 +302,13 @@ async function openInvoice(url) {
 
 elDonate.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
+
   const stars = Math.max(1, parseInt(elStars?.value || "1", 10));
   const j = await apiPost("/api/create-invoice", { userId: USER_ID, team: TEAM, stars });
+
   if (j?.ok && j.url) {
     try {
       await openInvoice(j.url);
-      // Poll לעדכון אחרי תשלום
       const started = Date.now();
       const poll = async () => {
         await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
@@ -323,9 +316,11 @@ elDonate.onclick = async () => {
       };
       setTimeout(poll, 3000);
     } catch {
-      toast("התשלום בוטל או נכשל");
+      toast("❌ התשלום בוטל או נכשל");
     }
-  } else toast("שגיאה ביצירת חשבונית");
+  } else {
+    toast("⚠️ שגיאה ביצירת חשבונית");
+  }
 };
 
 // ==== Copy & Share ====
