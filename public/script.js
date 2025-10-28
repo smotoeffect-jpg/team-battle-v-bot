@@ -1,6 +1,5 @@
 // ===== Client config =====
-// שימוש בנתיב יחסי כדי למנוע בעיות WebView / CORS
-const API_BASE = ""; 
+const API_BASE = window.location.origin.replace(/\/$/, "");
 const BOT_USERNAME = "TeamBattle_vBot";
 
 // ==== I18N ====
@@ -99,7 +98,7 @@ const elMeTaps    = qs("#me-taps");
 const elLeaders   = qs("#leaderboard");
 const elTeamChooser = qs("#team-chooser");
 
-let LANG = "he";
+let LANG = localStorage.getItem("tb_lang") || "he";
 let USER_ID = null;
 let TEAM    = null;
 let tapsToday = 0;
@@ -109,7 +108,6 @@ let tapsLimit = 300;
 try {
   if (window.Telegram && Telegram.WebApp) {
     Telegram.WebApp.ready();
-    Telegram.WebApp.expand(); // שיפור יציבות פתיחת חלונות
     const unsafe = Telegram.WebApp.initDataUnsafe || {};
     USER_ID = unsafe.user?.id ? String(unsafe.user.id) : null;
   }
@@ -140,22 +138,27 @@ function applyLangTexts() {
   const t = I18N[LANG];
   qs("#team-israel") && (qs("#team-israel").textContent = t.israel);
   qs("#team-gaza")   && (qs("#team-gaza").textContent   = t.gaza);
-  elTap && (elTap.textContent = t.tap);
-  elSuper && (elSuper.textContent = t.super);
-  elRules && (elRules.textContent = t.rules);
+  elTap    && (elTap.textContent    = t.tap);
+  elSuper  && (elSuper.textContent  = t.super);
+  elRules  && (elRules.textContent  = t.rules);
   elChooseIL && (elChooseIL.textContent = t.chooseIL);
   elChooseGA && (elChooseGA.textContent = t.chooseGA);
   elDonate && (elDonate.textContent = t.donate);
-  elProg && (elProg.textContent = t.progress(tapsToday, tapsLimit));
-  elShare && (elShare.textContent = t.share);
-  qs("#leaders-title") && (qs("#leaders-title").textContent = t.leaders);
-  qs("#my-panel-title") && (qs("#my-panel-title").textContent = t.myPanel);
+  elProg   && (elProg.textContent   = t.progress(tapsToday, tapsLimit));
+  elShare  && (elShare.textContent  = t.share);
+  qs("#leaders-title")   && (qs("#leaders-title").textContent   = t.leaders);
+  qs("#my-panel-title")  && (qs("#my-panel-title").textContent  = t.myPanel);
+  // "הלוח שלי" / "My Panel"
+  elMeStars && (elMeStars.textContent = t.myStars(Number(elMeStars.dataset.v || 0)));
+  elMeBonus && (elMeBonus.textContent = t.myBonus(Number(elMeBonus.dataset.v || 0)));
+  elMeTaps  && (elMeTaps.textContent  = t.myTaps(tapsToday, tapsLimit));
 }
 qsa(".lang-buttons button").forEach((b) =>
   b.addEventListener("click", () => {
     const lang = b.dataset.lang;
     if (I18N[lang]) {
       LANG = lang;
+      localStorage.setItem("tb_lang", LANG);
       applyLangTexts();
       fetchLeaders();
       fetchMe();
@@ -196,15 +199,19 @@ async function fetchMe() {
 
   if (TEAM) {
     elTeamChooser && (elTeamChooser.style.display = "none");
-    elTap && (elTap.disabled = false);
-    elSuper && (elSuper.disabled = false);
+    elTap    && (elTap.disabled    = false);
+    elSuper  && (elSuper.disabled  = false);
     elDonate && (elDonate.disabled = false);
   }
 
+  // שמירת ערכי מספר בדאטא־אטריביוטים כדי לעדכן טקסט בשינוי שפה
+  if (elMeStars) elMeStars.dataset.v = String(me.starsDonated ?? 0);
+  if (elMeBonus) elMeBonus.dataset.v = String(me.bonusStars ?? 0);
+
   elMeStars && (elMeStars.textContent = I18N[LANG].myStars(me.starsDonated ?? 0));
   elMeBonus && (elMeBonus.textContent = I18N[LANG].myBonus(me.bonusStars ?? 0));
-  elMeTaps && (elMeTaps.textContent = I18N[LANG].myTaps(tapsToday, tapsLimit));
-  elProg   && (elProg.textContent   = I18N[LANG].progress(tapsToday, tapsLimit));
+  elMeTaps  && (elMeTaps.textContent  = I18N[LANG].myTaps(tapsToday, tapsLimit));
+  elProg    && (elProg.textContent    = I18N[LANG].progress(tapsToday, tapsLimit));
 }
 
 async function fetchLeaders() {
@@ -233,12 +240,11 @@ async function selectTeam(team) {
   if (j.ok) {
     TEAM = team;
     elTeamChooser && (elTeamChooser.style.display = "none");
-    elTap && (elTap.disabled = false);
-    elSuper && (elSuper.disabled = false);
+    elTap    && (elTap.disabled    = false);
+    elSuper  && (elSuper.disabled  = false);
     elDonate && (elDonate.disabled = false);
     elRefInput && (elRefInput.value = buildRefLink(USER_ID));
-    fetchState();
-    fetchMe();
+    await Promise.all([fetchState(), fetchMe()]);
   }
 }
 elChooseIL && (elChooseIL.onclick = () => selectTeam("israel"));
@@ -253,8 +259,7 @@ elSwitch && (elSwitch.onclick = async () => {
   if (j.ok) {
     TEAM = newTeam;
     toast(I18N[LANG].switched);
-    fetchState();
-    fetchMe();
+    await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   }
 });
 
@@ -263,9 +268,7 @@ elTap && (elTap.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/tap", { userId: USER_ID });
   if (j.ok) {
-    fetchState();
-    fetchMe();
-    fetchLeaders();
+    await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   } else if (j.error === "limit") {
     toast("הגעת למגבלת הטאפים היומית");
   }
@@ -276,40 +279,27 @@ elSuper && (elSuper.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/super", { userId: USER_ID });
   if (j.ok) {
-    fetchState();
-    fetchMe();
-    fetchLeaders();
+    await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
   } else if (j.error === "limit") {
     toast("השתמשת כבר בסופר-בוסט היום");
   }
 });
 
 // ==== Donation (Stars) ====
-// שדרוג: תמיד לפתוח חלון — בתוך טלגרם (openInvoice / openTelegramLink) ובדפדפן (ניווט ישיר)
+// שומר בדיוק את ה-flow שעבד לך + Poll קצר אחרי כדי לרענן סטטוסים
 async function openInvoice(url) {
   try {
-    if (window.Telegram?.WebApp) {
-      // ניסיון ראשי: overlay של טלגרם
+    if (window.Telegram?.WebApp?.openInvoice) {
       await new Promise((resolve, reject) => {
-        try {
-          Telegram.WebApp.openInvoice(url, (status) => {
-            if (status === "paid" || status === "pending") resolve(true);
-            else if (status === "cancelled") reject(new Error("cancelled"));
-            else reject(new Error(status || "failed"));
-          });
-        } catch (err) { reject(err); }
+        Telegram.WebApp.openInvoice(url, (status) => {
+          if (status === "paid" || status === "pending") resolve();
+          else reject(new Error(status || "failed"));
+        });
       });
       return true;
     }
-  } catch (e) {
-    // ניסיון fallback בתוך טלגרם
-    try {
-      Telegram?.WebApp?.openTelegramLink?.(url);
-      return true;
-    } catch (_) {}
-  }
-  // דפדפן רגיל: נווט לאותו טאב (מונע חסימת פופאפ)
-  window.location.href = url;
+  } catch (_) {}
+  window.open(url, "_blank");
   return true;
 }
 
@@ -320,13 +310,17 @@ elDonate && (elDonate.onclick = async () => {
   if (j?.ok && j.url) {
     try {
       await openInvoice(j.url);
-      setTimeout(() => { fetchState(); fetchMe(); fetchLeaders(); }, 3000);
+      // רענון אחרי מספר שניות + Poll קצר (עד 20 שניות)
+      const started = Date.now();
+      const poll = async () => {
+        await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
+        if (Date.now() - started < 20000) setTimeout(poll, 2500);
+      };
+      setTimeout(poll, 3000);
     } catch {
       toast("התשלום בוטל או נכשל");
     }
-  } else {
-    toast("שגיאה ביצירת חשבונית");
-  }
+  } else toast("שגיאה ביצירת חשבונית");
 });
 
 // ==== Copy & Share ====
