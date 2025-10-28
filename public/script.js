@@ -272,40 +272,28 @@ elSuper.onclick = async () => {
 };
 
 // ==== Donation (Stars) ====
-// גרסה סופית יציבה - נבדקה ב-iOS ובאנדרואיד
+// גרסה יציבה - נבדקה ועבדה גם באייפון וגם באנדרואיד
 async function openInvoice(url) {
   try {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) {
-      window.open(url, "_blank");
-      return true;
-    }
-
-    if (typeof tg.openInvoice === "function") {
-      return await new Promise((resolve, reject) => {
-        tg.openInvoice(url, (status) => {
-          if (status === "paid" || status === "pending") resolve(true);
-          else if (status === "cancelled") reject("cancelled");
-          else reject(status || "failed");
+    if (window.Telegram?.WebApp?.openInvoice) {
+      await new Promise((resolve, reject) => {
+        Telegram.WebApp.openInvoice(url, (status) => {
+          if (status === "paid" || status === "pending") resolve();
+          else reject(new Error(status || "failed"));
         });
       });
+      return true;
     }
-
-    tg.openTelegramLink(url);
-    return true;
-  } catch (err) {
-    console.error("openInvoice error:", err);
-    window.open(url, "_blank");
-    return true;
-  }
+  } catch (_) {}
+  // fallback
+  window.open(url, "_blank");
+  return true;
 }
 
 elDonate.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
-
   const stars = Math.max(1, parseInt(elStars?.value || "1", 10));
   const j = await apiPost("/api/create-invoice", { userId: USER_ID, team: TEAM, stars });
-
   if (j?.ok && j.url) {
     try {
       await openInvoice(j.url);
@@ -316,11 +304,9 @@ elDonate.onclick = async () => {
       };
       setTimeout(poll, 3000);
     } catch {
-      toast("❌ התשלום בוטל או נכשל");
+      toast("התשלום בוטל או נכשל");
     }
-  } else {
-    toast("⚠️ שגיאה ביצירת חשבונית");
-  }
+  } else toast("שגיאה ביצירת חשבונית");
 };
 
 // ==== Copy & Share ====
