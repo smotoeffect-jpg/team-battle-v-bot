@@ -11,12 +11,12 @@ app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }))
 app.use(express.urlencoded({ extended: false }));
 
 // ====== CONFIG ======
-// מומלץ לשמור ב-ENV ב-Render: BOT_TOKEN, WEBHOOK_DOMAIN, MINI_APP_URL, DATA_DIR
-const BOT_TOKEN       = process.env.BOT_TOKEN       || "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
+// אתה כבר הגדרת ENV ב-Render, לא נוגע בזה
+const BOT_TOKEN       = process.env.BOT_TOKEN;
 const TG_API          = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const WEBHOOK_DOMAIN  = process.env.WEBHOOK_DOMAIN  || "https://team-battle-v-bot.onrender.com";
-const MINI_APP_URL    = process.env.MINI_APP_URL    || "https://team-battle-v-bot.onrender.com/";
-const DATA_DIR        = process.env.DATA_DIR        || "/data"; // ← הדיסק הקבוע ב-Render
+const WEBHOOK_DOMAIN  = process.env.WEBHOOK_DOMAIN;
+const MINI_APP_URL    = process.env.MINI_APP_URL;
+const DATA_DIR        = process.env.DATA_DIR || "/data"; // דיסק קבוע ב-Render
 
 // משחק
 const STAR_TO_POINTS   = 2;     // 1⭐ = 2 נק'
@@ -142,7 +142,7 @@ app.post("/api/super", (req, res) => {
   res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
 });
 
-// תרומה – נשמר כפי שעבד לך (createInvoiceLink)
+// תרומה (Stars) – createInvoiceLink כפי שעבד לך
 app.post("/api/create-invoice", async (req, res) => {
   try {
     const { userId, team, stars } = req.body || {};
@@ -390,4 +390,6 @@ app.get("*", (_, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
+app.listen(PORT, () =>
+  console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`)
+);
