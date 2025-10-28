@@ -1,110 +1,34 @@
-:root {
-  --bg: #000;
-  --text: #fff;
-  --pink: #ff2ed6;
-  --blue: #007bff;
-  --gold: #ffd700;
-  --gray: #444;
-  --border: #222;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: 'Segoe UI', Arial, sans-serif;
-  text-align: center;
-}
-
-#app {
-  max-width: 500px;
-  margin: auto;
-  padding: 20px;
-  background: radial-gradient(circle at top, #111 0%, #000 80%);
-  border-radius: 15px;
-  box-shadow: 0 0 30px rgba(255, 0, 100, 0.2);
-}
-
-h1 {
-  font-size: 26px;
-  color: var(--pink);
-  margin-bottom: 15px;
-  text-shadow: 0 0 10px rgba(255, 0, 200, 0.8);
-}
-
-#scores {
-  display: flex;
-  justify-content: space-around;
-  margin: 20px 0;
-}
-
-.team h2 {
-  color: var(--blue);
-  margin-bottom: 5px;
-}
-
-.team div {
-  font-size: 40px;
-  font-weight: bold;
-  color: var(--gold);
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
-}
-
-.lang-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.lang-buttons button {
-  background: var(--gray);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 5px 12px;
-  font-size: 15px;
-}
-
-.btn {
-  display: block;
-  width: 90%;
-  margin: 10px auto;
-  padding: 12px 15px;
-  border: none;
-  border-radius: 10px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: 0.25s ease;
-  font-weight: bold;
-}
-
-.btn.blue { background: var(--blue); color: #fff; box-shadow: 0 0 10px #007bff99; }
-.btn.pink { background: var(--pink); color: #fff; box-shadow: 0 0 10px #ff2ed699; }
-.btn.gold { background: var(--gold); color: #000; box-shadow: 0 0 10px #ffd700aa; }
-.btn.gray { background: var(--gray); color: #fff; }
-
-.btn:hover {
-  transform: scale(1.05);
-  opacity: 0.9;
-}
-
-#donate, #ref {
-  margin-top: 20px;
-}
-
-input[type="number"], input[type="text"] {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #555;
-  background: #111;
-  color: var(--text);
-  width: 150px;
-  text-align: center;
-}
-
-#ref h3 {
-  color: var(--pink);
-  margin-bottom: 10px;
-}
+*{box-sizing:border-box}html,body{margin:0;padding:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Heebo,Arial}
+body{background:#0e0f13;color:#e9ecf1}
+.container{max-width:720px;margin:22px auto;padding:16px}
+.title{text-align:center;margin:0 0 16px;font-weight:800;
+  font-size:28px;color:#ff5bd8;text-shadow:0 0 18px rgba(255,91,216,.6)}
+.lang-buttons{display:flex;gap:10px;justify-content:center;margin:8px 0 18px}
+.lang-buttons button{padding:8px 14px;border-radius:12px;border:1px solid #2b2f3a;background:#151823;color:#dfe4ec}
+.lang-buttons button:focus{outline:none;border-color:#6f9cff}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0}
+.team{background:#111420;border:1px solid #22283a;border-radius:16px;padding:14px;text-align:center}
+.team h2{margin:0 0 8px;font-size:20px;color:#b9c6ff}
+.score{font-size:52px;font-weight:900;color:#ffd84d;text-shadow:0 0 16px rgba(255,216,77,.45)}
+.rules{text-align:center;margin:10px 0 16px;color:#aab3c2}
+.team-chooser{display:flex;gap:12px;justify-content:center;margin:14px 0 8px}
+.choose{flex:1;border-radius:14px;padding:12px 14px;border:0;color:#fff;font-weight:700}
+.choose.blue{background:#2a74ff}
+.choose.green{background:#0fb16d}
+.btn-group{display:flex;gap:12px;margin:16px 0}
+.tap-btn,.super-btn{flex:1;border-radius:14px;padding:14px;border:0;font-weight:800;color:#fff;cursor:pointer}
+.tap-btn{background:#2f7bff;box-shadow:0 6px 20px rgba(47,123,255,.25)}
+.super-btn{background:#ff5bb1;box-shadow:0 6px 20px rgba(255,91,177,.25)}
+.tap-btn:disabled,.super-btn:disabled,.donate-btn:disabled{opacity:.5;cursor:not-allowed}
+#progress{display:flex;justify-content:center}
+#progress-text{background:#151823;border:1px solid #2b2f3a;color:#9fb2d7;border-radius:12px;padding:8px 12px}
+.donate{display:flex;align-items:center;gap:10px;margin:18px 0}
+.donate input{flex:1;min-width:120px;border-radius:12px;border:1px solid #2b2f3a;background:#0f121a;color:#e7ecf6;padding:12px;text-align:center;font-size:16px}
+.donate-btn{flex:2;background:#ffd84d;color:#111;font-weight:900;border:0;border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(255,216,77,.25)}
+.affiliate-title{margin:10px 0 4px;text-align:center;color:#ff9ad6}
+#affiliate-info{text-align:center;color:#c9d1e2;margin:0 0 10px}
+.affiliate-link{display:flex;gap:8px}
+.affiliate-link input{flex:1;border-radius:12px;border:1px solid #2b2f3a;background:#0f121a;color:#e7ecf6;padding:12px}
+#copy-link{border-radius:12px;border:0;background:#363f5a;color:#e7ecf6;padding:12px 14px;font-weight:700}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#1b2338;color:#e7ecf6;border:1px solid #334061;padding:10px 14px;border-radius:12px}
+@media (max-width:520px){.score{font-size:42px}.title{font-size:24px}}
