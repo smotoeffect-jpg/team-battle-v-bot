@@ -1,17 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="he">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TeamBattle</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  </head>
-  <body>
-    <div id="root">
-      <h1>TeamBattle - Israel Vs Gaza</h1>
-      <p>ברוך הבא למשחק!</p>
-      <button onclick="alert('לחצת!')">התחל</button>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TeamBattle - Israel Vs Gaza</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1 id="title">TeamBattle - Israel Vs Gaza</h1>
+
+    <div class="lang">
+      <button id="btnLang" class="lang-btn">🌐 <span id="langLabel">עברית</span></button>
+      <div id="langMenu" class="lang-menu hidden">
+        <div data-lang="he">🇮🇱 עברית</div>
+        <div data-lang="en">🇬🇧 English</div>
+        <div data-lang="ar">🇵🇸 العربية</div>
+      </div>
     </div>
-  </body>
+
+    <div class="board">
+      <div class="team">
+        <div class="team-name" id="nameIL">ישראל</div>
+        <div class="score" id="scoreIL">0</div>
+      </div>
+      <div class="team">
+        <div class="team-name" id="nameGA">עזה</div>
+        <div class="score" id="scoreGA">0</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="btnBoost" class="primary">(1+) טאפ להגברה</button>
+      <button id="btnSuper" class="secondary">(25+) סופר-בוסט</button>
+    </div>
+
+    <div class="donate">
+      <input id="donStars" type="number" min="1" value="5" />
+      <button id="btnDonate" class="gold">תרום כוכבים להגברה (5 ⭐)</button>
+    </div>
+
+    <div class="note" id="dailyNote">זה ייתן לצוות שלך 10 נקודות</div>
+
+    <h3 id="newsTitle">הודעות קרב:</h3>
+    <ul id="news"></ul>
+
+    <footer>© TeamBattle</footer>
+  </div>
+
+  <script src="/script.js"></script>
+</body>
 </html>
