@@ -1,9 +1,14 @@
 {
   "name": "team-battle-v-bot",
   "version": "1.0.0",
-  "description": "TeamBattle Mini App with Stars, daily taps, super-boost, battle feed & affiliates",
+  "description": "Telegram TeamBattle (Israel vs Gaza) Bot + Mini App",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "axios": "^1.7.7",
     "cors": "^2.8.5",
