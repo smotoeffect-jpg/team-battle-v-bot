@@ -12,9 +12,9 @@ app.use(express.urlencoded({ extended: false }));
 // =================== CONFIG ===================
 const BOT_TOKEN = "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const WEBHOOK_DOMAIN = "https://team-battle-v-bot.onrender.com"; // 👈 עודכן ל-Render
-const MINI_APP_URL = "https://team-battle-v-bot.onrender.com/"; // 👈 עודכן גם פה
-const WELCOME_IMAGE_URL = "https://files.oaiusercontent.com/file-F362F5C1-B1B9-4E69-B920-02FDECBDC094.jpeg";
+const WEBHOOK_DOMAIN = "https://team-battle-v-bot.onrender.com";
+const MINI_APP_URL = "https://team-battle-v-bot.onrender.com/";
+const WELCOME_IMAGE_URL = "https://raw.githubusercontent.com/SuperMoto/team-battle-v-bot/main/public/05ce994d-56d2-4800-b0e3-7883cc04ffaf.jpeg";
 // ==============================================
 
 // ✳️ Helper
@@ -23,6 +23,7 @@ const tgPost = (method, data) => axios.post(`${TG_API}/${method}`, data);
 // =================== WEBHOOK ===================
 app.post("/webhook", async (req, res) => {
   try {
+    // אם טלגרם שלחה בטעות לא JSON
     if (!req.is("application/json")) {
       console.log("⚠️ Non-JSON content received");
       return res.status(200).json({ ok: true });
@@ -31,6 +32,7 @@ app.post("/webhook", async (req, res) => {
     const update = req.body;
     console.log("📩 Incoming update:", update);
 
+    // ---- Pre-checkout (תשלום) ----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
         pre_checkout_query_id: update.pre_checkout_query.id,
@@ -38,11 +40,13 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
+    // ---- Successful Payment ----
     if (update.message && update.message.successful_payment) {
       const sp = update.message.successful_payment;
       console.log("✅ Payment received:", sp);
     }
 
+    // ---- Command: /start ----
     if (update.message && update.message.text) {
       const chatId = update.message.chat.id;
       const text = update.message.text.trim();
@@ -65,6 +69,7 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
+    // ---- Callback Query ----
     if (update.callback_query) {
       const cq = update.callback_query;
       const chatId = cq.message.chat.id;
@@ -125,12 +130,15 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+// 🚫 למנוע ש־GET יחזיר HTML
 app.get("/webhook", (req, res) => {
   res.status(405).json({ ok: true });
 });
 
+// =================== STATIC AFTER ===================
 app.use(express.static(path.join(__dirname, "public")));
 
+// =================== SETUP WEBHOOK ===================
 app.get("/setup-webhook", async (req, res) => {
   try {
     const url = `${WEBHOOK_DOMAIN}/webhook`;
@@ -144,9 +152,11 @@ app.get("/setup-webhook", async (req, res) => {
   }
 });
 
+// =================== DEFAULT ===================
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// =================== RUN ===================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
