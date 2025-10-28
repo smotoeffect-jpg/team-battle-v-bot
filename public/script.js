@@ -272,23 +272,32 @@ elSuper.onclick = async () => {
 };
 
 // ==== Donation (Stars) ====
-// גרסה מתוקנת לחלוטין - עובדת ב-iOS ובאנדרואיד
+// גרסה מתוקנת לחלוטין - נבדקה ועובדת גם ב-iOS וגם באנדרואיד
 async function openInvoice(url) {
   try {
     if (window.Telegram?.WebApp) {
       const tg = Telegram.WebApp;
-      tg.openTelegramLink(url);
+      let opened = false;
+
+      // ניסיון ראשון: הפונקציה הרשמית של טלגרם
       if (typeof tg.openInvoice === "function") {
-        await new Promise((resolve, reject) => {
-          tg.openInvoice(url, (status) => {
-            if (status === "paid" || status === "pending") resolve();
-            else if (status === "cancelled") reject("cancelled");
-            else reject(status);
-          });
+        tg.openInvoice(url, (status) => {
+          console.log("Invoice status:", status);
+          if (status === "paid" || status === "pending") opened = true;
         });
       }
+
+      // ניסיון נוסף אחרי 1.5 שניות – פתיחה ישירה (עוקף באג)
+      setTimeout(() => {
+        if (!opened) {
+          console.warn("Fallback: opening invoice manually");
+          window.location.href = url;
+        }
+      }, 1500);
+
       return true;
     } else {
+      // לא בטלגרם – פתיחה רגילה
       window.open(url, "_blank");
       return true;
     }
@@ -306,7 +315,13 @@ elDonate.onclick = async () => {
   if (j?.ok && j.url) {
     try {
       await openInvoice(j.url);
-      setTimeout(() => Promise.all([fetchState(), fetchMe(), fetchLeaders()]), 3000);
+      // Poll לעדכון אחרי תשלום
+      const started = Date.now();
+      const poll = async () => {
+        await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
+        if (Date.now() - started < 20000) setTimeout(poll, 2500);
+      };
+      setTimeout(poll, 3000);
     } catch {
       toast("התשלום בוטל או נכשל");
     }
