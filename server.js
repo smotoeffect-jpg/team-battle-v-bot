@@ -14,7 +14,7 @@ const BOT_TOKEN = "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
 const TG_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL = "https://team-battle-v-bot.onrender.com/";
-const WELCOME_IMAGE_URL = "https://raw.githubusercontent.com/SuperMoto/team-battle-v-bot/main/public/05ce994d-56d2-4800-b0e3-7883cc04ffaf.jpeg";
+const WELCOME_IMAGE_URL = "https://team-battle-v-bot.onrender.com/05ce994d-56d2-4800-b0e3-7883cc04ffaf.jpeg";
 // ==============================================
 
 // ✳️ Helper
