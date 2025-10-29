@@ -1,0 +1,29 @@
+body {
+  font-family: 'Rubik', sans-serif;
+  background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.panel-container {
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  padding: 30px 50px;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 15px;
+  color: #222;
+}
+
+#welcome {
+  font-size: 1.2em;
+  color: #333;
+}
