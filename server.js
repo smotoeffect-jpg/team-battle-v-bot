@@ -1,3 +1,21 @@
+// ====== FIX for invalid texts.json (auto regeneration) ======
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const DATA_DIR = process.env.DATA_DIR || "/data";
+  const TEXTS_FILE = path.join(DATA_DIR, "texts.json");
+  if (fs.existsSync(TEXTS_FILE)) {
+    const content = fs.readFileSync(TEXTS_FILE, "utf8");
+    if (content.includes('"summary_line"') || content.includes('"users_title"') || content.includes('"admins_list"')) {
+      fs.unlinkSync(TEXTS_FILE);
+      console.log("⚠️ texts.json was invalid (contained stringified functions) — deleted and will regenerate automatically.");
+    }
+  }
+} catch (err) {
+  console.error("Error inspecting texts.json:", err.message);
+}
+// ============================================================
+
 // ================== server.js ==================
 const express = require("express");
 const axios = require("axios");
