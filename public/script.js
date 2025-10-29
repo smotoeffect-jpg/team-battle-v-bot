@@ -56,32 +56,6 @@ const I18N = {
     levelLine: (lvl, xp, next) => `🎖️ Level ${lvl} (${xp}/${next} XP)`,
     dailyBonusToast: "Daily bonus 🎁 +5 team pts & +10 XP!",
   },
-  ar: {
-    israel: "🇮🇱 إسرائيل",
-    gaza: "🇵🇸 غزة",
-    tap: "نقرة تعزيز (+1)",
-    super: "تعزيز سوبر (+25)",
-    rules: "⭐ 1 = نقطتان • 💥 ٣٠٠ نقرة/يوم • ⚡ سوبر: +25 مرة/يوم",
-    chooseIL: "انضم لفريق إسرائيل 🇮🇱",
-    chooseGA: "انضم لفريق غزة 🇵🇸",
-    donate: "تبرع بالنجوم",
-    progress: (x, m) => `${x} / ${m} نقرات اليوم`,
-    toastCopy: "تم نسخ الرابط",
-    mustChoose: "اختر فريقًا أولًا",
-    confirmSwitch: "هل تريد تغيير الفريق؟",
-    you: "أنت",
-    myPanel: "لوحتي",
-    myStars: (n) => `⭐ النجوم التي تبرعت بها: ${n}`,
-    myBonus: (n) => `🎁 مكافأة الإحالة: ${n}⭐`,
-    myTaps: (x, m) => `👆 نقرات اليوم: ${x}/${m}`,
-    share: "📤 شارك على تيليجرام",
-    leaders: "اللاعبون المتصدرون",
-    switched: "تم تغيير الفريق ✅",
-    partners: "برنامج الشركاء 🤝",
-    copyLink: "نسخ الرابط",
-    levelLine: (lvl, xp, next) => `🎖️ المستوى ${lvl} (${xp}/${next} XP)`,
-    dailyBonusToast: "مكافأة يومية 🎁 +5 نقاط للفريق و +10 XP!",
-  },
 };
 
 // ==== Shortcuts ====
@@ -109,7 +83,8 @@ const elMeBonus = qs("#me-bonus");
 const elMeTaps = qs("#me-taps");
 const elLeaders = qs("#leaderboard");
 const elTeamChooser = qs("#team-chooser");
-// חדש – ניצור (אם לא קיים) שורה לרמה/XP
+
+// תוספת חדשה – XP/Level
 let elMeLevel = qs("#me-level");
 if (!elMeLevel) {
   elMeLevel = document.createElement("p");
@@ -218,8 +193,6 @@ async function fetchMe() {
   TEAM = me.team || TEAM;
   tapsToday = me.tapsToday ?? tapsToday;
   tapsLimit = j.limit ?? tapsLimit;
-
-  // XP/Level UI
   lastXP = Number(me.xp || 0);
   lastLevel = Number(me.level || 1);
 
@@ -239,10 +212,8 @@ async function fetchMe() {
   elProg && (elProg.textContent = I18N[LANG].progress(tapsToday, tapsLimit));
   elMeLevel && (elMeLevel.textContent = I18N[LANG].levelLine(lastLevel, lastXP, nextLevelAt(lastLevel)));
 
-  // אם קיבל בונוס יומי – נציג טוסט
   if (me.justGotDailyBonus) {
     toast(I18N[LANG].dailyBonusToast);
-    // ריענון קטן של הסקור אחרי כמה שניות
     setTimeout(fetchState, 1500);
   }
 }
@@ -265,7 +236,7 @@ async function fetchLeaders() {
   });
 }
 
-// ==== Teams, Tap, Super ====
+// ==== Teams ====
 async function selectTeam(team) {
   const j = await apiPost("/api/select-team", { userId: USER_ID, team });
   if (j.ok) {
@@ -293,6 +264,7 @@ elSwitch && (elSwitch.onclick = async () => {
   }
 });
 
+// ==== Tap & Super ====
 elTap && (elTap.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/tap", { userId: USER_ID });
@@ -313,21 +285,19 @@ elSuper && (elSuper.onclick = async () => {
   }
 });
 
-// ==== Donation (Stars) ====
-// בלי לגעת ב-flow שעבד לך: openInvoice של Telegram אם קיים; אחרת fallback
+// ==== Donate (Stars) ====
+// ✅ גרסה מתוקנת עובדת גם באייפון
 async function openInvoice(url) {
   try {
     if (window.Telegram?.WebApp?.openInvoice) {
-      await new Promise((resolve, reject) => {
-        Telegram.WebApp.openInvoice(url, (status) => {
-          if (status === "paid" || status === "pending") resolve();
-          else reject(new Error(status || "failed"));
-        });
-      });
-      return true;
+      const status = await Telegram.WebApp.openInvoice(url);
+      if (status === "paid" || status === "pending") return true;
+      throw new Error(status || "failed");
     }
-  } catch (_) {}
-  window.open(url, "_blank");
+  } catch (e) {
+    console.warn("openInvoice error:", e.message);
+  }
+  window.location.href = url; // fallback חובה באייפון
   return true;
 }
 
