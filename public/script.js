@@ -27,6 +27,8 @@ const I18N = {
     switched: "הקבוצה הוחלפה ✅",
     partners: "תוכנית שותפים 🤝",
     copyLink: "העתק קישור",
+    levelLine: (lvl, xp, next) => `🎖️ רמה ${lvl} (${xp}/${next} XP)`,
+    dailyBonusToast: "קיבלת בונוס יומי 🎁 +5 נק' קבוצה ו־+10 XP!",
   },
   en: {
     israel: "🇮🇱 Israel",
@@ -51,6 +53,8 @@ const I18N = {
     switched: "Team switched ✅",
     partners: "Affiliate Program 🤝",
     copyLink: "Copy Link",
+    levelLine: (lvl, xp, next) => `🎖️ Level ${lvl} (${xp}/${next} XP)`,
+    dailyBonusToast: "Daily bonus 🎁 +5 team pts & +10 XP!",
   },
   ar: {
     israel: "🇮🇱 إسرائيل",
@@ -75,6 +79,8 @@ const I18N = {
     switched: "تم تغيير الفريق ✅",
     partners: "برنامج الشركاء 🤝",
     copyLink: "نسخ الرابط",
+    levelLine: (lvl, xp, next) => `🎖️ المستوى ${lvl} (${xp}/${next} XP)`,
+    dailyBonusToast: "مكافأة يومية 🎁 +5 نقاط للفريق و +10 XP!",
   },
 };
 
@@ -103,12 +109,22 @@ const elMeBonus = qs("#me-bonus");
 const elMeTaps = qs("#me-taps");
 const elLeaders = qs("#leaderboard");
 const elTeamChooser = qs("#team-chooser");
+// חדש – ניצור (אם לא קיים) שורה לרמה/XP
+let elMeLevel = qs("#me-level");
+if (!elMeLevel) {
+  elMeLevel = document.createElement("p");
+  elMeLevel.id = "me-level";
+  const panel = qs("#my-panel") || document.body;
+  panel.insertBefore(elMeLevel, elMeTaps || null);
+}
 
 let LANG = localStorage.getItem("tb_lang") || "he";
 let USER_ID = null;
 let TEAM = null;
 let tapsToday = 0;
 let tapsLimit = 300;
+let lastXP = 0;
+let lastLevel = 1;
 
 // ==== Telegram init ====
 try {
@@ -132,30 +148,32 @@ function toast(msg) {
   if (!elToast) return alert(msg);
   elToast.textContent = msg;
   elToast.hidden = false;
-  setTimeout(() => (elToast.hidden = true), 1600);
+  setTimeout(() => (elToast.hidden = true), 1800);
 }
+const nextLevelAt = (level) => level * 100;
 
 // ==== Language ====
 function applyLangTexts() {
   const t = I18N[LANG];
-  qs("#team-israel").textContent = t.israel;
-  qs("#team-gaza").textContent = t.gaza;
-  elTap.textContent = t.tap;
-  elSuper.textContent = t.super;
-  elRules.textContent = t.rules;
-  elChooseIL.textContent = t.chooseIL;
-  elChooseGA.textContent = t.chooseGA;
-  elDonate.textContent = t.donate;
-  qs(".affiliate-title").textContent = t.partners;
-  elCopy.textContent = t.copyLink;
-  elShare.textContent = t.share;
-  qs("#leaders-title").textContent = t.leaders;
-  qs("#my-panel-title").textContent = t.myPanel;
-  elProg.textContent = t.progress(tapsToday, tapsLimit);
-  elMeStars.textContent = t.myStars(Number(elMeStars.dataset.v || 0));
-  elMeBonus.textContent = t.myBonus(Number(elMeBonus.dataset.v || 0));
-  elMeTaps.textContent = t.myTaps(tapsToday, tapsLimit);
+  qs("#team-israel") && (qs("#team-israel").textContent = t.israel);
+  qs("#team-gaza") && (qs("#team-gaza").textContent = t.gaza);
+  elTap && (elTap.textContent = t.tap);
+  elSuper && (elSuper.textContent = t.super);
+  elRules && (elRules.textContent = t.rules);
+  elChooseIL && (elChooseIL.textContent = t.chooseIL);
+  elChooseGA && (elChooseGA.textContent = t.chooseGA);
+  elDonate && (elDonate.textContent = t.donate);
+  qs(".affiliate-title") && (qs(".affiliate-title").textContent = t.partners);
+  elCopy && (elCopy.textContent = t.copyLink);
+  elShare && (elShare.textContent = t.share);
+  qs("#leaders-title") && (qs("#leaders-title").textContent = t.leaders);
+  qs("#my-panel-title") && (qs("#my-panel-title").textContent = t.myPanel);
+  elProg && (elProg.textContent = t.progress(tapsToday, tapsLimit));
+  elMeStars && (elMeStars.textContent = t.myStars(elMeStars.dataset.v || 0));
+  elMeBonus && (elMeBonus.textContent = t.myBonus(elMeBonus.dataset.v || 0));
+  if (elMeLevel) elMeLevel.textContent = t.levelLine(lastLevel, lastXP, nextLevelAt(lastLevel));
 }
+
 qsa(".lang-buttons button").forEach((b) =>
   b.addEventListener("click", () => {
     const lang = b.dataset.lang;
@@ -187,29 +205,46 @@ async function apiPost(p, b) {
 async function fetchState() {
   const j = await apiGet("/api/state");
   if (j?.ok && j.scores) {
-    elScoreIL.textContent = j.scores.israel ?? 0;
-    elScoreGA.textContent = j.scores.gaza ?? 0;
+    elScoreIL && (elScoreIL.textContent = j.scores.israel ?? 0);
+    elScoreGA && (elScoreGA.textContent = j.scores.gaza ?? 0);
   }
 }
+
 async function fetchMe() {
   const j = await apiGet(`/api/me?userId=${encodeURIComponent(USER_ID)}`);
   if (!j?.ok || !j.me) return;
   const me = j.me;
+
   TEAM = me.team || TEAM;
   tapsToday = me.tapsToday ?? tapsToday;
   tapsLimit = j.limit ?? tapsLimit;
 
+  // XP/Level UI
+  lastXP = Number(me.xp || 0);
+  lastLevel = Number(me.level || 1);
+
   if (TEAM) {
-    elTeamChooser.style.display = "none";
-    elTap.disabled = elSuper.disabled = elDonate.disabled = false;
+    elTeamChooser && (elTeamChooser.style.display = "none");
+    elTap && (elTap.disabled = false);
+    elSuper && (elSuper.disabled = false);
+    elDonate && (elDonate.disabled = false);
   }
 
-  elMeStars.dataset.v = String(me.starsDonated ?? 0);
-  elMeBonus.dataset.v = String(me.bonusStars ?? 0);
-  elMeStars.textContent = I18N[LANG].myStars(me.starsDonated ?? 0);
-  elMeBonus.textContent = I18N[LANG].myBonus(me.bonusStars ?? 0);
-  elMeTaps.textContent = I18N[LANG].myTaps(tapsToday, tapsLimit);
-  elProg.textContent = I18N[LANG].progress(tapsToday, tapsLimit);
+  elMeStars && (elMeStars.dataset.v = String(me.starsDonated ?? 0));
+  elMeBonus && (elMeBonus.dataset.v = String(me.bonusStars ?? 0));
+
+  elMeStars && (elMeStars.textContent = I18N[LANG].myStars(me.starsDonated ?? 0));
+  elMeBonus && (elMeBonus.textContent = I18N[LANG].myBonus(me.bonusStars ?? 0));
+  elMeTaps && (elMeTaps.textContent = I18N[LANG].myTaps(tapsToday, tapsLimit));
+  elProg && (elProg.textContent = I18N[LANG].progress(tapsToday, tapsLimit));
+  elMeLevel && (elMeLevel.textContent = I18N[LANG].levelLine(lastLevel, lastXP, nextLevelAt(lastLevel)));
+
+  // אם קיבל בונוס יומי – נציג טוסט
+  if (me.justGotDailyBonus) {
+    toast(I18N[LANG].dailyBonusToast);
+    // ריענון קטן של הסקור אחרי כמה שניות
+    setTimeout(fetchState, 1500);
+  }
 }
 
 // ==== Leaders ====
@@ -217,7 +252,7 @@ async function fetchLeaders() {
   const j = await apiGet("/api/leaderboard");
   if (!j?.ok || !Array.isArray(j.top)) return;
   const t = I18N[LANG];
-  elLeaders.innerHTML = "";
+  elLeaders && (elLeaders.innerHTML = "");
   j.top.slice(0, 20).forEach((u, i) => {
     const li = document.createElement("div");
     li.className = "leader-row";
@@ -226,7 +261,7 @@ async function fetchLeaders() {
       u.displayName || u.username || (u.userId === USER_ID ? t.you : `Player ${u.userId?.slice(-4) || ""}`);
     const points = u.points ?? (u.starsDonated ? u.starsDonated * 2 : 0);
     li.textContent = `${rank}. ${name} — ${points} pts`;
-    elLeaders.appendChild(li);
+    elLeaders && elLeaders.appendChild(li);
   });
 }
 
@@ -235,9 +270,11 @@ async function selectTeam(team) {
   const j = await apiPost("/api/select-team", { userId: USER_ID, team });
   if (j.ok) {
     TEAM = team;
-    elTeamChooser.style.display = "none";
-    elTap.disabled = elSuper.disabled = elDonate.disabled = false;
-    elRefInput.value = buildRefLink(USER_ID);
+    elTeamChooser && (elTeamChooser.style.display = "none");
+    elTap && (elTap.disabled = false);
+    elSuper && (elSuper.disabled = false);
+    elDonate && (elDonate.disabled = false);
+    elRefInput && (elRefInput.value = buildRefLink(USER_ID));
     await Promise.all([fetchState(), fetchMe()]);
   }
 }
@@ -259,50 +296,39 @@ elSwitch && (elSwitch.onclick = async () => {
 elTap && (elTap.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/tap", { userId: USER_ID });
-  if (j.ok) await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
-  else if (j.error === "limit") toast("הגעת למגבלת הטאפים היומית");
+  if (j.ok) {
+    await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
+  } else if (j.error === "limit") {
+    toast("הגעת למגבלת הטאפים היומית");
+  }
 });
 
 elSuper && (elSuper.onclick = async () => {
   if (!TEAM) return toast(I18N[LANG].mustChoose);
   const j = await apiPost("/api/super", { userId: USER_ID });
-  if (j.ok) await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
-  else if (j.error === "limit") toast("השתמשת כבר בסופר-בוסט היום");
+  if (j.ok) {
+    await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
+  } else if (j.error === "limit") {
+    toast("השתמשת כבר בסופר-בוסט היום");
+  }
 });
 
 // ==== Donation (Stars) ====
-// זרימה יציבה במיוחד לאייפון: קודם openTelegramLink, אח"כ openInvoice אם נתמך, ולבסוף fallback
-async function openInvoiceRobust(url) {
+// בלי לגעת ב-flow שעבד לך: openInvoice של Telegram אם קיים; אחרת fallback
+async function openInvoice(url) {
   try {
-    const tg = window.Telegram?.WebApp;
-    let opened = false;
-
-    if (tg && typeof tg.openTelegramLink === "function") {
-      try { tg.openTelegramLink(url); opened = true; } catch (_) {}
-    }
-
-    if (tg && typeof tg.openInvoice === "function") {
-      try {
-        tg.openInvoice(url, (status) => {
-          // ערכים אופייניים: "paid" / "pending" / "cancelled"
-          if (status === "paid" || status === "pending") opened = true;
+    if (window.Telegram?.WebApp?.openInvoice) {
+      await new Promise((resolve, reject) => {
+        Telegram.WebApp.openInvoice(url, (status) => {
+          if (status === "paid" || status === "pending") resolve();
+          else reject(new Error(status || "failed"));
         });
-      } catch (_) {}
+      });
+      return true;
     }
-
-    // fallback באייפון במקרים שהחלון לא נפתח
-    setTimeout(() => {
-      if (!opened) {
-        try { window.location.href = url; } catch { window.open(url, "_blank"); }
-      }
-    }, 1200);
-
-    return true;
-  } catch (e) {
-    console.error("Invoice open failed:", e);
-    try { window.location.href = url; } catch { window.open(url, "_blank"); }
-    return true;
-  }
+  } catch (_) {}
+  window.open(url, "_blank");
+  return true;
 }
 
 elDonate && (elDonate.onclick = async () => {
@@ -311,8 +337,7 @@ elDonate && (elDonate.onclick = async () => {
   const j = await apiPost("/api/create-invoice", { userId: USER_ID, team: TEAM, stars });
   if (j?.ok && j.url) {
     try {
-      await openInvoiceRobust(j.url);
-      // Poll קצר כדי לרענן סטטוסים אחרי תשלום
+      await openInvoice(j.url);
       const started = Date.now();
       const poll = async () => {
         await Promise.all([fetchState(), fetchMe(), fetchLeaders()]);
@@ -322,13 +347,11 @@ elDonate && (elDonate.onclick = async () => {
     } catch {
       toast("התשלום בוטל או נכשל");
     }
-  } else {
-    toast("שגיאה ביצירת חשבונית");
-  }
+  } else toast("שגיאה ביצירת חשבונית");
 });
 
 // ==== Copy & Share ====
-if (elRefInput) elRefInput.value = buildRefLink(USER_ID);
+elRefInput && (elRefInput.value = buildRefLink(USER_ID));
 elCopy && (elCopy.onclick = async () => {
   try { await navigator.clipboard.writeText(elRefInput.value); toast(I18N[LANG].toastCopy); }
   catch { toast("לא הצלחתי להעתיק"); }
