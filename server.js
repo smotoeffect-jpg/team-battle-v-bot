@@ -1,63 +1,49 @@
-// ====== FIX for invalid texts.json (auto regeneration) ======
-try {
-  const fs = require('fs');
-  const path = require('path');
-  const DATA_DIR = process.env.DATA_DIR || "/data";
-  const TEXTS_FILE = path.join(DATA_DIR, "texts.json");
-  if (fs.existsSync(TEXTS_FILE)) {
-    const content = fs.readFileSync(TEXTS_FILE, "utf8");
-    if (content.includes('"summary_line"') || content.includes('"users_title"') || content.includes('"admins_list"')) {
-      fs.unlinkSync(TEXTS_FILE);
-      console.log("⚠️ texts.json was invalid (contained stringified functions) — deleted and will regenerate automatically.");
-    }
-  }
-} catch (err) {
-  console.error("Error inspecting texts.json:", err.message);
-}
-// ============================================================
-
 // ================== server.js ==================
 const express = require("express");
-const axios = require("axios");
-const path = require("path");
-const fs = require("fs");
-const cors = require("cors");
+const axios   = require("axios");
+const path    = require("path");
+const fs      = require("fs");
+const cors    = require("cors");
 
 const app = express();
 app.use(cors());
 app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 
-// ====== CONFIG ======
+// ====== CONFIG (Render ENV) ======
 const BOT_TOKEN      = process.env.BOT_TOKEN      || "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
-const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
+const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk (persistent)
 
-// משחק
-const STAR_TO_POINTS  = 2;
-const SUPER_POINTS    = 25;
-const DAILY_TAPS      = 300;
-const AFFILIATE_BONUS = 0.10;
+// ====== GAME CONSTS ======
+const STAR_TO_POINTS  = 2;     // 1⭐ = 2 pts
+const SUPER_POINTS    = 25;    // Super Boost
+const DAILY_TAPS      = 300;   // tap/day limit
+const AFFILIATE_BONUS = 0.10;  // 10% stars to inviter
 
-// XP/Levels
-const DAILY_BONUS_INTERVAL_MS = 24*60*60*1000;
+// ====== XP / Levels ======
+const DAILY_BONUS_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const DAILY_BONUS_POINTS = 5;
 const DAILY_BONUS_XP     = 10;
-const LEVEL_STEP         = 100;
+const LEVEL_STEP         = 100; // next level when xp >= level * LEVEL_STEP
 
-// ====== Storage (/data) ======
+// ====== Storage Files ======
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const USERS_FILE  = path.join(DATA_DIR, "users.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
-const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // per-admin prefs (e.g. lang)
-const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n texts
+const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // { uid: { lang, awaiting } }
+const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n (rehydratable)
 
+// ====== Utils ======
 function readJSON(file, fallback) {
   try {
-    if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+    if (!fs.existsSync(file)) {
+      if (fallback !== undefined) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+      return fallback;
+    }
     return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
     return fallback;
@@ -65,21 +51,21 @@ function readJSON(file, fallback) {
 }
 function writeJSON(file, data) {
   try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); }
-  catch (e) { console.error("writeJSON error:", e.message); }
+  catch (e) { console.error("writeJSON error:", e?.message); }
 }
-
 const todayStr = () => new Date().toISOString().slice(0,10);
 const nowTs    = () => Date.now();
 
+// ====== Runtime State ======
 let scores = readJSON(SCORES_FILE, { israel: 0, gaza: 0 });
-let users  = readJSON(USERS_FILE,  {});   // userId -> profile
-let admins = readJSON(ADMINS_FILE, ["7366892099","6081158942","7586749848"]); // Admins list (includes Super Admins)
-let adminMeta = readJSON(AMETA_FILE, {}); // { userId: { lang:"en"| "he", awaiting:null|"broadcast" } }
+let users  = readJSON(USERS_FILE,  {}); // userId -> profile
+let admins = readJSON(ADMINS_FILE, ["7366892099","6081158942","7586749848"]); // initial Super Admins
+let adminMeta = readJSON(AMETA_FILE, {}); // per-admin { lang: 'en'|'he', awaiting: null|'broadcast' }
 
-// Super Admins (קבועים בקוד; רק הם יכולים להוסיף/להסיר אדמינים)
+// Super Admins hardcoded (only they can add/remove admins)
 const SUPER_ADMINS = new Set(["7366892099","6081158942","7586749848"]);
 
-// Panel texts (ברירת מחדל) – ניתן לעריכה בקובץ texts.json
+// ====== Panel Texts (with real functions in DEFAULT) ======
 const PANEL_TEXTS_DEFAULT = {
   en: {
     panelTitle: "🛠️ TeamBattle – Admin Panel",
@@ -138,7 +124,85 @@ const PANEL_TEXTS_DEFAULT = {
     lang_set_he: "🌐 השפה הוגדרה לעברית.",
   }
 };
-let PANEL_TEXTS = readJSON(TEXTS_FILE, PANEL_TEXTS_DEFAULT);
+
+// ====== texts.json Rehydration Layer ======
+// מאחר ו־JSON לא תומך בפונקציות, נשמור קובץ בפורמט "rehydratable":
+// { format:"rehydratable_v1", en:{...}, he:{...} } ושדות "fn" מסומנים כ-placeholders,
+// ובאתחול נחליף אותם לפונקציות אמיתיות. אם נמצא קובץ ישן/שבור – נמחק וניצור מחדש.
+const TEXTS_FORMAT = "rehydratable_v1";
+const RUNTIME_FN_KEYS = ["summary_line", "users_title", "admins_list", "bc_done"]; // פונקציות ריצה
+
+function makeRehydratableFromDefault(def) {
+  // הופך את default (עם פונקציות) לייצוג JSON שמאפשר שחזור פונקציות.
+  const toBlock = (langObj) => ({
+    ...langObj,
+    // פונקציות יירשמו כ־string tokens ונשחזר אותן באתחול:
+    summary_line: "__fn_summary_line__",
+    users_title : "__fn_users_title__",
+    admins_list : "__fn_admins_list__",
+    bc_done     : "__fn_bc_done__",
+  });
+  return { format: TEXTS_FORMAT, en: toBlock(def.en), he: toBlock(def.he) };
+}
+function rehydrateToRuntime(obj) {
+  // מחזיר אובייקט עם פונקציות אמיתיות
+  const out = JSON.parse(JSON.stringify(obj));
+  const attachFns = (lang) => {
+    const L = out[lang];
+    if (!L) return;
+
+    if (L.summary_line === "__fn_summary_line__") {
+      L.summary_line = (scores, usersCount) =>
+        lang === "he"
+          ? `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}\n👥 משתמשים: ${usersCount}`
+          : `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}\n👥 Users: ${usersCount}`;
+    }
+    if (L.users_title === "__fn_users_title__") {
+      L.users_title = (n) => lang === "he" ? `👥 משתמשים (${n}) – 20 אחרונים` : `👥 Users (${n}) – last 20 IDs`;
+    }
+    if (L.admins_list === "__fn_admins_list__") {
+      L.admins_list = (arr)=> (lang === "he"
+        ? `מנהלים נוכחיים:\n${arr.map(a=>`• ${a}`).join("\n") || "(אין)"}`
+        : `Current admins:\n${arr.map(a=>`• ${a}`).join("\n") || "(none)"}`
+      );
+    }
+    if (L.bc_done === "__fn_bc_done__") {
+      L.bc_done = (ok,fail)=> lang === "he" ? `✅ נשלחו: ${ok}  |  ❌ נכשלו: ${fail}` : `✅ Sent: ${ok}  |  ❌ Failed: ${fail}`;
+    }
+  };
+  attachFns("en");
+  attachFns("he");
+  return out;
+}
+function validateOrResetTexts() {
+  let raw = readJSON(TEXTS_FILE, null);
+  // אם אין קובץ → ניצור חדש מה־DEFAULT
+  if (!raw || raw.format !== TEXTS_FORMAT) {
+    // “מחיקה” והקמה מחדש (כמו שביקשת)
+    try { if (fs.existsSync(TEXTS_FILE)) fs.unlinkSync(TEXTS_FILE); } catch {}
+    raw = makeRehydratableFromDefault(PANEL_TEXTS_DEFAULT);
+    writeJSON(TEXTS_FILE, raw);
+  }
+  // אם הקובץ קיים אבל השדות פונקציונליים לא תקינים → מחיקה ויצירה מחדש
+  const mustHave = ["en","he"];
+  let malformed = false;
+  for (const k of mustHave) {
+    if (!raw[k]) { malformed = true; break; }
+    for (const f of RUNTIME_FN_KEYS) {
+      if (!(f in raw[k])) { malformed = true; break; }
+    }
+    if (malformed) break;
+  }
+  if (malformed) {
+    try { fs.unlinkSync(TEXTS_FILE); } catch {}
+    raw = makeRehydratableFromDefault(PANEL_TEXTS_DEFAULT);
+    writeJSON(TEXTS_FILE, raw);
+  }
+  // החזרת אובייקט ריצה עם פונקציות אמיתיות:
+  return rehydrateToRuntime(raw);
+}
+
+let PANEL_TEXTS = validateOrResetTexts(); // ← כאן מתבצעת ה"מחיקה והקמה" לפני שהבוט מתחיל לעבוד
 
 // ====== Helpers ======
 function ensureUser(userId) {
@@ -153,7 +217,7 @@ function ensureUser(userId) {
       username: null, first_name: null, last_name: null, displayName: null,
       xp: 0, level: 1, lastDailyBonus: 0,
       history: [], // {ts,type,stars,points,team,from,xp}
-      active: true, // ננסה לעקוב אחרי "פעיל בבוט"
+      active: true,
     };
   }
   return users[userId];
@@ -162,11 +226,11 @@ function updateUserProfileFromTG(from) {
   if (!from?.id) return;
   const uid = String(from.id);
   const u = ensureUser(uid);
-  if (from.username) u.username = from.username;
+  if (from.username !== undefined)   u.username = from.username;
   if (from.first_name !== undefined) u.first_name = from.first_name;
   if (from.last_name  !== undefined) u.last_name  = from.last_name;
   const fn = u.first_name || "";
-  const ln = u.last_name || "";
+  const ln = u.last_name  || "";
   u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : (u.username ? `@${u.username}` : u.displayName);
   u.active = true;
   writeJSON(USERS_FILE, users);
@@ -176,11 +240,11 @@ function addXpAndMaybeLevelUp(u, addXp) {
   u.xp += addXp;
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
-const tgPost = (m, d) =>
-  axios.post(`${TG_API}/${m}`, d).catch(e => {
-    // שגיאת 403 בדרך כלל = המשתמש חסם את הבוט
-    if (d?.chat_id && e?.response?.status === 403) {
-      const uid = String(d.chat_id);
+const tgPost = (method, data) =>
+  axios.post(`${TG_API}/${method}`, data).catch(e => {
+    // 403 = user blocked bot → נסמן כלא-פעיל
+    if (data?.chat_id && e?.response?.status === 403) {
+      const uid = String(data.chat_id);
       if (users[uid]) { users[uid].active = false; writeJSON(USERS_FILE, users); }
     }
     console.error("TG error:", e?.response?.data || e.message);
@@ -197,7 +261,7 @@ function setAdminLang(uid, lang) {
 }
 function setAdminAwait(uid, what) {
   if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].awaiting = what; // e.g. 'broadcast' | null
+  adminMeta[uid].awaiting = what; // 'broadcast' | null
   writeJSON(AMETA_FILE, adminMeta);
 }
 
@@ -227,12 +291,15 @@ app.post("/api/tap", (req, res) => {
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
   if (u.tapsToday >= DAILY_TAPS) return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+
   u.tapsToday += 1;
   scores[u.team] = (scores[u.team] || 0) + 1;
   addXpAndMaybeLevelUp(u, 1);
+
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS });
@@ -243,20 +310,24 @@ app.post("/api/super", (req, res) => {
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+
   const today = todayStr();
   if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
   if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
+
   u.superUsed += 1;
   scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
   addXpAndMaybeLevelUp(u, SUPER_POINTS);
-  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
+
+  u.history.push({ ts: nowTs(), type:"super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
   if (u.history.length > 200) u.history.shift();
+
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
 });
 
-// ====== Stars Payment – UNTOUCHED & STABLE ======
+// ====== Stars Payment (LOCKED & UNCHANGED) ======
 app.post("/api/create-invoice", async (req, res) => {
   try {
     const { userId, team, stars } = req.body || {};
@@ -274,6 +345,7 @@ app.post("/api/create-invoice", async (req, res) => {
       currency: "XTR",
       prices: [{ label: "Stars", amount: Math.floor(stars) }],
     });
+
     if (!r.data?.ok) return res.status(500).json({ ok:false, error:r.data });
     res.json({ ok:true, url:r.data.result });
   } catch (e) {
@@ -282,14 +354,16 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
+// ====== Me / Leaderboard ======
 app.get("/api/me", (req, res) => {
   const userId = String(req.query.userId || "");
   if (!userId) return res.json({ ok:false });
+
   const u = ensureUser(userId);
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
 
-  // Daily bonus
+  // Daily bonus (once per 24h)
   let justGotDailyBonus = false;
   const now = nowTs();
   if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
@@ -301,6 +375,7 @@ app.get("/api/me", (req, res) => {
     justGotDailyBonus = true;
     writeJSON(SCORES_FILE, scores);
   }
+
   writeJSON(USERS_FILE, users);
 
   res.json({
@@ -343,9 +418,9 @@ app.get("/api/leaderboard", (req, res) => {
 // ====== Static Mini-App ======
 app.use(express.static(path.join(__dirname, "public")));
 
-// ====== Panel (INLINE via bot) ======
+// ====== Inline Admin Panel (inside bot) ======
 function panelKeyboard(lang="en") {
-  const t = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
+  const t = PANEL_TEXTS[lang] || PANEL_TEXTS_DEFAULT.en;
   return {
     inline_keyboard: [
       [{ text: t.menu_summary,   callback_data: "panel:summary" }],
@@ -358,7 +433,7 @@ function panelKeyboard(lang="en") {
   };
 }
 async function sendPanel(chatId, lang="en") {
-  const t = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
+  const t = PANEL_TEXTS[lang] || PANEL_TEXTS_DEFAULT.en;
   await tgPost("sendMessage", {
     chat_id: chatId,
     text: t.panelTitle,
@@ -366,7 +441,7 @@ async function sendPanel(chatId, lang="en") {
   });
 }
 async function editToMainPanel(msg, lang="en") {
-  const t = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
+  const t = PANEL_TEXTS[lang] || PANEL_TEXTS_DEFAULT.en;
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
@@ -380,10 +455,10 @@ app.post("/webhook", async (req, res) => {
   try {
     const update = req.body;
 
-    if (update.message?.from) updateUserProfileFromTG(update.message.from);
-    if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
+    if (update.message?.from)           updateUserProfileFromTG(update.message.from);
+    if (update.callback_query?.from)    updateUserProfileFromTG(update.callback_query.from);
 
-    // ----- Payments confirmations -----
+    // ---- Payments confirmations ----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
         pre_checkout_query_id: update.pre_checkout_query.id,
@@ -393,30 +468,30 @@ app.post("/webhook", async (req, res) => {
     if (update.message?.successful_payment) {
       const sp = update.message.successful_payment;
       const userId = String(update.message.from.id);
-      const stars = sp.total_amount; // 1 = ⭐
+      const stars  = sp.total_amount; // 1 = ⭐
       let payload = {};
       try { payload = JSON.parse(sp.invoice_payload || "{}"); } catch {}
-      const u = ensureUser(userId);
-      const team = u.team || payload.team || "israel";
-      const pts  = stars * STAR_TO_POINTS;
+      const u   = ensureUser(userId);
+      const team= u.team || payload.team || "israel";
+      const pts = stars * STAR_TO_POINTS;
 
       scores[team] = (scores[team] || 0) + pts;
       u.starsDonated += stars;
       addXpAndMaybeLevelUp(u, pts);
+
       u.history.push({ ts: nowTs(), type:"donation", stars, points: pts, team, xp: pts });
       if (u.history.length > 200) u.history.shift();
 
-      // affiliate bonus
       if (u.refBy) {
-        const inviterId  = String(u.refBy);
-        const inv = ensureUser(inviterId);
-        const bonusStars = Math.floor(stars * AFFILIATE_BONUS);
+        const inviterId   = String(u.refBy);
+        const inv         = ensureUser(inviterId);
+        const bonusStars  = Math.floor(stars * AFFILIATE_BONUS);
         if (bonusStars > 0) {
           inv.bonusStars += bonusStars;
-          const bonusPts = bonusStars * STAR_TO_POINTS;
-          const inviterTeam = inv.team || team;
-          scores[inviterTeam] = (scores[inviterTeam] || 0) + bonusPts;
-          inv.history.push({ ts: nowTs(), type:"affiliate_bonus", stars: bonusStars, points: bonusPts, from: userId, team: inviterTeam });
+          const bonusPts  = bonusStars * STAR_TO_POINTS;
+          const inviterTm = inv.team || team;
+          scores[inviterTm] = (scores[inviterTm] || 0) + bonusPts;
+          inv.history.push({ ts: nowTs(), type:"affiliate_bonus", stars: bonusStars, points: bonusPts, from: userId, team: inviterTm });
           if (inv.history.length > 200) inv.history.shift();
         }
       }
@@ -426,24 +501,34 @@ app.post("/webhook", async (req, res) => {
       await tgPost("sendMessage", { chat_id: userId, text: `✅ תודה! נתרמו ${stars}⭐ → +${pts} נק' ל${team}.` });
     }
 
-    // ----- Messages -----
+    // ---- Messages ----
     if (update.message?.text) {
-      const msg   = update.message;
-      const chatId= msg.chat.id;
-      const text  = (msg.text || "").trim();
-      const uid   = String(msg.from.id);
+      const msg    = update.message;
+      const chatId = msg.chat.id;
+      const text   = (msg.text || "").trim();
+      const uid    = String(msg.from.id);
 
-      // אם אדמין במצב "ממתין לשידור"
+      // referral capture
+      const parts = text.split(" ");
+      if (parts[1] && parts[1].startsWith("ref_")) {
+        const refBy = parts[1].slice(4);
+        const u = ensureUser(uid);
+        if (!u.refBy && refBy !== uid) {
+          u.refBy = refBy;
+          writeJSON(USERS_FILE, users);
+        }
+      }
+
+      // admin pending broadcast
       if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
         const lang = getAdminLang(uid);
-        const tt = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
+        const tt = PANEL_TEXTS[lang] || PANEL_TEXTS_DEFAULT.en;
         setAdminAwait(uid, null);
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
 
         let ok=0, fail=0;
-        const entries = Object.entries(users);
-        for (const [id, u] of entries) {
-          if (!u.active) { continue; }
+        for (const [id, u] of Object.entries(users)) {
+          if (!u.active) continue;
           try {
             await tgPost("sendMessage", { chat_id: id, text });
             ok++;
@@ -475,14 +560,14 @@ app.post("/webhook", async (req, res) => {
       // /panel
       if (text === "/panel") {
         if (!admins.includes(uid)) {
-          const t = PANEL_TEXTS[getAdminLang(uid)] || PANEL_TEXTS.en;
+          const t = PANEL_TEXTS[getAdminLang(uid)] || PANEL_TEXTS_DEFAULT.en;
           await tgPost("sendMessage", { chat_id: chatId, text: t.unauthorized });
         } else {
           await sendPanel(chatId, getAdminLang(uid));
         }
       }
 
-      // Admin management commands (Super Admin only)
+      // Admin management (Super Admin only)
       if (text.startsWith("/addadmin")) {
         if (SUPER_ADMINS.has(uid)) {
           const parts = text.split(" ").filter(Boolean);
@@ -513,19 +598,17 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // ----- Callbacks (Panel) -----
+    // ---- Callbacks (Panel) ----
     if (update.callback_query) {
       const cq   = update.callback_query;
       const uid  = String(cq.from.id);
       const data = cq.data || "";
       const lang = getAdminLang(uid);
-      const t    = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
+      const t    = PANEL_TEXTS[lang] || PANEL_TEXTS_DEFAULT.en;
       const msg  = cq.message;
 
-      // שפת /start
+      // language buttons in /start (no panel change)
       if (data === "lang_en" || data === "lang_he" || data === "lang_ar") {
-        const chosen = data.replace("lang_", "");
-        // לא משנים פה את פאנל הניהול (זה למסך /start)
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
       }
 
@@ -536,10 +619,10 @@ app.post("/webhook", async (req, res) => {
           const [, action] = data.split(":");
 
           if (action === "lang") {
-            // toggle lang
             const newLang = lang === "he" ? "en" : "he";
             setAdminLang(uid, newLang);
-            const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
+            const tx = newLang === "he" ? (PANEL_TEXTS.he?.lang_set_he || "🌐 השפה הוגדרה לעברית.")
+                                        : (PANEL_TEXTS.en?.lang_set_en || "🌐 Language set to English.");
             await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tx });
             await editToMainPanel(msg, newLang);
           }
@@ -593,10 +676,9 @@ app.post("/webhook", async (req, res) => {
           }
 
           else if (action === "reset_daily") {
-            // איפוס מגבלות יומיות לכולם
             const today = todayStr();
-            for (const uid of Object.keys(users)) {
-              const u = users[uid];
+            for (const id of Object.keys(users)) {
+              const u = users[id];
               u.tapsDate = today;
               u.tapsToday = 0;
               u.superDate = today;
@@ -645,7 +727,6 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
-      // חזרה למסך ראשי
       if (data === "panel:main") {
         await editToMainPanel(cq.message, getAdminLang(uid));
       }
@@ -662,7 +743,7 @@ app.post("/webhook", async (req, res) => {
 
 // ====== Health & Webhook setup ======
 app.get("/webhook", (_, res) => res.status(405).json({ ok:true }));
-app.get("/healthz", (_, res) => res.json({ ok:true }));
+app.get("/healthz",  (_, res) => res.json({ ok:true }));
 
 app.get("/setup-webhook", async (_, res) => {
   try {
