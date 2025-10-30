@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css" />
   </head>
 
-  <body>
+  <body dir="rtl">
     <div class="container">
       <h1 class="title">TeamBattle - Israel Vs Gaza</h1>
 
@@ -36,15 +36,15 @@
 
       <!-- בחירת קבוצה -->
       <div id="team-chooser" class="team-chooser">
-        <button id="choose-israel" class="choose blue">בחר צוות ישראל 🇮🇱</button>
-        <button id="choose-gaza" class="choose green">בחר צוות עזה 🇵🇸</button>
+        <button class="choose blue" data-action="chooseIL">בחר צוות ישראל 🇮🇱</button>
+        <button class="choose green" data-action="chooseGA">בחר צוות עזה 🇵🇸</button>
       </div>
 
       <!-- פעולות -->
       <div class="btn-group">
-        <button id="tap-btn" class="tap-btn" disabled>טאפ להגברה (+1)</button>
-        <button id="super-btn" class="super-btn" disabled>סופר-בוסט (+25)</button>
-        <button id="switch-team" class="switch-btn">🔁 החלף קבוצה</button>
+        <button class="tap-btn" data-action="tap" disabled>טאפ להגברה (+1)</button>
+        <button class="super-btn" data-action="super" disabled>סופר-בוסט (+25)</button>
+        <button class="switch-btn" data-action="switchTeam">🔁 החלף קבוצה</button>
       </div>
 
       <!-- התקדמות -->
@@ -56,7 +56,7 @@
       <div class="donate">
         <input type="number" id="stars" min="1" value="10" />
         <span>⭐</span>
-        <button id="donate-btn" class="donate-btn" disabled>תרום כוכבים</button>
+        <button class="donate-btn" data-action="donate" disabled>תרום כוכבים</button>
       </div>
 
       <!-- תוכנית שותפים -->
@@ -90,6 +90,7 @@
       <p id="toast" class="toast" hidden></p>
     </div>
 
+    <!-- סקריפט החדש (עם כל הפיצ'רים ותמיכה מלאה בעברית/אנגלית/ערבית) -->
     <script src="script.js"></script>
   </body>
 </html>
