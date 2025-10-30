@@ -2,54 +2,66 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
   <title>Team Battle: Israel Vs Gaza</title>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#0d0f14; --panel:#161a22; --panel2:#1f2430; --text:#dfe7ff;
-      --muted:#97a1bd; --accent:#ff4bf2; --btn:#2b87ff; --warn:#f9cc45; --good:#21d07a;
+      --muted:#97a1bd; --accent:#ff4bf2; --btn:#2b87ff; --warn:#f0c13b; --good:#22c97a;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Rubik",system-ui,Segoe UI,Arial,sans-serif;
-      overscroll-behavior:contain; -webkit-text-size-adjust:100%;}
-    .container{max-width:700px;margin:28px auto;padding:18px}
-    h1{font-size:32px;margin:0 0 12px;letter-spacing:.5px;text-align:center;
-       text-shadow:0 0 24px rgba(255,75,242,.65)}
-    .lang-buttons{display:flex;gap:10px;justify-content:center;margin:8px 0 18px}
-    .lang-buttons button{background:#2a2f3b;border:0;color:var(--text);padding:8px 14px;border-radius:12px;font-weight:600}
-    .cards{display:flex;gap:12px}
-    .card{flex:1;background:var(--panel);border-radius:18px;padding:14px 16px}
-    .team-title{display:flex;align-items:center;gap:8px;font-weight:800}
-    .score{font-size:56px;font-weight:800;color:#ffe874;text-align:center;margin-top:6px}
-    .rule{color:var(--muted);text-align:center;margin:14px 0 8px}
-    .actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+    html,body{
+      margin:0;background:var(--bg);color:var(--text);
+      font-family:"Rubik",system-ui,Segoe UI,Arial,sans-serif;
+      overscroll-behavior:contain; -webkit-text-size-adjust:100%;
+      touch-action: manipulation;
+    }
+    *{ -webkit-user-drag:none; -webkit-tap-highlight-color:transparent; }
+
+    .container{max-width:720px;margin:28px auto;padding:18px}
+    h1{
+      font-size:34px;margin:0 0 14px;text-align:center;font-weight:800;
+      text-shadow:0 0 24px rgba(255,75,242,.7), 0 0 6px rgba(255,75,242,.5);
+    }
+
+    .lang-buttons{display:flex;gap:10px;justify-content:center;margin:10px 0 18px}
+    .lang-buttons button{background:#2a2f3b;border:0;color:var(--text);padding:8px 14px;border-radius:12px;font-weight:600;cursor:pointer}
+
+    .cards{display:flex;gap:14px}
+    .card{flex:1;background:var(--panel);border-radius:18px;padding:14px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .team-title{display:flex;align-items:center;gap:8px;font-weight:800;font-size:20px}
+    .score{font-size:64px;font-weight:800;color:#ffe874;text-align:center;margin-top:6px}
+
+    .rule{color:var(--muted);text-align:center;margin:16px 0 10px;font-weight:600}
+
+    .actions{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin:12px 0}
     .btn{border:0;border-radius:16px;padding:14px 18px;font-weight:800;color:#fff;cursor:pointer}
     .btn-choose{background:var(--good)}
     .btn-tap{background:var(--btn)}
     .btn-super{background:#d24ba8}
     .btn-switch{background:#586173}
-    .progress-wrap{text-align:center;margin:10px 0}
-    .prog{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:12px;font-weight:700}
-    .split{display:flex;gap:12px;margin:14px 0}
+
+    .progress-wrap{text-align:center;margin:12px 0}
+    .prog{display:inline-block;background:var(--panel2);padding:10px 14px;border-radius:12px;font-weight:800}
+
+    .split{display:flex;gap:14px;margin:14px 0}
     .split .box{flex:1;background:var(--panel);padding:12px;border-radius:14px}
     .box input{width:100%;height:44px;border-radius:12px;border:0;background:var(--panel2);color:var(--text);text-align:center;font-size:18px}
-    .gold{background:#caa12a;color:#161616}
+    .gold{background:var(--warn);color:#161616}
+
     .share-row{display:flex;gap:10px;margin-top:10px}
-    .share-row button{flex:0 0 auto}
     .copy-input{flex:1}
-    #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
-      background:#1f2430;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;display:none}
-    /* לא לזוז/להתקרב בזום */
-    html, body { touch-action: manipulation; }
-    * { -webkit-user-drag: none; -webkit-tap-highlight-color: transparent; }
+    .share-row button{flex:0 0 auto}
+
     .muted{color:var(--muted)}
     #team-chooser{display:flex;gap:12px;justify-content:center;margin:12px 0}
     .section-title{font-weight:800;font-size:22px;margin:18px 0 8px;text-align:center}
-    #leaders-title{margin-top:18px}
     #leaderboard .leader-row{padding:8px 10px;background:var(--panel);border-radius:10px;margin:6px 0}
+
+    #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#1f2430;color:#fff;
+      padding:10px 14px;border-radius:12px;font-weight:700;display:none}
   </style>
 </head>
 <body>
@@ -57,34 +69,34 @@
     <h1>TeamBattle - Israel Vs Gaza</h1>
 
     <div class="lang-buttons">
-      <button data-lang="he">עברית</button>
-      <button data-lang="en">English</button>
       <button data-lang="ar">العربية</button>
+      <button data-lang="en">English</button>
+      <button data-lang="he">עברית</button>
     </div>
 
     <div class="cards">
       <div class="card">
-        <div class="team-title"><span>🇮🇱</span><span id="team-israel">ישראל</span></div>
-        <div class="score" id="score-israel">0</div>
-      </div>
-      <div class="card">
         <div class="team-title"><span>🇵🇸</span><span id="team-gaza">עזה</span></div>
         <div class="score" id="score-gaza">0</div>
       </div>
+      <div class="card">
+        <div class="team-title"><span>🇮🇱</span><span id="team-israel">ישראל</span></div>
+        <div class="score" id="score-israel">0</div>
+      </div>
     </div>
 
-    <div class="rule">⭐ 1 = 2 נקודות • 💥 מגבלה 300 טאפים ביום • ⚡ סופר-בוסט פעם ביום</div>
+    <div class="rule">⭐ 1 = 2 נק׳ • 💥 מגבלה 300 טאפים ביום • ⚡ סופר-בוסט פעם ביום</div>
 
     <!-- בחירת קבוצה -->
     <div id="team-chooser">
-      <button id="choose-gaza"   class="btn btn-choose">בחר צוות עזה 🇵🇸</button>
       <button id="choose-israel" class="btn btn-choose">בחר צוות ישראל 🇮🇱</button>
+      <button id="choose-gaza"   class="btn btn-choose">בחר צוות עזה 🇵🇸</button>
     </div>
 
     <div class="actions">
-      <button id="tap-btn"   class="btn btn-tap">TAP (+1)</button>
-      <button id="super-btn" class="btn btn-super">סופר-בוסט</button>
       <button id="switch-team" class="btn btn-switch">החלף קבוצה</button>
+      <button id="super-btn"   class="btn btn-super">סופר-בוסט</button>
+      <button id="tap-btn"     class="btn btn-tap">TAP (+1)</button>
     </div>
 
     <div class="progress-wrap">
@@ -93,10 +105,10 @@
 
     <div class="split">
       <div class="box">
-        <input id="stars" type="number" min="1" step="1" value="10" />
+        <button id="donate-btn" class="btn gold" style="width:100%;height:44px;">Extra TAP +2</button>
       </div>
       <div class="box">
-        <button id="donate-btn" class="btn gold" style="width:100%;height:44px;">Extra TAP +2</button>
+        <input id="stars" type="number" min="1" step="1" value="10"/>
       </div>
     </div>
 
@@ -106,9 +118,9 @@
     </p>
 
     <div class="share-row">
-      <input id="ref-link" class="copy-input" type="text" readonly value="">
-      <button id="copy-link" class="btn btn-switch">העתק קישור</button>
       <button id="share-btn" class="btn btn-tap">שתף בטלגרם</button>
+      <button id="copy-link" class="btn btn-switch">העתק קישור</button>
+      <input id="ref-link" class="copy-input" type="text" readonly value="">
     </div>
 
     <div class="section-title" id="my-panel-title">הלוח שלי</div>
