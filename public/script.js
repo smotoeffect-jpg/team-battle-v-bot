@@ -339,3 +339,42 @@ fetchMe();
 fetchLeaders();
 setInterval(fetchState, 10000);
 setInterval(fetchLeaders, 15000);
+
+
+/* === Anti-Zoom & Scroll Lock Enhancements === */
+document.addEventListener('DOMContentLoaded', function() {
+  const style = document.createElement('style');
+  style.innerHTML = `
+    html, body {
+      overscroll-behavior: none;
+      overflow-x: hidden;
+      touch-action: pan-y !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -ms-user-select: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Prevent double-tap zoom
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function(event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, false);
+
+  // Prevent pinch-zoom
+  document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+  });
+  document.addEventListener('gesturechange', function(e) {
+    e.preventDefault();
+  });
+  document.addEventListener('gestureend', function(e) {
+    e.preventDefault();
+  });
+});
+/* === End Enhancements === */
