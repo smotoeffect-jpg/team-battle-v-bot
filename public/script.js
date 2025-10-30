@@ -103,12 +103,22 @@
     }
   };
 
-  // ===== State =====
-  let LANG = localStorage.getItem("tb_lang") || "he";
+  // ===== State & LocalStorage =====
+  const STORAGE = {
+    uid: "tb_user_id",
+    team: "tb_team",
+    lang: "tb_lang",
+  };
+
+  let LANG = localStorage.getItem(STORAGE.lang) || "he";
   let USER_ID = null;
-  let TEAM = null;
+  let TEAM = localStorage.getItem(STORAGE.team) || null; // ← נטען מוקדם כדי להדליק כפתורים מיד
   let tapsToday = 0;
   let tapsLimit = 300;
+
+  function saveTeamLocally(team) {
+    try { localStorage.setItem(STORAGE.team, team || ""); } catch {}
+  }
 
   // ===== Telegram init =====
   try {
@@ -120,8 +130,8 @@
   } catch(e){ err("TG init fail", e); }
 
   if (!USER_ID) {
-    USER_ID = localStorage.getItem("tb_user_id") || String(Math.floor(Math.random()*1e12));
-    localStorage.setItem("tb_user_id", USER_ID);
+    USER_ID = localStorage.getItem(STORAGE.uid) || String(Math.floor(Math.random()*1e12));
+    try { localStorage.setItem(STORAGE.uid, USER_ID); } catch {}
   }
 
   // ===== Elements (לא נופל אם חסר) =====
@@ -180,15 +190,16 @@
     const mp = qs("#my-panel-title");
     if (mp) mp.textContent = t.myPanel;
     if (els.prog)     els.prog.textContent     = t.progress(tapsToday, tapsLimit);
-    if (els.meStars)  els.meStars.textContent  = t.myStars( Number(els.meStars?.dataset?.v || 0) );
-    if (els.meBonus)  els.meBonus.textContent  = t.myBonus( Number(els.meBonus?.dataset?.v || 0) );
+    if (els.meStars)  els.meStars.textContent  = t.myStars(Number(els.meStars?.dataset?.v || 0));
+    if (els.meBonus)  els.meBonus.textContent  = t.myBonus(Number(els.meBonus?.dataset?.v || 0));
     if (els.meTaps)   els.meTaps.textContent   = t.myTaps(tapsToday, tapsLimit);
   }
 
   // ===== API =====
   async function apiGet(p) {
     try {
-      const r = await fetch(`${API_BASE}${p}`, { credentials:"omit" });
+      const url = `${API_BASE}${p}${p.includes("?") ? "&" : "?"}_=${Date.now()}`; // cache-bust קל
+      const r = await fetch(url, { credentials:"omit" });
       return await r.json();
     } catch(e){ err("GET fail", p, e); return {}; }
   }
@@ -216,11 +227,14 @@
     const j = await apiGet(`/api/me?userId=${encodeURIComponent(USER_ID)}`);
     if (!j?.ok || !j.me) return;
     const me = j.me || {};
-    TEAM = me.team || TEAM;
+    // אם השרת מחזיר team — נשמור ונפעיל כפתורים
+    if (me.team) {
+      TEAM = me.team;
+      saveTeamLocally(TEAM);
+    }
     tapsToday = typeof me.tapsToday === "number" ? me.tapsToday : tapsToday;
     tapsLimit = typeof j.limit === "number" ? j.limit : tapsLimit;
 
-    // הפעלה לאחר בחירת קבוצה
     if (TEAM && els.teamChooser) {
       els.teamChooser.style.display = "none";
       if (els.tap)    els.tap.disabled    = false;
@@ -261,6 +275,7 @@
     const j = await apiPost("/api/select-team", { userId: USER_ID, team });
     if (j?.ok) {
       TEAM = team;
+      saveTeamLocally(TEAM);
       if (els.teamChooser) els.teamChooser.style.display = "none";
       if (els.tap)    els.tap.disabled    = false;
       if (els.super)  els.super.disabled  = false;
@@ -356,7 +371,7 @@
         if (!confirm((I18N[LANG]||I18N.he).confirmSwitch)) break;
         apiPost("/api/switch-team", { userId: USER_ID, newTeam: TEAM === "israel" ? "gaza" : "israel" })
           .then(async (j)=>{
-            if (j?.ok) { TEAM = j.team; toast((I18N[LANG]||I18N.he).switched); await Promise.all([fetchState(), fetchMe(), fetchLeaders()]); }
+            if (j?.ok) { TEAM = j.team; saveTeamLocally(TEAM); toast((I18N[LANG]||I18N.he).switched); await Promise.all([fetchState(), fetchMe(), fetchLeaders()]); }
           });
         break;
       default: break;
@@ -369,7 +384,7 @@
       const lang = b.dataset.lang;
       if (I18N[lang]) {
         LANG = lang;
-        localStorage.setItem("tb_lang", LANG);
+        try { localStorage.setItem(STORAGE.lang, LANG); } catch {}
         applyLangTexts();
         fetchLeaders();
         fetchMe();
@@ -381,9 +396,20 @@
   document.addEventListener("DOMContentLoaded", () => {
     try { wireClipboardAndShare(); } catch(e){ err(e); }
     try { applyLangTexts(); } catch(e){ err(e); }
+
+    // אם יש TEAM ב-localStorage — להדליק כפתורים כבר עכשיו לפני קריאות רשת
+    if (TEAM) {
+      if (els.teamChooser) els.teamChooser.style.display = "none";
+      if (els.tap)    els.tap.disabled    = false;
+      if (els.super)  els.super.disabled  = false;
+      if (els.donate) els.donate.disabled = false;
+      if (els.refInput) els.refInput.value = buildRefLink(USER_ID);
+    }
+
     fetchState();
     fetchMe();
     fetchLeaders();
+
     setInterval(fetchState, 10000);
     setInterval(fetchLeaders, 15000);
   });
