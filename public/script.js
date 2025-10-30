@@ -1,3 +1,103 @@
+
+// === Inject anti-zoom & fast-tap behavior ===
+(function setupTouchBehavior(){
+  try {
+    // Ensure viewport tag prevents zoom
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) {
+      vp = document.createElement('meta');
+      vp.name = 'viewport';
+      document.head.appendChild(vp);
+    }
+    vp.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no');
+
+    // CSS to improve tap behavior and disable double-tap zoom
+    var css = document.createElement('style');
+    css.id = 'tb-touch-style';
+    css.textContent = `
+      html, body { overscroll-behavior: contain; touch-action: manipulation; }
+      #tb-xp-banner {
+        position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+        padding: 6px 12px; border-radius: 10px; font-weight: 700; 
+        z-index: 9999; user-select: none; pointer-events: none; 
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      }
+      .neon {
+        text-shadow: 0 0 4px rgba(255, 255, 255, 0.6), 0 0 10px rgba(255, 0, 200, 0.9), 0 0 16px rgba(255, 0, 200, 0.7);
+        box-shadow: 0 0 10px rgba(255, 0, 200, 0.3), inset 0 0 10px rgba(255,255,255,0.1);
+      }
+      .pulse {
+        animation: tbPulse 1.4s ease-in-out infinite;
+      }
+      @keyframes tbPulse {
+        0% { filter: drop-shadow(0 0 0px rgba(255,0,200,0.0)); opacity: 0.95; }
+        50% { filter: drop-shadow(0 0 12px rgba(255,0,200,0.55)); opacity: 1; }
+        100% { filter: drop-shadow(0 0 0px rgba(255,0,200,0.0)); opacity: 0.95; }
+      }
+    `;
+    document.head.appendChild(css);
+
+    // Prevent pinch zoom and gesture zoom
+    document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, {passive:false});
+    document.addEventListener('gesturechange', function(e){ e.preventDefault(); }, {passive:false});
+    document.addEventListener('gestureend', function(e){ e.preventDefault(); }, {passive:false});
+
+    // Prevent double-tap zoom on iOS
+    var lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e){
+      var now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, {passive:false});
+
+    // Allow multi-touch taps without scrolling
+    document.addEventListener('touchmove', function(e){
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    }, {passive:false});
+  } catch(_){}
+})();
+
+
+// === Double XP banner ===
+(function setupDoubleXpBanner(){
+  try {
+    var banner = document.getElementById('tb-xp-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'tb-xp-banner';
+      document.body.appendChild(banner);
+    }
+    function render(active){
+      if (active) {
+        banner.textContent = '🔥 XP מוכפל פעיל! ⚡';
+        banner.className = 'neon pulse';
+        banner.style.background = 'rgba(0,0,0,0.45)';
+        banner.style.color = '#ffffff';
+        banner.style.border = '1px solid rgba(255,0,200,0.6)';
+      } else {
+        banner.textContent = '⚡ XP רגיל';
+        banner.className = '';
+        banner.style.background = 'rgba(0,0,0,0.25)';
+        banner.style.color = '#ddd';
+        banner.style.border = '1px solid rgba(255,255,255,0.2)';
+      }
+    }
+    async function refresh(){
+      try{
+        const r = await fetch((window.location.origin.replace(/\\/$/, '')) + '/api/state');
+        const j = await r.json();
+        render(!!j.doubleXpActive);
+      }catch(_){}
+    }
+    refresh();
+    setInterval(refresh, 30000);
+  } catch(_){}
+})();
+
 // ===== Client config =====
 const API_BASE = window.location.origin.replace(/\/$/, "");
 const BOT_USERNAME = "TeamBattle_vBot";
@@ -339,42 +439,3 @@ fetchMe();
 fetchLeaders();
 setInterval(fetchState, 10000);
 setInterval(fetchLeaders, 15000);
-
-
-/* === Anti-Zoom & Scroll Lock Enhancements === */
-document.addEventListener('DOMContentLoaded', function() {
-  const style = document.createElement('style');
-  style.innerHTML = `
-    html, body {
-      overscroll-behavior: none;
-      overflow-x: hidden;
-      touch-action: pan-y !important;
-      user-select: none !important;
-      -webkit-user-select: none !important;
-      -ms-user-select: none !important;
-    }
-  `;
-  document.head.appendChild(style);
-
-  // Prevent double-tap zoom
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', function(event) {
-    const now = (new Date()).getTime();
-    if (now - lastTouchEnd <= 300) {
-      event.preventDefault();
-    }
-    lastTouchEnd = now;
-  }, false);
-
-  // Prevent pinch-zoom
-  document.addEventListener('gesturestart', function(e) {
-    e.preventDefault();
-  });
-  document.addEventListener('gesturechange', function(e) {
-    e.preventDefault();
-  });
-  document.addEventListener('gestureend', function(e) {
-    e.preventDefault();
-  });
-});
-/* === End Enhancements === */
