@@ -1,5 +1,4 @@
-
-/* ================== script.js (fixed) ================== */
+/* ================== script.js (fixed & stable) ================== */
 
 // מניעת זום וגלילה לא רצויה במשחק הקליקר
 document.addEventListener('gesturestart', e => e.preventDefault());
@@ -31,7 +30,11 @@ document.body.style.touchAction = 'manipulation';
 
   async function selectTeam(team){
     const j = await post('/api/select-team',{userId:USER_ID,team});
-    if(j.ok){ toast('Team selected: '+team); await fetchState(); }
+    if(j.ok){
+      toast('Team selected: '+team);
+      await fetchState();
+      await loadMe();
+    }
   }
 
   async function tap(){
@@ -51,8 +54,15 @@ document.body.style.touchAction = 'manipulation';
 
   async function fetchState(){
     const j = await get('/api/state');
-    if(j.ok && j.doubleXP){
+    if(j.ok && j.doubleXP !== undefined){
       renderDoubleXpBanner(j.doubleXP.on);
+    }
+  }
+
+  async function loadMe(){
+    const j = await get(`/api/me?userId=${USER_ID}`);
+    if(j.ok && j.me){
+      console.log('User data:', j.me);
     }
   }
 
@@ -75,4 +85,5 @@ document.body.style.touchAction = 'manipulation';
 
   try { Telegram?.WebApp?.ready(); } catch(_){}
   fetchState();
+  loadMe();
 })();
