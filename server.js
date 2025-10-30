@@ -1,9 +1,10 @@
-// ================== server.js ==================
+// ================== server.js (TeamBattle – stable) ==================
 const express = require("express");
 const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const FormData = require("form-data"); // for sending CSV as document
 
 const app = express();
 app.use(cors());
@@ -11,19 +12,20 @@ app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }))
 app.use(express.urlencoded({ extended: false }));
 
 // ====== CONFIG ======
+// NOTE: Payments code is LOCKED to the stable createInvoiceLink flow. Do not change.
 const BOT_TOKEN      = process.env.BOT_TOKEN      || "8366510657:AAEC5for6-8246aKdW6F5w3FPfJ5oWNLCfA";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
-const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
+const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render persistent disk
 
-// משחק
-const STAR_TO_POINTS  = 2;
-const SUPER_POINTS    = 25;
-const DAILY_TAPS      = 300;
-const AFFILIATE_BONUS = 0.10;
+// Game
+const STAR_TO_POINTS  = 2;    // 1⭐ = 2 pts
+const SUPER_POINTS    = 25;   // Super boost
+const DAILY_TAPS      = 300;  // per-day tap limit
+const AFFILIATE_BONUS = 0.10; // 10% stars to inviter
 
-// XP/Levels
+// XP / Levels
 const DAILY_BONUS_INTERVAL_MS = 24*60*60*1000;
 const DAILY_BONUS_POINTS = 5;
 const DAILY_BONUS_XP     = 10;
@@ -34,11 +36,9 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const USERS_FILE  = path.join(DATA_DIR, "users.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
-const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // per-admin prefs (lang, awaiting)
-const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n texts
-const STATE_FILE  = path.join(DATA_DIR, "state.json");      // runtime state (Double XP)
+const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // { userId: { lang, awaiting } }
+const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n (serializable ONLY)
 
-// ========= helpers: JSON IO =========
 function readJSON(file, fallback) {
   try {
     if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
@@ -51,167 +51,126 @@ function writeJSON(file, data) {
   try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); }
   catch (e) { console.error("writeJSON error:", e.message); }
 }
+
 const todayStr = () => new Date().toISOString().slice(0,10);
 const nowTs    = () => Date.now();
 
-// ========= load data =========
 let scores = readJSON(SCORES_FILE, { israel: 0, gaza: 0 });
 let users  = readJSON(USERS_FILE,  {});   // userId -> profile
-let admins = readJSON(ADMINS_FILE, ["7366892099","6081158942","7586749848"]); // Admins (כולל סופר)
-let adminMeta = readJSON(AMETA_FILE, {}); // { userId: { lang:"en"| "he", awaiting:null|"broadcast" } }
-let STATE = readJSON(STATE_FILE, {
-  doubleXP: {
-    active: false,
-    until: 0,                // timestamp ms
-    lastStartDay: "",        // YYYY-MM-DD למניעת כפילות יומית
-  },
-  schedule: {
-    hourUTC: 18,             // שעה יומית (UTC) להפעלה אוטומטית
-    durationMin: 60
-  }
-});
+let admins = readJSON(ADMINS_FILE, ["7366892099","6081158942","7586749848"]);
+let adminMeta = readJSON(AMETA_FILE, {}); // { uid: { lang: 'en'|'he', awaiting: null|'broadcast' } }
 
-// Super Admins: רק הם מנהלים מנהלים
+// Super Admins (fixed in code)
 const SUPER_ADMINS = new Set(["7366892099","6081158942","7586749848"]);
 
-// ========= Panel texts (with functions!) =========
+// ====== Panel Texts (functions live in code; JSON stores only plain strings) ======
 const PANEL_TEXTS_DEFAULT = {
   en: {
-    panelTitle: "🛠️ TeamBattle – Admin Panel",
+    panelTitle: "*🛠️ TeamBattle – Admin Panel*",
     menu_summary: "📊 Global summary",
-    menu_users: "👥 Users list",
+    menu_users: "👥 Users",
     menu_bonuses: "🎁 Bonuses & resets",
     menu_broadcast: "📢 Broadcast message",
     menu_admins: "👑 Manage admins",
     menu_language: "🌐 Language / שפה",
+    menu_export_csv: "📤 Export CSV",
     back: "⬅️ Back",
     unauthorized: "❌ You don’t have access to this panel.",
-
-    summary_line: (scores, usersCount) =>
-      `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}\n👥 Users: ${usersCount}`,
-
-    users_title: (n) => `👥 Users (${n}) – last 20 IDs`,
-
-    bonuses_title: "🎁 Bonuses & resets",
+    users_header_counts: (active, inactive, total) => 
+      `*👥 Users*\nActive: ${active}\nInactive: ${inactive}\nTotal: ${total}`,
+    bonuses_title: "*🎁 Bonuses & resets*",
     reset_daily: "♻️ Reset daily limits (all)",
-    reset_super: "♻️ Reset Super-Boost (all)",
+    reset_super: "♻️ Reset Super Boost (all)",
     bonus_israel: "➕ +25 to 🇮🇱",
     bonus_gaza: "➕ +25 to 🇵🇸",
-
-    doublexp_title: "⚡ Double XP controls",
-    doublexp_status_on: (minLeft)=>`⏱️ Double XP: Active (${minLeft}m left)`,
-    doublexp_status_off: (hourUTC,dur)=>`⚡ Double XP is OFF\n🕓 Daily at ${hourUTC}:00 UTC for ${dur}m`,
-    doublexp_toggle_on_now: "▶️ Start Double XP (60m)",
-    doublexp_toggle_off_now:"⏹ Stop Double XP",
-    doublexp_hour_minus: "– hour",
-    doublexp_hour_plus:  "+ hour",
-    doublexp_show_hour:  (h)=>`Daily hour (UTC): ${h}`,
     done: "✅ Done.",
-
     ask_broadcast: "📢 Send the message you want to broadcast.\n(Reply in this chat)",
     bc_started: "⏳ Broadcasting…",
     bc_done: (ok,fail)=>`✅ Sent: ${ok}  |  ❌ Failed: ${fail}`,
-
-    admins_title: "👑 Manage admins",
-    admins_list: (arr)=>`Current admins:\n${arr.map(a=>`• ${a}`).join("\n") || "(none)"}`,
+    admins_title: "*👑 Manage admins*",
     admins_help: "Use commands:\n/addadmin <userId>\n/rmadmin <userId>\n(Only Super Admins)",
-
     lang_set_en: "🌐 Language set to English.",
     lang_set_he: "🌐 השפה הוגדרה לעברית.",
-
-    // broadcasts per user language
-    bc_doublexp_start: "⚡ Double XP is live now! Earn 2× XP for the next hour!",
-    bc_doublexp_end:   "⏹ Double XP has ended. See you next time!",
+    csv_file_name: () => `users_export_${Date.now()}.csv`,
   },
   he: {
-    panelTitle: "🛠️ פאנל ניהול – TeamBattle",
+    panelTitle: "*🛠️ פאנל ניהול – TeamBattle*",
     menu_summary: "📊 סיכום כללי",
-    menu_users: "👥 רשימת משתמשים",
+    menu_users: "👥 משתמשים",
     menu_bonuses: "🎁 בונוסים ואיפוסים",
     menu_broadcast: "📢 שליחת הודעה",
     menu_admins: "👑 ניהול מנהלים",
     menu_language: "🌐 שפה / Language",
+    menu_export_csv: "📤 ייצוא CSV",
     back: "⬅️ חזרה",
     unauthorized: "❌ אין לך גישה לפאנל הניהול.",
-
-    summary_line: (scores, usersCount) =>
-      `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}\n👥 משתמשים: ${usersCount}`,
-
-    users_title: (n) => `👥 משתמשים (${n}) – 20 אחרונים`,
-
-    bonuses_title: "🎁 בונוסים ואיפוסים",
+    users_header_counts: (active, inactive, total) => 
+      `*👥 רשימת משתמשים*\nמשתמשים פעילים: ${active}\nמשתמשים לא פעילים: ${inactive}\nסה״כ רשומים: ${total}`,
+    bonuses_title: "*🎁 בונוסים ואיפוסים*",
     reset_daily: "♻️ איפוס מגבלות יומיות (לכולם)",
-    reset_super: "♻️ איפוס סופר־בוסט (לכולם)",
+    reset_super: "♻️ איפוס סופר-בוסט (לכולם)",
     bonus_israel: "➕ +25 ל🇮🇱",
     bonus_gaza: "➕ +25 ל🇵🇸",
-
-    doublexp_title: "⚡ ניהול Double XP",
-    doublexp_status_on: (minLeft)=>`⏱️ Double XP פעיל! (${minLeft} דקות נותרו)`,
-    doublexp_status_off: (hourUTC,dur)=>`⚡ Double XP כבוי\n🕓 יומי ב־${hourUTC}:00 (UTC) למשך ${dur} דק׳`,
-    doublexp_toggle_on_now: "▶️ התחלת Double XP (60ד׳)",
-    doublexp_toggle_off_now:"⏹ עצירת Double XP",
-    doublexp_hour_minus: "– שעה",
-    doublexp_hour_plus:  "+ שעה",
-    doublexp_show_hour:  (h)=>`שעה יומית (UTC): ${h}`,
     done: "✅ בוצע.",
-
-    ask_broadcast: "📢 שלח את ההודעה לשידור.\n(ענה בהודעה הזו)",
+    ask_broadcast: "📢 שלח את ההודעה שתרצה לשדר.\n(ענה בהודעה הזו)",
     bc_started: "⏳ משדר…",
     bc_done: (ok,fail)=>`✅ נשלחו: ${ok}  |  ❌ נכשלו: ${fail}`,
-
-    admins_title: "👑 ניהול מנהלים",
-    admins_list: (arr)=>`מנהלים נוכחיים:\n${arr.map(a=>`• ${a}`).join("\n") || "(אין)"}`,
+    admins_title: "*👑 ניהול מנהלים*",
     admins_help: "פקודות:\n/addadmin <userId>\n/rmadmin <userId>\n(סופר־אדמין בלבד)",
-
     lang_set_en: "🌐 Language set to English.",
     lang_set_he: "🌐 השפה הוגדרה לעברית.",
-
-    bc_doublexp_start: "⚡ אקספי מוכפל יצא לדרך! קבלו 2× XP לשעה הקרובה!",
-    bc_doublexp_end:   "⏹ האקספי המוכפל הסתיים. נתראה בפעם הבאה!",
-  },
-  ar: {
-    // משתמשים בלבד (להודעות שידור), לא לפאנל
-    bc_doublexp_start: "⚡ بدأ مضاعفة الخبرة الآن! احصل على 2× XP لمدة ساعة!",
-    bc_doublexp_end:   "⏹ انتهى مضاعفة الخبرة. نراكم في المرة القادمة!",
+    csv_file_name: () => `ייצוא_משתמשים_${Date.now()}.csv`,
   }
 };
 
-// טוענים/מתקנים texts.json — אם התקלקל (למשל הפונקציות הפכו לטקסטים), נשחזר לברירת מחדל עם פונקציות
-function ensurePanelTextsFunctions() {
-  let raw;
-  try { raw = fs.readFileSync(TEXTS_FILE, "utf8"); } catch { raw = null; }
-  let ok = false;
-  if (raw) {
-    try {
-      const parsed = JSON.parse(raw);
-      // אם הגיע קובץ בלי פונקציות (serialized), נשחזר
-      if (
-        typeof parsed?.en?.summary_line === "string" ||
-        typeof parsed?.he?.summary_line === "string" ||
-        typeof parsed?.en?.users_title === "string" ||
-        typeof parsed?.he?.users_title === "string"
-      ) {
-        ok = false;
-      } else {
-        ok = true; // נראה תקין
-      }
-    } catch {
-      ok = false;
-    }
+// The serializable mirror for texts.json (no functions)
+const PANEL_TEXTS_SERIALIZABLE = {
+  en: {
+    panelTitle: "🛠️ TeamBattle – Admin Panel",
+    menu_summary: "📊 Global summary",
+    menu_users: "👥 Users",
+    menu_bonuses: "🎁 Bonuses & resets",
+    menu_broadcast: "📢 Broadcast message",
+    menu_admins: "👑 Manage admins",
+    menu_language: "🌐 Language / שפה",
+    menu_export_csv: "📤 Export CSV",
+    back: "⬅️ Back",
+    unauthorized: "❌ You don’t have access to this panel."
+  },
+  he: {
+    panelTitle: "🛠️ פאנל ניהול – TeamBattle",
+    menu_summary: "📊 סיכום כללי",
+    menu_users: "👥 משתמשים",
+    menu_bonuses: "🎁 בונוסים ואיפוסים",
+    menu_broadcast: "📢 שליחת הודעה",
+    menu_admins: "👑 ניהול מנהלים",
+    menu_language: "🌐 שפה / Language",
+    menu_export_csv: "📤 ייצוא CSV",
+    back: "⬅️ חזרה",
+    unauthorized: "❌ אין לך גישה לפאנל הניהול."
   }
-  if (!raw || !ok) {
-    // כתיבה מחדש של ברירת המחדל (אובייקט – יישמר ללא פונקציות, לכן גם בזיכרון נשתמש במקור)
-    writeJSON(TEXTS_FILE, {
-      en: { ...PANEL_TEXTS_DEFAULT.en, summary_line: undefined, users_title: undefined, admins_list: undefined },
-      he: { ...PANEL_TEXTS_DEFAULT.he, summary_line: undefined, users_title: undefined, admins_list: undefined },
-      ar: { ...PANEL_TEXTS_DEFAULT.ar }
-    });
-  }
-}
-ensurePanelTextsFunctions();
+};
 
-// בזיכרון נשתמש תמיד ב־PANEL_TEXTS_DEFAULT (מכיל פונקציות)
-let PANEL_TEXTS = PANEL_TEXTS_DEFAULT;
+// Auto-repair texts.json (delete & rebuild if broken/missing keys)
+(function ensureTextsJsonHealthy() {
+  let needRepair = false;
+  try {
+    const raw = fs.existsSync(TEXTS_FILE) ? fs.readFileSync(TEXTS_FILE, "utf8") : "";
+    const j = raw ? JSON.parse(raw) : null;
+    // minimal sanity
+    if (!j || !j.en || !j.he || !j.en.menu_summary || !j.he.menu_summary) {
+      needRepair = true;
+    }
+  } catch { needRepair = true; }
+  if (needRepair) {
+    try { fs.unlinkSync(TEXTS_FILE); } catch {}
+    writeJSON(TEXTS_FILE, PANEL_TEXTS_SERIALIZABLE);
+    console.log("texts.json was repaired to a safe default.");
+  }
+})();
+
+// Use the in-code texts (with functions) at runtime:
+const PANEL_TEXTS = PANEL_TEXTS_DEFAULT;
 
 // ====== Helpers ======
 function ensureUser(userId) {
@@ -224,9 +183,10 @@ function ensureUser(userId) {
       starsDonated: 0,
       bonusStars: 0,
       username: null, first_name: null, last_name: null, displayName: null,
-      lang: "en", // שפת המשתמש (לשידורים)
       xp: 0, level: 1, lastDailyBonus: 0,
-      history: [], // {ts,type,stars,points,team,from,xp}
+      lang: null,    // user's chosen language (en/he/ar) when they press language
+      country: "",   // (optional, not collected yet)
+      history: [],   // {ts,type,stars,points,team,from,xp}
       active: true,
     };
   }
@@ -245,6 +205,20 @@ function updateUserProfileFromTG(from) {
   u.active = true;
   writeJSON(USERS_FILE, users);
 }
+function addXpAndMaybeLevelUp(u, addXp) {
+  if (!addXp) return;
+  u.xp += addXp;
+  while (u.xp >= u.level * LEVEL_STEP) u.level++;
+}
+const tgPost = (m, d) =>
+  axios.post(`${TG_API}/${m}`, d).catch(e => {
+    if (d?.chat_id && e?.response?.status === 403) {
+      const uid = String(d.chat_id);
+      if (users[uid]) { users[uid].active = false; writeJSON(USERS_FILE, users); }
+    }
+    console.error("TG error:", e?.response?.data || e.message);
+  });
+
 function getAdminLang(uid) {
   const meta = adminMeta[uid] || {};
   return meta.lang === "he" ? "he" : "en";
@@ -256,62 +230,12 @@ function setAdminLang(uid, lang) {
 }
 function setAdminAwait(uid, what) {
   if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].awaiting = what; // e.g. 'broadcast' | null
+  adminMeta[uid].awaiting = what; // 'broadcast' | null
   writeJSON(AMETA_FILE, adminMeta);
-}
-const tgPost = (m, d) =>
-  axios.post(`${TG_API}/${m}`, d).catch(e => {
-    // 403 = המשתמש חסם את הבוט
-    if (d?.chat_id && e?.response?.status === 403) {
-      const uid = String(d.chat_id);
-      if (users[uid]) { users[uid].active = false; writeJSON(USERS_FILE, users); }
-    }
-    console.error("TG error:", e?.response?.data || e.message);
-  });
-
-// ====== Double XP helpers ======
-function isDoubleXPActive() {
-  return STATE.doubleXP.active && nowTs() < STATE.doubleXP.until;
-}
-function minLeftDoubleXP() {
-  if (!isDoubleXPActive()) return 0;
-  return Math.max(0, Math.ceil((STATE.doubleXP.until - nowTs()) / 60000));
-}
-function activateDoubleXP(minutes = STATE.schedule.durationMin || 60, broadcast = true) {
-  STATE.doubleXP.active = true;
-  STATE.doubleXP.until  = nowTs() + minutes * 60000;
-  STATE.doubleXP.lastStartDay = todayStr();
-  writeJSON(STATE_FILE, STATE);
-  if (broadcast) broadcastDoubleXP("start").catch(()=>{});
-}
-function stopDoubleXP(broadcast = true) {
-  STATE.doubleXP.active = false;
-  STATE.doubleXP.until  = 0;
-  writeJSON(STATE_FILE, STATE);
-  if (broadcast) broadcastDoubleXP("end").catch(()=>{});
-}
-function xpGain(base) {
-  return isDoubleXPActive() ? base * 2 : base;
-}
-
-// ====== Broadcast Double XP (multi-lang) ======
-async function broadcastDoubleXP(phase /* "start" | "end" */) {
-  let ok=0, fail=0;
-  for (const [id, u] of Object.entries(users)) {
-    if (!u.active) continue;
-    const lang = u.lang === "he" ? "he" : (u.lang === "ar" ? "ar" : "en");
-    const t = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
-    const text = phase === "start" ? t.bc_doublexp_start : t.bc_doublexp_end;
-    try {
-      await tgPost("sendMessage", { chat_id: id, text });
-      ok++;
-    } catch { fail++; }
-  }
-  console.log(`DoubleXP ${phase} broadcast -> ok=${ok}, fail=${fail}`);
 }
 
 // ====== Mini-App API ======
-app.get("/api/state", (_, res) => res.json({ ok: true, scores, doubleXP: { active:isDoubleXPActive(), minLeft: minLeftDoubleXP() } }));
+app.get("/api/state", (_, res) => res.json({ ok: true, scores }));
 
 app.post("/api/select-team", (req, res) => {
   const { userId, team } = req.body || {};
@@ -339,17 +263,12 @@ app.post("/api/tap", (req, res) => {
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
   if (u.tapsToday >= DAILY_TAPS) return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
-
   u.tapsToday += 1;
   scores[u.team] = (scores[u.team] || 0) + 1;
-  // XP על טאפ
-  const add = xpGain(1);
-  u.xp += add;
-  while (u.xp >= u.level * LEVEL_STEP) u.level++;
-
+  addXpAndMaybeLevelUp(u, 1);
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS, doubleXP: isDoubleXPActive() });
+  res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS });
 });
 
 app.post("/api/super", (req, res) => {
@@ -360,23 +279,17 @@ app.post("/api/super", (req, res) => {
   const today = todayStr();
   if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
   if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
-
   u.superUsed += 1;
   scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
-
-  const add = xpGain(SUPER_POINTS);
-  u.xp += add;
-  while (u.xp >= u.level * LEVEL_STEP) u.level++;
-
-  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: add });
+  addXpAndMaybeLevelUp(u, SUPER_POINTS);
+  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
   if (u.history.length > 200) u.history.shift();
-
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1, doubleXP: isDoubleXPActive() });
+  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
 });
 
-// ====== Stars Payment – UNTOUCHED & STABLE ======
+// ====== Stars Payment – UNTOUCHED (stable) ======
 app.post("/api/create-invoice", async (req, res) => {
   try {
     const { userId, team, stars } = req.body || {};
@@ -409,16 +322,14 @@ app.get("/api/me", (req, res) => {
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
 
-  // Daily bonus
+  // Daily bonus (auto)
   let justGotDailyBonus = false;
   const now = nowTs();
   if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
     scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
-    const add = xpGain(DAILY_BONUS_XP);
-    u.xp += add;
-    while (u.xp >= u.level * LEVEL_STEP) u.level++;
+    addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
     u.lastDailyBonus = now;
-    u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: add });
+    u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
     if (u.history.length > 200) u.history.shift();
     justGotDailyBonus = true;
     writeJSON(SCORES_FILE, scores);
@@ -441,10 +352,10 @@ app.get("/api/me", (req, res) => {
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
       history: (u.history || []).slice(-50),
-      lang: u.lang || "en",
+      lang: u.lang || null,
+      country: u.country || ""
     },
     limit: DAILY_TAPS,
-    doubleXP: { active: isDoubleXPActive(), minLeft: minLeftDoubleXP() },
   });
 });
 
@@ -477,6 +388,7 @@ function panelKeyboard(lang="en") {
       [{ text: t.menu_bonuses,   callback_data: "panel:bonuses" }],
       [{ text: t.menu_broadcast, callback_data: "panel:broadcast" }],
       [{ text: t.menu_admins,    callback_data: "panel:admins" }],
+      [{ text: t.menu_export_csv,callback_data: "panel:export_csv" }],
       [{ text: t.menu_language,  callback_data: "panel:lang" }]
     ]
   };
@@ -486,6 +398,7 @@ async function sendPanel(chatId, lang="en") {
   await tgPost("sendMessage", {
     chat_id: chatId,
     text: t.panelTitle,
+    parse_mode: "Markdown",
     reply_markup: panelKeyboard(lang)
   });
 }
@@ -495,8 +408,42 @@ async function editToMainPanel(msg, lang="en") {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
     text: t.panelTitle,
+    parse_mode: "Markdown",
     reply_markup: panelKeyboard(lang)
   });
+}
+
+// ====== CSV Export helper ======
+function csvEscape(s) {
+  if (s == null) return "";
+  s = String(s);
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function generateUsersCSV() {
+  const header = ["Name","Username","ID","Language","Country"];
+  const rows = [header.join(",")];
+  for (const [id, u] of Object.entries(users)) {
+    const name = u.displayName || "";
+    const uname = u.username ? `@${u.username}` : "";
+    const lang = u.lang || "";
+    const country = u.country || "";
+    rows.push([name, uname, id, lang, country].map(csvEscape).join(","));
+  }
+  return rows.join("\n");
+}
+async function sendCSVToAdmin(chat_id, fileName) {
+  const csvData = generateUsersCSV();
+  const tmpPath = path.join(DATA_DIR, fileName);
+  fs.writeFileSync(tmpPath, csvData, "utf8");
+
+  const form = new FormData();
+  form.append("chat_id", chat_id);
+  form.append("document", fs.createReadStream(tmpPath), { filename: fileName, contentType: "text/csv" });
+  await axios.post(`${TG_API}/sendDocument`, form, { headers: form.getHeaders() }).catch(e=>{
+    console.error("sendDocument error:", e?.response?.data || e.message);
+  });
+
+  // cleanup is optional (Render persistent). Keep it for reuse.
 }
 
 // ====== Webhook ======
@@ -526,12 +473,8 @@ app.post("/webhook", async (req, res) => {
 
       scores[team] = (scores[team] || 0) + pts;
       u.starsDonated += stars;
-
-      const add = xpGain(pts); // XP לפי נקודות, עם Double XP
-      u.xp += add;
-      while (u.xp >= u.level * LEVEL_STEP) u.level++;
-
-      u.history.push({ ts: nowTs(), type:"donation", stars, points: pts, team, xp: add });
+      addXpAndMaybeLevelUp(u, pts);
+      u.history.push({ ts: nowTs(), type:"donation", stars, points: pts, team, xp: pts });
       if (u.history.length > 200) u.history.shift();
 
       // affiliate bonus
@@ -544,7 +487,6 @@ app.post("/webhook", async (req, res) => {
           const bonusPts = bonusStars * STAR_TO_POINTS;
           const inviterTeam = inv.team || team;
           scores[inviterTeam] = (scores[inviterTeam] || 0) + bonusPts;
-
           inv.history.push({ ts: nowTs(), type:"affiliate_bonus", stars: bonusStars, points: bonusPts, from: userId, team: inviterTeam });
           if (inv.history.length > 200) inv.history.shift();
         }
@@ -562,25 +504,22 @@ app.post("/webhook", async (req, res) => {
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
 
-      // אם אדמין במצב "ממתין לשידור"
+      // broadcast flow
       if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
         const lang = getAdminLang(uid);
         const tt = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
         setAdminAwait(uid, null);
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
-
         let ok=0, fail=0;
         for (const [id, u] of Object.entries(users)) {
           if (!u.active) continue;
-          try {
-            await tgPost("sendMessage", { chat_id: id, text });
-            ok++;
-          } catch { fail++; }
+          try { await tgPost("sendMessage", { chat_id: id, text }); ok++; }
+          catch { fail++; }
         }
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
 
-      // /start — בחירת שפה + כפתור לפתיחת המיני־אפ
+      // /start
       if (text.startsWith("/start")) {
         await tgPost("sendMessage", {
           chat_id: chatId,
@@ -598,7 +537,7 @@ app.post("/webhook", async (req, res) => {
         });
       }
 
-      // /panel — פאנל INLINE בבוט
+      // /panel
       if (text === "/panel") {
         if (!admins.includes(uid)) {
           const t = PANEL_TEXTS[getAdminLang(uid)] || PANEL_TEXTS.en;
@@ -608,7 +547,7 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
-      // Admin management commands (Super Admin only)
+      // Super Admin only
       if (text.startsWith("/addadmin")) {
         if (SUPER_ADMINS.has(uid)) {
           const parts = text.split(" ").filter(Boolean);
@@ -639,34 +578,30 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // ----- Callbacks (Panel + Language) -----
+    // ----- Callbacks (Panel & language) -----
     if (update.callback_query) {
       const cq   = update.callback_query;
       const uid  = String(cq.from.id);
       const data = cq.data || "";
+      const lang = getAdminLang(uid);
+      const t    = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
       const msg  = cq.message;
 
-      // שינוי שפת המשתמש במסך /start
+      // /start language selection also sets user's lang
       if (data === "lang_en" || data === "lang_he" || data === "lang_ar") {
         const u = ensureUser(uid);
-        u.lang = data === "lang_he" ? "he" : (data === "lang_ar" ? "ar" : "en");
+        u.lang = data.replace("lang_",""); // en / he / ar
         writeJSON(USERS_FILE, users);
-        await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `Language set: ${u.lang}` });
+        await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
       }
 
-      // פאנל
       if (data.startsWith("panel:")) {
-        const lang = getAdminLang(uid);
-        const t    = PANEL_TEXTS[lang] || PANEL_TEXTS.en;
-
         if (!admins.includes(uid)) {
           await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.unauthorized, show_alert: true });
         } else {
-          const parts = data.split(":"); // e.g. panel:bonuses or panel:dxp:on
-          const action = parts[1];
+          const [, action] = data.split(":");
 
           if (action === "lang") {
-            // toggle admin panel language
             const newLang = lang === "he" ? "en" : "he";
             setAdminLang(uid, newLang);
             const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
@@ -679,49 +614,48 @@ app.post("/webhook", async (req, res) => {
             await tgPost("editMessageText", {
               chat_id: msg.chat.id,
               message_id: msg.message_id,
-              text: `${t.panelTitle}\n\n${t.summary_line(scores, usersCount)}`,
-              reply_markup: { inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]] }
+              text: `${t.panelTitle}\n\n*🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}*\n*👥 Users:* ${usersCount}`,
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]]
+              }
             });
           }
 
           else if (action === "users") {
+            // Show only counters + Export CSV button
             const ids = Object.keys(users);
-            const last20 = ids.slice(-20);
-            const list = last20.map(id=>{
-              const u = users[id];
-              const flag = u.team === "israel" ? "🇮🇱" : (u.team === "gaza" ? "🇵🇸" : "❔");
-              return `${flag} ${id}`;
-            }).join("\n");
+            let active = 0, inactive = 0;
+            ids.forEach(id => users[id].active ? active++ : inactive++);
+            const total = ids.length;
             await tgPost("editMessageText", {
               chat_id: msg.chat.id,
               message_id: msg.message_id,
-              text: `${t.panelTitle}\n\n${t.users_title(ids.length)}\n\n${list || "(empty)"}`,
-              reply_markup: { inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]] }
+              text: `${t.panelTitle}\n\n${t.users_header_counts(active, inactive, total)}`,
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: t.menu_export_csv, callback_data: "panel:export_csv" }],
+                  [{ text: t.back, callback_data: "panel:main" }]
+                ]
+              }
             });
           }
 
+          else if (action === "export_csv") {
+            const fileName = (t.csv_file_name ? t.csv_file_name() : `users_export_${Date.now()}.csv`);
+            await sendCSVToAdmin(uid, fileName);
+            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "📤 CSV generated." });
+          }
+
           else if (action === "bonuses") {
-            // מסך בונוסים מורחב כולל Double XP
-            const status = isDoubleXPActive()
-              ? t.doublexp_status_on(minLeftDoubleXP())
-              : t.doublexp_status_off(STATE.schedule.hourUTC, STATE.schedule.durationMin);
             await tgPost("editMessageText", {
               chat_id: msg.chat.id,
               message_id: msg.message_id,
-              text: `${t.panelTitle}\n\n${t.bonuses_title}\n\n${t.doublexp_title}\n${status}\n${t.doublexp_show_hour(STATE.schedule.hourUTC)}`,
+              text: `${t.panelTitle}\n\n${t.bonuses_title}`,
+              parse_mode: "Markdown",
               reply_markup: {
                 inline_keyboard: [
-                  // שורת Double XP מיידי
-                  [
-                    { text: t.doublexp_toggle_on_now,  callback_data: "panel:dxp:on" },
-                    { text: t.doublexp_toggle_off_now, callback_data: "panel:dxp:off" }
-                  ],
-                  // שינוי שעה יומית
-                  [
-                    { text: t.doublexp_hour_minus, callback_data: "panel:dxp:hour:-" },
-                    { text: t.doublexp_hour_plus,  callback_data: "panel:dxp:hour:+" }
-                  ],
-                  // כללי
                   [{ text: t.reset_daily, callback_data: "panel:reset_daily" }],
                   [{ text: t.reset_super, callback_data: "panel:reset_super" }],
                   [
@@ -735,33 +669,28 @@ app.post("/webhook", async (req, res) => {
           }
 
           else if (action === "reset_daily") {
-            // איפוס מגבלות יומיות לכולם
             const today = todayStr();
-            for (const _uid of Object.keys(users)) {
-              const u = users[_uid];
-              u.tapsDate = today;
-              u.tapsToday = 0;
-              u.superDate = today;
-              // לא מאפס סופר כאן — יש כפתור ייעודי
+            for (const uid2 of Object.keys(users)) {
+              const u = users[uid2];
+              u.tapsDate = today; u.tapsToday = 0;
+              u.superDate = today; u.superUsed = 0;
             }
             writeJSON(USERS_FILE, users);
             await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.done });
           }
 
           else if (action === "reset_super") {
-            // איפוס סופר־בוסט לכולם
             const today = todayStr();
-            for (const _uid of Object.keys(users)) {
-              const u = users[_uid];
-              u.superDate = today;
-              u.superUsed = 0;
+            for (const uid2 of Object.keys(users)) {
+              const u = users[uid2];
+              u.superDate = today; u.superUsed = 0;
             }
             writeJSON(USERS_FILE, users);
             await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.done });
           }
 
           else if (action.startsWith("bonus:")) {
-            const team = parts[2];
+            const team = action.split(":")[1];
             if (team === "israel" || team === "gaza") {
               scores[team] = (scores[team] || 0) + SUPER_POINTS;
               writeJSON(SCORES_FILE, scores);
@@ -775,48 +704,38 @@ app.post("/webhook", async (req, res) => {
               chat_id: msg.chat.id,
               message_id: msg.message_id,
               text: `${t.panelTitle}\n\n${t.ask_broadcast}`,
-              reply_markup: { inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]] }
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]]
+              }
             });
           }
 
           else if (action === "admins") {
-            const list = t.admins_list(admins);
+            // Show current admins (plain list)
+            const list = admins.map(a => `• ${a}`).join("\n") || "(none)";
             await tgPost("editMessageText", {
               chat_id: msg.chat.id,
               message_id: msg.message_id,
-              text: `${t.panelTitle}\n\n${t.admins_title}\n\n${list}\n\n${t.admins_help}`,
-              reply_markup: { inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]] }
+              text: `${t.admins_title}\n\n${list}\n\n${t.admins_help}`,
+              parse_mode: "Markdown",
+              reply_markup: {
+                inline_keyboard: [[{ text: t.back, callback_data: "panel:main" }]]
+              }
             });
           }
 
           else if (action === "main") {
             await editToMainPanel(msg, lang);
           }
-
-          // ----- Double XP inline controls -----
-          else if (action === "dxp") {
-            const sub = parts[2]; // on / off / hour
-            if (sub === "on") {
-              activateDoubleXP(60, true); // שעה
-              await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.done });
-            } else if (sub === "off") {
-              stopDoubleXP(true);
-              await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.done });
-            } else if (sub === "hour") {
-              const dir = parts[3]; // + | -
-              if (dir === "+") {
-                STATE.schedule.hourUTC = (STATE.schedule.hourUTC + 1) % 24;
-              } else if (dir === "-") {
-                STATE.schedule.hourUTC = (STATE.schedule.hourUTC + 23) % 24;
-              }
-              writeJSON(STATE_FILE, STATE);
-              await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: t.done });
-            }
-          }
         }
       }
 
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
+      if (data === "panel:main") {
+        await editToMainPanel(cq.message, getAdminLang(uid));
+      }
+
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id });
     }
 
     res.status(200).send("OK");
@@ -825,28 +744,6 @@ app.post("/webhook", async (req, res) => {
     res.status(200).send("OK");
   }
 });
-
-// ====== Daily Double XP scheduler (UTC hour) ======
-setInterval(() => {
-  try {
-    const now = new Date();
-    const day = now.toISOString().slice(0,10);
-    const hourUTC = now.getUTCHours();
-    const minute = now.getUTCMinutes();
-
-    // התחלה אוטומטית בתחילת השעה הייעודית, פעם ביום
-    if (day !== STATE.doubleXP.lastStartDay && hourUTC === (STATE.schedule.hourUTC|0) && minute === 0) {
-      activateDoubleXP(STATE.schedule.durationMin || 60, true);
-    }
-
-    // סיום אוטומטי אם הגיע הזמן
-    if (STATE.doubleXP.active && nowTs() >= STATE.doubleXP.until) {
-      stopDoubleXP(true);
-    }
-  } catch (e) {
-    console.error("doubleXP scheduler error:", e.message);
-  }
-}, 30 * 1000); // בדיקה כל 30 שניות
 
 // ====== Health & Webhook setup ======
 app.get("/webhook", (_, res) => res.status(405).json({ ok:true }));
