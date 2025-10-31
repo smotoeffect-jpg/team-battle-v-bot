@@ -1,33 +1,20 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>TeamBattle – Israel Vs Gaza</title>
-  <style>
-    body { background: #0d0f14; color: #fff; font-family: sans-serif; text-align:center; }
-    button { padding: 12px 18px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; margin: 6px; }
-    .btn-tap { background: #2b87ff; color: white; }
-    .btn-super { background: #d24ba8; color: white; }
-    .btn-switch { background: #586173; color: white; }
-    .btn-donate { background: #f9cc45; color: #161616; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>Team Battle: Israel Vs Gaza</title>
+  <link rel="stylesheet" href="./style.css"/>
+  <!-- Telegram Mini App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- React 18 UMD (stable for Babel/UMD) -->
+  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Babel for JSX in-browser -->
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
 </head>
-<body>
-  <h1>TeamBattle - Israel Vs Gaza</h1>
-  <div>
-    <button id="choose-israel" class="btn-super">🇮🇱 Israel</button>
-    <button id="choose-gaza" class="btn-super">🇵🇸 Gaza</button>
-  </div>
-  <div>
-    <button id="tap-btn" class="btn-tap" disabled>TAP (+1)</button>
-    <button id="super-btn" class="btn-super" disabled>Super</button>
-    <button id="switch-team" class="btn-switch" disabled>Switch Team</button>
-  </div>
-  <div>
-    <input id="stars" type="number" min="1" value="10" />
-    <button id="donate-btn" class="btn-donate" disabled>Extra TAP +2</button>
-  </div>
-  <script src="/script.js"></script>
+<body class="tg-bg">
+  <div id="root">Loading…</div>
+  <script type="text/babel" data-presets="env,react" src="./app.jsx"></script>
 </body>
 </html>
