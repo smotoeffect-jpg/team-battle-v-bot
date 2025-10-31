@@ -1,21 +1,33 @@
-<!doctype html>
-<html lang="he">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
-    <title>TeamBattle – Mini App</title>
-    <link rel="stylesheet" href="./style.css" />
-    <!-- Telegram Mini App SDK -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- React UMD + ReactDOM UMD -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for in-browser JSX transpile -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
-  <body class="tg-bg">
-    <div id="root">Loading…</div>
-    <!-- App -->
-    <script type="text/babel" src="./app.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>TeamBattle – Israel Vs Gaza</title>
+  <style>
+    body { background: #0d0f14; color: #fff; font-family: sans-serif; text-align:center; }
+    button { padding: 12px 18px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; margin: 6px; }
+    .btn-tap { background: #2b87ff; color: white; }
+    .btn-super { background: #d24ba8; color: white; }
+    .btn-switch { background: #586173; color: white; }
+    .btn-donate { background: #f9cc45; color: #161616; }
+  </style>
+</head>
+<body>
+  <h1>TeamBattle - Israel Vs Gaza</h1>
+  <div>
+    <button id="choose-israel" class="btn-super">🇮🇱 Israel</button>
+    <button id="choose-gaza" class="btn-super">🇵🇸 Gaza</button>
+  </div>
+  <div>
+    <button id="tap-btn" class="btn-tap" disabled>TAP (+1)</button>
+    <button id="super-btn" class="btn-super" disabled>Super</button>
+    <button id="switch-team" class="btn-switch" disabled>Switch Team</button>
+  </div>
+  <div>
+    <input id="stars" type="number" min="1" value="10" />
+    <button id="donate-btn" class="btn-donate" disabled>Extra TAP +2</button>
+  </div>
+  <script src="/script.js"></script>
+</body>
 </html>
