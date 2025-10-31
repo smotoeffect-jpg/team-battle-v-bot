@@ -1,0 +1,19 @@
+/* TeamBattle V1.8 Styles */
+body {
+  background-color: black;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+}
+button {
+  background: linear-gradient(90deg, #ff0080, #ffcc00);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  color: white;
+  box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
+  transition: all 0.3s ease;
+}
+button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 0, 128, 0.8);
+}
