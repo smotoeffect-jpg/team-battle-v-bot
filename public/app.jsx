@@ -1,125 +1,301 @@
-// TeamBattle V2.2 – React (UMD) + Babel
-const {useEffect,useMemo,useRef,useState} = React;
 
-const tDict = {
-  en:{doubleXpOn:"Double XP Active!",doubleXpOff:"Double XP Off",title:"Team Battle: Israel vs Gaza",subtitle:"Global team arena. Tap to push your team forward.",yourName:"Your Name",chooseTeam:"Choose Your Team",israel:"Israel",gaza:"Gaza",tap:"+1 Tap",super:"+25 Super Boost",changeTeam:"Change Team",daily:"Daily taps",superUsed:"Super boosts used",topPlayers:"Top Players",partners:"Referral Program",partnersHint:"Invite friends using your personal link. When they donate Stars you get a 10% bonus to your team!",copy:"Copy Link",share:"Share on Telegram",extraTap:"Extra TAP +2",hebrew:"Hebrew",english:"English",arabic:"Arabic"},
-  he:{doubleXpOn:"דאבל אקספי פעיל!",doubleXpOff:"דאבל אקספי כבוי",title:"Team Battle: Israel vs Gaza",subtitle:"ארנת הצוותים הגלובלית. טאפ כדי לקדם את הקבוצה שלך.",yourName:"השם שלך",chooseTeam:"בחר את הקבוצה שלך",israel:"ישראל",gaza:"עזה",tap:"טאפ +1",super:"סופר-בוסט +25",changeTeam:"החלף קבוצה",daily:"טאפים יומיים",superUsed:"בוסטי סופר היום",topPlayers:"שחקנים מובילים",partners:"תוכנית שותפים",partnersHint:"הזמן חברים בעזרת הקישור האישי שלך. כשתורמים כוכבים אתה מקבל 10% בונוס לקבוצה שלך!",copy:"העתק קישור",share:"שתף בטלגרם",extraTap:"Extra TAP +2",hebrew:"עברית",english:"English",arabic:"العربية"},
-  ar:{doubleXpOn:"دابل اكس‌بي يعمل!",doubleXpOff:"دابل اكس‌بي متوقف",title:"Team Battle: Israel vs Gaza",subtitle:"ساحة الفرق العالمية. المس لدفع فريقك للأمام.",yourName:"اسمك",chooseTeam:"اختر فريقك",israel:"إسرائيل",gaza:"غزة",tap:"+1 نقرة",super:"+25 تعزيز سوبر",changeTeam:"تبديل الفريق",daily:"النقرات اليومية",superUsed:"تعزيزات السوبر اليوم",topPlayers:"أفضل اللاعبين",partners:"برنامج الشركاء",partnersHint:"ادعُ الأصدقاء باستخدام رابطك الشخصي. عند التبرع بالنجوم تحصل على مكافأة 10% لفريقك!",copy:"نسخ الرابط",share:"مشاركة على تيليجرام",extraTap:"Extra TAP +2",hebrew:"العبرية",english:"الإنجليزية",arabic:"العربية"}
+// app.jsx  — TeamBattle Mini‑App (V2.3)
+const {useEffect, useMemo, useRef, useState} = React;
+
+// --- Config (client-side) ---
+const EXTRA_TAP_PRICE = 5; // Stars cost for Extra TAP +2
+const BOT_USERNAME = "TeamBattle_vBot"; // used to build referral link fallback
+
+// --- i18n ---
+const tMap = {
+  en: {
+    doubleXpOn: "Double XP Active!",
+    doubleXpOff: "Double XP Off",
+    hebrew: "Hebrew",
+    english: "English",
+    arabic: "Arabic",
+    title: "Team Battle: Israel vs Gaza",
+    subtitle: "Global team arena. Tap to push your team forward.",
+    yourName: "Your Name",
+    chooseTeam: "Choose Your Team",
+    israel: "Israel",
+    gaza: "Gaza",
+    tap: "+1 Tap",
+    super: "+25 Super Boost",
+    changeTeam: "Change Team",
+    daily: "Daily taps",
+    superToday: "Super boosts used",
+    of: "of",
+    topPlayers: "Top Players",
+    partners: "Referral Program",
+    invite: "Invite friends with your personal link. You earn 10% bonus to your team from their donations!",
+    copyLink: "Copy Link",
+    share: "Share on Telegram",
+    extraTap: "Extra TAP +2",
+  },
+  he: {
+    doubleXpOn: "דאבל אקספי פעיל!",
+    doubleXpOff: "דאבל אקספי כבוי",
+    hebrew: "עברית",
+    english: "English",
+    arabic: "العربية",
+    title: "Team Battle: Israel vs Gaza",
+    subtitle: "ארנת הצוותים הגלובלית. טאפ כדי לקדם את הקבוצה שלך.",
+    yourName: "השם שלך",
+    chooseTeam: "בחר את הקבוצה שלך",
+    israel: "ישראל",
+    gaza: "עזה",
+    tap: "1+ טאפ",
+    super: "25+ סופר-בוסט",
+    changeTeam: "החלף קבוצה",
+    daily: "טאפים יומיים",
+    superToday: "בוסטים סופר היום",
+    of: "מתוך",
+    topPlayers: "שחקנים מובילים",
+    partners: "תכנית שותפים",
+    invite: "הזמן חברים בעזרת הקישור האישי שלך. כשיתורמים — אתה מקבל בונוס 10% לקבוצתך!",
+    copyLink: "העתק קישור",
+    share: "שתף בטלגרם",
+    extraTap: "Extra TAP +2",
+  },
+  ar: {
+    doubleXpOn: "دابل اكس‌بي يعمل!",
+    doubleXpOff: "دابل اكس‌بي متوقف",
+    hebrew: "עברית",
+    english: "English",
+    arabic: "العربية",
+    title: "Team Battle: Israel vs Gaza",
+    subtitle: "ساحة الفرق العالمية. انقر لدفع فريقك للأمام.",
+    yourName: "اسمك",
+    chooseTeam: "اختر فريقك",
+    israel: "إسرائيل",
+    gaza: "غزة",
+    tap: "+1 نقرة",
+    super: "+25 تعزيز سوبر",
+    changeTeam: "غيّر الفريق",
+    daily: "النقرات اليومية",
+    superToday: "تعزيزات سوبر لهذا اليوم",
+    of: "من",
+    topPlayers: "أفضل اللاعبين",
+    partners: "برنامج الشركاء",
+    invite: "ادعُ الأصدقاء برابطك الشخصي. عند تبرعهم تحصل على 10٪ مكافأة لفريقك!",
+    copyLink: "نسخ الرابط",
+    share: "شارك على تيليجرام",
+    extraTap: "Extra TAP +2",
+  }
 };
 
 function useTelegram(){
   const WebApp = typeof window!=="undefined" ? window.Telegram?.WebApp : undefined;
-  useEffect(()=>{ if(WebApp){ WebApp.ready(); WebApp.expand(); } },[WebApp]);
+  useEffect(()=>{ if(WebApp){ WebApp.ready(); WebApp.expand?.(); }},[WebApp]);
   return WebApp;
 }
+function useT(lang){ return (k)=> (tMap[lang] && tMap[lang][k]) || k; }
 
-function App(){
+// attempt to fetch double xp state from server
+async function getDoubleXP() {
+  try {
+    const r = await fetch("/api/status/double-xp", {cache:"no-store"});
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    return !!j.active;
+  } catch(e){
+    return false;
+  }
+}
+// attempt to fetch top20
+async function getTop20() {
+  try {
+    const r = await fetch("/api/top20", {cache:"no-store"});
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    if(Array.isArray(j)) return j;
+  } catch(e){}
+  // fallback demo
+  return Array.from({length:20}).map((_,i)=>({name:`Player${i+1}`, score: 1000 - i*21}));
+}
+
+function Section({children, className=""}){
+  return <div className={`card ${className}`}>{children}</div>;
+}
+
+export default function App(){
   const tg = useTelegram();
-  const [lang,setLang] = useState(localStorage.getItem("tb_lang") || "he");
-  useEffect(()=> localStorage.setItem("tb_lang",lang), [lang]);
-  const t=(k)=> tDict[lang][k]||k;
+  const [lang,setLang] = useState("he");
+  const t = useT(lang);
+
+  const user = tg?.initDataUnsafe?.user;
+  const userId = user?.id?.toString() || `guest_${Math.floor(Math.random()*1e8)}`;
+  const [username, setUsername] = useState(user?.username || user?.first_name || "");
+  const [selected, setSelected] = useState(null); // "israel" | "gaza"
 
   const [doubleXP,setDoubleXP] = useState(false);
-  useEffect(()=>{
-    let dead=false;
-    async function fetchStatus(){
-      try{
-        const doFetch=async(u)=>{const r=await fetch(u,{cache:"no-store"}); if(!r.ok) throw 0; return await r.json();};
-        let data;
-        try{ data = await doFetch("/double-xp-status"); }
-        catch(e){ data = await doFetch("/api/double-xp-status"); }
-        if(!dead && typeof data?.isDoubleXP==="boolean") setDoubleXP(data.isDoubleXP);
-      }catch(_){ if(!dead) setDoubleXP(false); }
-    }
-    fetchStatus();
-    const id=setInterval(fetchStatus,30000);
-    return ()=>{dead=true; clearInterval(id)};
-  },[]);
+  const [isLoadingXP,setIsLoadingXP] = useState(true);
 
-  const [name,setName] = useState(tg?.initDataUnsafe?.user?.username || "");
-  const [team,setTeam] = useState("israel");
-  const [score,setScore] = useState({israel:2213,gaza:48});
+  const [score,setScore] = useState({israel:2213, gaza:48});
   const [taps,setTaps] = useState(0);
   const [superUsed,setSuperUsed] = useState(0);
-  const maxTaps=300, maxSuper=1;
+  const maxTaps = 300;
+  const maxSuper = 1;
 
-  const [leaders] = useState(()=> Array.from({length:20},(_,i)=>({rank:i+1,name:`Player${i+1}`,points:1000-i*23})) );
+  const [top,setTop] = useState([]);
 
-  const userId = tg?.initDataUnsafe?.user?.id || Math.floor(Math.random()*1e9);
-  const referral = `?start=ref_${userId}`;
+  // init
+  useEffect(()=>{
+    (async ()=>{
+      setIsLoadingXP(true);
+      setDoubleXP(await getDoubleXP());
+      setIsLoadingXP(false);
+      setTop(await getTop20());
+    })();
+  },[]);
 
-  function changeTeam(){ setTeam(p=>p==="israel"?"gaza":"israel"); }
-  function tapOnce(){ if(!team || taps>=maxTaps) return; setScore(s=>({...s,[team]:s[team]+1})); setTaps(n=>n+1); tg?.HapticFeedback?.impactOccurred("light"); }
-  function superBoost(){ if(!team || superUsed>=maxSuper) return; setScore(s=>({...s,[team]:s[team]+25})); setSuperUsed(n=>n+1); tg?.HapticFeedback?.notificationOccurred("success"); }
+  // helpers
+  const refLink = useMemo(()=>{
+    const bot = tg?.initDataUnsafe?.receiver?.username || BOT_USERNAME;
+    return `https://t.me/${bot}/app?start_param=${userId}`;
+  },[tg,userId]);
+
+  const handleTap = ()=>{
+    if(!selected) return;
+    if(taps>=maxTaps) return;
+    const s = {...score};
+    s[selected]+=1;
+    setScore(s);
+    setTaps(taps+1);
+    tg?.HapticFeedback?.impactOccurred("light");
+  };
+  const handleSuper = ()=>{
+    if(!selected) return;
+    if(superUsed>=maxSuper) return;
+    const s = {...score};
+    s[selected]+=25;
+    setScore(s);
+    setSuperUsed(superUsed+1);
+    tg?.HapticFeedback?.notificationOccurred("success");
+  };
+  const toggleTeam = ()=>{
+    setSelected(prev => prev==="israel" ? "gaza" : "israel");
+  };
+
+  // Real Stars purchase for Extra TAP +2
+  async function buyExtraTap(){
+    try{
+      const payload = {t:"extra_tap", userId, team:selected || ""};
+      const r = await fetch("/api/create-invoice", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          title: "Extra TAP +2",
+          description: "Gives +2 points to your team",
+          amount: EXTRA_TAP_PRICE,
+          payload
+        })
+      });
+      const j = await r.json();
+      if(!j.ok || !j.url) throw new Error("Invoice failed");
+      tg?.openInvoice?.(j.url, (status)=>{
+        // optional callback
+        // status: "paid" | "cancelled" | "failed" (depends on client)
+      });
+    }catch(e){
+      alert("Payment error. Try again.");
+    }
+  }
+
+  // UI pieces
+  const LangButtons = ()=>(
+    <div className="chips">
+      <div className={`chip ${doubleXP ? "on" : "off"}`}>
+        {doubleXP ? "🟢 " + t("doubleXpOn") : "⚪ " + t("doubleXpOff")}
+      </div>
+      <button className="chip lang" onClick={()=>setLang("he")}>{t("hebrew")}</button>
+      <button className="chip lang" onClick={()=>setLang("en")}>{t("english")}</button>
+      <button className="chip lang" onClick={()=>setLang("ar")}>{t("arabic")}</button>
+    </div>
+  );
 
   return (
     <div className="container">
-      <div className="small-note">
-        <div className={"badge "+(doubleXP?"gold":"dim")}>{doubleXP?("🟢 "+t("doubleXpOn")):("⚪ "+t("doubleXpOff"))}</div>
-        <div className="lang-row">
-          <button className={"lang-btn "+(lang==="he"?"active":"")} onClick={()=>setLang("he")}>{t("hebrew")}</button>
-          <button className={"lang-btn "+(lang==="en"?"active":"")} onClick={()=>setLang("en")}>{t("english")}</button>
-          <button className={"lang-btn "+(lang==="ar"?"active":"")} onClick={()=>setLang("ar")}>{t("arabic")}</button>
-        </div>
+      <div className="header-row">
+        <LangButtons/>
       </div>
 
-      <div className="glow-title">{t("title")}</div>
-      <div className="kv" style={{justifyContent:"center"}}><span>{t("subtitle")}</span></div>
-
-      <div className="card" style={{marginTop:12}}>
-        <div style={{fontWeight:700, marginBottom:8}}>{t("yourName")}</div>
-        <input className="input" value={name} onChange={e=>setName(e.target.value)} placeholder="@username" />
+      <div className="title-wrap">
+        <div className="title">{t("title")}</div>
+        <div className="subtitle">{t("subtitle")}</div>
       </div>
 
-      <div className="card" style={{marginTop:12}}>
-        <div style={{fontWeight:800, marginBottom:10}}>{t("chooseTeam")}</div>
-        <div className="grid">
-          <div className="team-card">
-            <div className="team-name">🇮🇱 {t("israel")}</div>
-            <div className="team-score">{score.israel}</div>
+      {/* Name */}
+      <Section>
+        <div style={{fontWeight:800, marginBottom:8}}>{t("yourName")}</div>
+        <input
+          placeholder="@username"
+          value={username}
+          onChange={(e)=>setUsername(e.target.value)}
+          className="ref-card input"
+          style={{width:"100%"}}
+        />
+      </Section>
+
+      {/* Teams */}
+      <Section>
+        <div style={{fontWeight:800, marginBottom:12}}>{t("chooseTeam")}</div>
+        <div className="teams">
+          <div className="team" onClick={()=>setSelected("israel")}>
+            <div className="name">{t("israel")}</div>
+            <div className="score">{score.israel}</div>
           </div>
-          <div className="team-card">
-            <div className="team-name">🇵🇸 {t("gaza")}</div>
-            <div className="team-score">{score.gaza}</div>
+          <div className="team" onClick={()=>setSelected("gaza")}>
+            <div className="name">{t("gaza")}</div>
+            <div className="score">{score.gaza}</div>
           </div>
         </div>
-        <div className="row" style={{marginTop:12}}>
-          <button className="btn" onClick={tapOnce}>{t("tap")}</button>
-          <button className="btn btn-pink" onClick={superBoost}>{t("super")}</button>
-          <button className="btn btn-gold" onClick={changeTeam}>{t("changeTeam")}</button>
-        </div>
-        <div className="kv">
-          <span>{t("daily")}: {taps}/{maxTaps}</span>
-          <span>{t("superUsed")}: {superUsed}/{maxSuper}</span>
-        </div>
-      </div>
 
-      <div className="card partners">
-        <h3 style={{margin:0,fontWeight:800}}>{t("partners")}</h3>
-        <div className="hint" style={{margin:"6px 0 10px"}}>{t("partnersHint")}</div>
-        <div className="row">
-          <button className="btn" onClick={()=>navigator.clipboard.writeText(referral)}>{t("copy")}</button>
-          <button className="btn" onClick={()=>tg?.openTelegramLink && tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(referral)}`)}>{t("share")}</button>
-          <input className="input" readOnly value={referral} />
+        <div className="btn-row" style={{marginTop:14}}>
+          <button className="btn btn-blue" onClick={handleTap} disabled={!selected || taps>=maxTaps}>{t("tap")}</button>
+          <button className="btn btn-pink" onClick={handleSuper} disabled={!selected || superUsed>=maxSuper}>{t("super")}</button>
+          <button className="btn btn-gold" onClick={toggleTeam}>{t("changeTeam")}</button>
         </div>
-      </div>
 
-      <div className="card top-card">
-        <div style={{fontWeight:800, marginBottom:10}}>{t("topPlayers")}</div>
-        <div className="top-list">
-          {leaders.map(p=>(
-            <div key={p.rank} className="top-item">
-              <div>#{p.rank} {p.name}</div>
-              <div>{p.points}</div>
+        <div className="stats" style={{marginTop:10}}>
+          {t("daily")}: {taps}/{maxTaps} • {t("superToday")}: {superUsed}/{maxSuper}
+        </div>
+      </Section>
+
+      {/* Extra Tap purchase row + progress */}
+      <Section className="kv">
+        <button className="btn btn-gold" onClick={buyExtraTap}>{t("extraTap")}</button>
+        <div className="ref-card" style={{flex:1, textAlign:"center"}}>
+          <div style={{fontWeight:800, color:"#e1e6ff"}}>{taps}/{maxTaps}</div>
+        </div>
+      </Section>
+
+      {/* Referral */}
+      <Section className="ref-card">
+        <div style={{fontWeight:800, marginBottom:10}}>🤝 {t("partners")}</div>
+        <div style={{color:"var(--muted)", marginBottom:12}}>{t("invite")}</div>
+        <div className="btn-row" style={{marginBottom:12}}>
+          <button className="btn btn-ghost" onClick={()=>navigator.clipboard.writeText(refLink)}>{t("copyLink")}</button>
+          <button className="btn btn-blue" onClick={()=> tg?.openTelegramLink?.(`https://t.me/share/url?url=${encodeURIComponent(refLink)}`)}>{t("share")}</button>
+        </div>
+        <input readOnly value={refLink} />
+      </Section>
+
+      {/* Top players */}
+      <Section className="top-card">
+        <div style={{fontWeight:800, marginBottom:8}}>{t("topPlayers")}</div>
+        <div className="top-wrap">
+          {top.slice(0,20).map((p,idx)=>(
+            <div className="row" key={idx}>
+              <div>#{idx+1} {p.name}</div>
+              <div style={{opacity:.9, fontWeight:800}}>{p.score}</div>
             </div>
           ))}
         </div>
-      </div>
+      </Section>
 
       <div className="footer">© TeamBattle</div>
     </div>
   );
 }
-
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<App />);
