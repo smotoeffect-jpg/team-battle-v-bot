@@ -1,19 +1,42 @@
-/* TeamBattle V1.8 Styles */
-body {
-  background-color: black;
-  color: white;
-  font-family: 'Segoe UI', sans-serif;
-}
-button {
-  background: linear-gradient(90deg, #ff0080, #ffcc00);
-  border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
-  color: white;
-  box-shadow: 0 0 20px rgba(255, 0, 128, 0.6);
-  transition: all 0.3s ease;
-}
-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 30px rgba(255, 0, 128, 0.8);
-}
+/* style.css – TeamBattle V1.9 (neon glow) */
+:root{--bg:#0b0d12;--panel:#141823;--panel-2:#171b26;--text:#e9ecf1;--muted:#a7b0c0;--blue:#2f6dff;--blue-soft:#3b82f6;--gold:#f5c33b;--pink:#ff4fa3;--green:#19d17b;--card:#1c2230;--card-border:#263149}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,Helvetica,sans-serif;}
+.wrap{max-width:720px;margin:0 auto;padding:18px 16px 48px}
+.glow{text-shadow:0 0 20px rgba(255,255,255,.08),0 0 48px rgba(175,120,255,.12)}
+.xp-indicator{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:4px;margin-bottom:4px;font-weight:700;letter-spacing:.2px}
+.xp-indicator.on{color:var(--gold);text-shadow:0 0 10px rgba(245,195,59,.5)}
+.xp-indicator.off{color:#94a3b8;opacity:.85}
+.xp-toggle{margin-left:8px;position:relative;display:inline-flex;align-items:center}
+.xp-toggle input{display:none}
+.xp-toggle span{width:38px;height:22px;border-radius:22px;background:#394357;display:inline-block;position:relative;transition:.18s}
+.xp-toggle span:after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#e2e8f0;transition:.18s}
+.xp-toggle input:checked + span{background:#2dd4bf}
+.xp-toggle input:checked + span:after{left:19px;background:#0b1320}
+.title{font-size:28px;text-align:center;margin:2px 0 10px 0}
+.lang-row{display:flex;gap:10px;justify-content:center;margin:10px 0 16px 0}
+.btn{background:#222937;border:1px solid #2b3448;color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;transition:.15s}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.active{outline:2px solid #7aa2ff;box-shadow:0 0 18px rgba(105,155,255,.35)}
+.btn-blue{background:linear-gradient(180deg,#3b82f6,#2563eb);border-color:#1f49d5}
+.btn-pink{background:linear-gradient(180deg,#ff64b4,#ff2f94);border-color:#bc1b6b}
+.btn-gold{background:linear-gradient(180deg,#ffd055,#f4b400);border-color:#c9911e;color:#1b1300}
+.btn.big{width:100%;height:52px;font-size:18px;border-radius:14px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:8px 0 8px}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:16px;padding:14px 16px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.card-title{font-size:16px;color:#c9d4e6;margin-bottom:8px}
+.card-score{font-size:40px;font-weight:800;letter-spacing:1px}
+.card.selected{outline:2px solid #7aa2ff;box-shadow:0 0 22px rgba(105,155,255,.25)}
+.actions{display:flex;gap:12px;align-items:center;margin:8px 0 6px}
+.status{margin:10px 0 12px 0;color:var(--muted);text-align:center}
+.panel{background:var(--panel);border:1px solid #20283a;border-radius:16px;padding:14px 14px;margin:14px 0;box-shadow:0 6px 28px rgba(0,0,0,.25)}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sub{margin:0;font-size:16px}
+.hint{margin:6px 0 0 0;color:#9aa6b8}
+.ref-block .ref-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.leader-window{max-height:220px;overflow:auto;border-radius:12px;background:var(--panel-2);border:1px solid #20283a;padding:6px}
+.leader-row{display:grid;grid-template-columns:44px 1fr 110px;gap:8px;align-items:center;padding:10px;border-radius:10px;background:#111826;border:1px solid #242c3d;margin:6px 0}
+.rank{font-weight:800;color:#cbd5e1;text-align:center}
+.lname{color:#e5e7eb;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pts{text-align:right;font-weight:800;color:#ffe082}
