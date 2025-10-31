@@ -1,47 +1,145 @@
-/* TeamBattle V2.2 — UI styles (exact file name: style.css) */
+
+/* ---------- Reset & Base ---------- */
+* { box-sizing: border-box; }
+html, body { margin:0; padding:0; height:100%; }
 :root{
-  --bg:#0b0d12;
-  --panel:#121621;
-  --panel-2:#161b27;
-  --text:#e8ebf1;
-  --muted:#aab3c5;
-  --primary:#3b82f6;
-  --accent:#ff4fa3;
-  --gold:#f5c84b;
-  --success:#22c55e;
-  --danger:#ef4444;
-  --shadow: 0 10px 30px rgba(0,0,0,.45);
+  --bg:#0e0f12;
+  --panel:#171923;
+  --panel-2:#131621;
+  --text:#e7e7ef;
+  --muted:#9aa0ac;
+  --accent:#3e6df4;
+  --pink:#ff3ea5;
+  --gold:#e9b949;
+  --ok:#2fd173;
+  --warn:#f5c84b;
+  --card:#1c2030;
+  --chip:#1a1f2e;
+  --ring: 0 0 0 1px rgba(255,255,255,.06), 0 8px 24px rgba(0,0,0,.45) inset;
 }
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;background:radial-gradient(1200px 600px at 50% -10%, #1a1f2e 0%, #0b0d12 60%, #090a0e 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-.container{max-width:980px;margin:18px auto;padding:0 16px}
-.card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
-.glow-title{ text-align:center;font-weight:900;line-height:1.05;font-size:36px;letter-spacing:.2px;margin:14px 0 6px;text-shadow:0 0 14px rgba(255,79,163,.25), 0 2px 28px rgba(59,130,246,.18); }
-.small-note{display:flex;gap:12px;align-items:center;justify-content:center;margin:16px auto 6px}
-.badge{ background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.09); padding:10px 14px;border-radius:12px;color:var(--text); box-shadow:var(--shadow); }
-.badge.gold{color:#000;background:linear-gradient(180deg,#ffe9a9,#ffd76a);border:0}
-.badge.dim{color:var(--muted)}
-.lang-row{display:flex;gap:12px;justify-content:center;margin:10px 0 18px}
-.lang-btn{ background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1); padding:10px 14px;border-radius:12px;color:var(--text);cursor:pointer;user-select:none }
-.lang-btn.active{outline:2px solid var(--primary)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:720px){.grid{grid-template-columns:1fr}}
-.team-card{padding:18px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
-.team-name{font-size:20px;color:var(--muted);display:flex;align-items:center;gap:8px}
-.team-score{font-size:44px;font-weight:800;margin-top:6px}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.row.center{justify-content:center}
-.btn{ border:none;border-radius:14px;padding:12px 18px; background:var(--primary);color:#fff;font-weight:700;cursor:pointer; box-shadow:0 6px 20px rgba(59,130,246,.35); }
-.btn:disabled{opacity:.55;cursor:not-allowed;box-shadow:none}
-.btn-pink{background:var(--accent);box-shadow:0 6px 20px rgba(255,79,163,.35)}
-.btn-gold{background:linear-gradient(180deg,#ffe08a,#f6c74d);color:#1c1400;box-shadow:0 6px 16px rgba(246,199,77,.35)}
-.input{width:100%;border-radius:12px;background:#0f131d;border:1px solid rgba(255,255,255,.08);padding:12px 14px;color:var(--text)}
-.kv{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:8px;color:var(--muted)}
-.top-card{margin-top:14px}
-.top-list{max-height:260px;overflow:auto;padding-right:6px}
-.top-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:10px}
-.top-item:nth-child(-n+5){outline:2px solid rgba(255,255,255,.06)}
-.partners{margin-top:18px}
-.partners h3{margin:8px 0 6px}
-.partners .hint{color:var(--muted)}
-.footer{opacity:.7;text-align:center;margin:20px 0}
+
+body.tg-bg{
+  color:var(--text);
+  background:
+    radial-gradient(1200px 400px at 50% -120px, rgba(126,91,255,.16), transparent 60%),
+    radial-gradient(1000px 400px at 10% 10%, rgba(63,225,255,.08), transparent 60%),
+    linear-gradient(180deg, #0c0d10 0%, #0d0f14 40%, #0b0d12 100%),
+    var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Helvetica Neue", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  -webkit-font-smoothing: antialiased;
+  padding:20px 14px 36px;
+}
+
+/* ---------- Layout ---------- */
+.container {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  border-radius: 18px;
+  box-shadow: var(--ring);
+  padding: 18px;
+  margin: 14px 0;
+}
+
+.header-row {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:12px 14px;
+  background: linear-gradient(160deg, rgba(62,109,244,.10), rgba(255,255,255,.03));
+  border:1px solid rgba(255,255,255,.06);
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(2,10,35,.35) inset;
+}
+
+/* ---------- Title ---------- */
+.title-wrap{
+  text-align:center;
+  padding:20px 8px 6px;
+}
+.title{
+  font-size: 36px;
+  line-height: 1.06;
+  margin: 10px 0 4px;
+  font-weight: 800;
+  letter-spacing:.2px;
+  color:#e8ecff;
+  text-shadow: 0 0 42px rgba(195,145,255,.65), 0 0 18px rgba(116,190,255,.45);
+}
+.subtitle{
+  text-align:center;
+  margin:0 0 10px;
+  color:var(--muted);
+}
+
+/* ---------- Chips & Buttons ---------- */
+.chips{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.chip{
+  background:var(--chip);
+  color:var(--text);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:10px 14px;
+  font-weight:600;
+  box-shadow: var(--ring);
+  cursor:pointer;
+}
+.chip.on{ color:var(--gold); border-color:rgba(233,185,73,.45); box-shadow:0 0 22px rgba(233,185,73,.25); }
+.chip.off{ color:#c7c9d3; opacity:.85; }
+
+.lang{ min-width:96px; text-align:center; }
+
+.btn-row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:center; }
+.btn{
+  border:none;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-weight: 700;
+  cursor:pointer;
+  box-shadow: var(--ring);
+}
+.btn-blue { background:#2b6cf6; color:#fff; }
+.btn-pink { background:#ff3ea5; color:#fff; }
+.btn-gold { background:#f2c14e; color:#222; }
+.btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
+.btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+/* ---------- Team boxes ---------- */
+.teams{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+.team{
+  background: linear-gradient(180deg, #141827, #111423);
+  border-radius: 18px;
+  box-shadow: var(--ring);
+  padding:16px;
+}
+.team .name{ color:#cfd5ff; font-weight:800; letter-spacing:.3px; display:flex; align-items:center; gap:8px; }
+.team .score{ font-size: 56px; font-weight:800; color:#ffe48a; text-shadow:0 0 18px rgba(255,228,138,.25); }
+
+/* ---------- Stats ---------- */
+.stats{
+  text-align:center; color:#c9ceda; font-weight:700; letter-spacing:.2px;
+}
+.kv{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+
+/* ---------- Top players ---------- */
+.top-card .row{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 16px; margin:10px 0;
+  background: #171a28; border-radius:12px; border:1px solid rgba(255,255,255,.06);
+}
+.top-wrap{ max-height: 260px; overflow:auto; padding-right:6px; }
+.top-wrap::-webkit-scrollbar{ width:6px; }
+.top-wrap::-webkit-scrollbar-thumb{ background:#272d42; border-radius:6px; }
+
+/* ---------- Referral ---------- */
+.ref-card input{
+  width:100%; background:#0f1320; color:#e7ebff; border:1px solid rgba(255,255,255,.10);
+  border-radius:12px; padding:12px 14px; font-weight:600;
+}
+
+/* ---------- Footer ---------- */
+.footer{ text-align:center; color:#aab1be; padding:18px 6px 8px; }
