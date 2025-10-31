@@ -1,17 +1,94 @@
-<!doctype html>
-<html lang="he">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TeamBattle - Israel Vs Gaza</title>
-    <link rel="stylesheet" href="/styles.css" />
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  </head>
-  <body class="tg-bg">
-    <div id="root">Loading…</div>
-    <script type="text/babel" src="./app.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Battle: Israel vs Gaza</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-wrap">
+    <header class="header">
+      <h1 id="title" class="title">Team Battle: Israel vs Gaza</h1>
+      <div class="lang-switch">
+        <button id="lang-en" class="btn small">EN</button>
+        <button id="lang-he" class="btn small">HE</button>
+        <button id="lang-ar" class="btn small">AR</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="vip-card">
+        <div class="vip-left">
+          <h3 id="vip-label">VIP Premium</h3>
+          <p id="vip-desc" class="muted">Join VIP to get 5 super boosts daily (+25 taps each)!</p>
+        </div>
+        <div class="vip-right">
+          <button id="buyVipBtn" class="btn vip">Buy VIP</button>
+          <div id="vipActiveBadge" class="vip-active hidden">VIP Active</div>
+        </div>
+      </section>
+
+      <section class="ref-card">
+        <h3 id="ref-title">Referral Program</h3>
+        <p id="ref-desc" class="muted">Share your referral link to earn +10 taps per friend who joins!</p>
+        <div class="ref-row">
+          <input id="referralLink" class="input" type="text" readonly value="" />
+          <button id="copyReferralBtn" class="btn">Copy Link</button>
+        </div>
+        <p id="ref-hint" class="muted tiny">Copy and share this link with friends.</p>
+      </section>
+
+      <section class="teams">
+        <h3 id="chooseTeamLabel">Choose Your Team</h3>
+        <div class="team-row">
+          <div id="teamIsrael" class="team-card">
+            <div class="team-name">Israel</div>
+            <div class="score" id="scoreIsrael">0</div>
+          </div>
+          <div id="teamGaza" class="team-card">
+            <div class="team-name">Gaza</div>
+            <div class="score" id="scoreGaza">0</div>
+          </div>
+        </div>
+        <div class="team-controls">
+          <button id="switchTeamBtn" class="btn outline">Switch Team</button>
+          <div id="statusLine" class="muted tiny">Offline Mode - Local Updates Only</div>
+          <div id="limitsLine" class="muted tiny">Daily taps: <span id="tapsUsed">0</span>/<span id="tapsMax">300</span> • Super boosts: <span id="superUsed">0</span>/<span id="superMax">1</span></div>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="tapBtn" class="btn wide">Tap to Boost (+1)</button>
+        <button id="superBoostBtn" class="btn danger wide">Super Boost (+25)</button>
+
+        <div class="donate">
+          <div class="donate-row">
+            <input id="extraStarsInput" class="input" type="number" min="1" max="1000" value="5" />
+            <button id="donateButton" class="btn gold">Extra Tap</button>
+          </div>
+          <div class="muted tiny center">
+            This will give your team <span id="donatePoints">10</span> points
+          </div>
+        </div>
+      </section>
+
+      <section class="leaderboard">
+        <h3 id="lb-title">Top Players</h3>
+        <ul id="leaderboard" class="lb-list"></ul>
+      </section>
+
+      <section class="messages">
+        <h3 id="msg-title">Battle Messages</h3>
+        <div id="msgList" class="msg-list"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="footerText">© TeamBattle</span>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
 </html>
