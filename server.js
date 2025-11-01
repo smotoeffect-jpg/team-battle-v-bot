@@ -435,7 +435,13 @@ app.get("/api/me", (req, res) => {
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
   });
 });
-
+// ====== Debug: check Telegram init headers ======
+app.use((req, res, next) => {
+  if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
+    console.log("📦 Telegram init headers received:", (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]).slice(0,200));
+  }
+  next();
+});
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
