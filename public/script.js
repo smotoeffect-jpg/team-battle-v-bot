@@ -276,14 +276,18 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
     flashStatus(i18n[getLang()].err);
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
+// ===== Extra Tap / Payment =====
+const btnExtra = document.getElementById('btn-extra');
+if (btnExtra) btnExtra.addEventListener('click', async () => {
+  ...
+});  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
+
+
 // === TON Wallet Connect ===
 console.log("💎 Initializing TON Connect...");
-
 (async () => {
   try {
-    // בדוק אם TonConnect קיים בשם אחר (window.TonConnectSDK)
     const TonSDK = window.TonConnect || window.TonConnectSDK?.TonConnect;
-
     if (!TonSDK) {
       console.error("❌ TON SDK not loaded correctly!");
       return;
@@ -316,9 +320,10 @@ console.log("💎 Initializing TON Connect...");
     });
 
     connectBtn.addEventListener("click", connectTonWallet);
-
     console.log("✅ TON Connect initialized successfully");
   } catch (err) {
     console.error("TON Connect initialization failed:", err);
   }
 })();
+
+});  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
