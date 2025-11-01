@@ -335,7 +335,7 @@ app.post("/api/switch-team", (req, res) => {
   res.json({ ok:true, team:newTeam });
 });
 
-// ====== Tap endpoint with level-based bonus ======
+// ====== Tap endpoint – Tap strength equals player level ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
@@ -348,14 +348,13 @@ app.post("/api/tap", (req, res) => {
   if (u.tapsToday >= DAILY_TAPS)
     return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
 
-  // ⚡ חישוב טאפ לפי רמה
-  const basePoints = 1;                  // נקודת בסיס
-  const tapPoints = basePoints + (u.level || 1);  // כל רמה מוסיפה +1
+  // ⚡ Tap value = current level
+  const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
   u.tapsToday += 1;
   scores[u.team] = (scores[u.team] || 0) + tapPoints;
 
-  // XP מחושב גם לפי כמות הנקודות
+  // XP מתעדכן בהתאם לעוצמת הטאפ
   addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
 
   // היסטוריה
