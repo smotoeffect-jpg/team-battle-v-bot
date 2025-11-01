@@ -1,3 +1,5 @@
+console.log("🌐 WebApp Detected:", !!window.Telegram?.WebApp);
+console.log("🔑 initData:", window.Telegram?.WebApp?.initData);
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = window.Telegram?.WebApp;
   if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
