@@ -102,3 +102,38 @@
     }catch(_){ flashStatus(i18n[getLang()].err); }
   });
 })();
+
+/* === Referral Program Activation (V2.4-Referral-Active) === */
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    const userId = tg?.initDataUnsafe?.user?.id || 0;
+    const link = userId ? `https://t.me/TeamBattle_vBot/app?start_param=${userId}` : "";
+    const input = document.getElementById("ref-link");
+    const copyBtn = document.getElementById("copy-ref");
+    const title = document.querySelector(".partner-title");
+    if (title) title.textContent = (localStorage.getItem('tb_lang') === 'he')
+      ? 'תוכנית שותפים'
+      : (localStorage.getItem('tb_lang') === 'ar' ? 'برنامج الشركاء' : 'Partner Program');
+    if (input) input.value = link;
+    if (copyBtn) {
+      copyBtn.textContent = (localStorage.getItem('tb_lang') === 'he')
+        ? 'העתק קישור'
+        : (localStorage.getItem('tb_lang') === 'ar' ? 'نسخ الرابط' : 'Copy Link');
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(link);
+          const oldText = copyBtn.textContent;
+          copyBtn.textContent = (localStorage.getItem('tb_lang') === 'he')
+            ? 'הועתק!'
+            : (localStorage.getItem('tb_lang') === 'ar' ? 'نُسخ!' : 'Copied!');
+          setTimeout(() => (copyBtn.textContent = oldText), 1200);
+        } catch(e) {
+          console.error(e);
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Referral init error:', err);
+  }
+});
