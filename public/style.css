@@ -61,12 +61,13 @@ body{
   flex-wrap: nowrap;
 }
 
+/* === ACTION BUTTONS TEXT SMALLER === */
 .action-row button {
   flex: 1;
   max-width: 30%;
   min-width: 30%;
-  height: 68px; /* 🔹 כפתור גבוה יותר */
-  font-size: 0.85rem; /* 🔹 טקסט קטן ומדויק */
+  height: 68px; /* נשאר אותו גודל כפתור */
+  font-size: 0.7rem; /* 🔹 מוקטן עוד */
   font-weight: 800;
   border-radius: 12px;
   text-transform: uppercase;
