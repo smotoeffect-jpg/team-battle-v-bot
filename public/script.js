@@ -280,7 +280,6 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
 // === TON Wallet Connect (Telegram compatible) ===
 console.log("💎 Initializing TON Connect...");
 try {
-  // נסה למצוא את המחלקה בכל אחת מהאפשרויות
   const TonConnectClass =
     window.TonConnectSDK?.TonConnect ||
     window.TonConnect ||
@@ -298,29 +297,33 @@ try {
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
+    // --- חיבור לארנק ---
     async function connectTonWallet() {
       try {
-        const connectedWallet = await tonConnect.connect();
-        if (connectedWallet?.account?.address) {
-          const addr = connectedWallet.account.address;
-          addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-          connectBtn.style.display = "none";
+        console.log("💎 Opening TON Connect Wallet...");
+        const link = tonConnect.connectWallet();
+
+        if (link && typeof link === "string") {
+          console.log("🌐 Redirecting to wallet:", link);
+          window.location.href = link;
         }
       } catch (err) {
         console.error("❌ TON connect error:", err);
-        window.location.href =
-          "https://app.tonkeeper.com/ton-connect?manifestUrl=https://team-battle-v-bot.onrender.com/tonconnect-manifest.json";
+        flashStatus("TON Connect Error");
       }
     }
 
+    // --- מאזין סטטוס יחיד ---
     tonConnect.onStatusChange((wallet) => {
       if (wallet?.account?.address) {
         const addr = wallet.account.address;
         addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
         connectBtn.style.display = "none";
+        console.log("✅ Wallet connected successfully:", addr);
       } else {
         connectBtn.style.display = "inline-block";
         addressDiv.textContent = "";
+        console.log("🔌 Wallet disconnected");
       }
     });
 
@@ -329,5 +332,4 @@ try {
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
-
 }); // ← ← ← סוגר רק את ה-DOMContentLoaded (לא את TON Connect!)
