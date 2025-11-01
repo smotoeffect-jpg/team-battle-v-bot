@@ -435,25 +435,7 @@ app.get("/api/me", (req, res) => {
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
   });
 });
-// ====== Deep Debug: Telegram Init Data & Headers ======
-app.use((req, res, next) => {
-  const headers = Object.keys(req.headers)
-    .filter(k => k.startsWith('x-') || k.startsWith('content'))
-    .reduce((obj, k) => { obj[k] = req.headers[k]; return obj; }, {});
 
-  console.log("🧩 Incoming request:", req.method, req.path);
-  console.log("📨 Headers snapshot:", headers);
-
-  if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
-    console.log("✅ Found init-data header!");
-    const initData = req.headers["x-init-data"] || req.headers["x-telegram-init-data"];
-    console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
-  } else {
-    console.warn("⚠️ No init-data header received for", req.path);
-  }
-
-  next();
-});
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
@@ -473,7 +455,25 @@ app.get("/api/leaderboard", (req, res) => {
 // ====== Static Mini-App ======
 app.use(express.static(path.join(__dirname, "public")));
 
-// ====== Panel (INLINE via bot) ======
+// ====== Deep Debug: Telegram Init Data & Headers ======
+app.use((req, res, next) => {
+  const headers = Object.keys(req.headers)
+    .filter(k => k.startsWith('x-') || k.startsWith('content'))
+    .reduce((obj, k) => { obj[k] = req.headers[k]; return obj; }, {});
+
+  console.log("🧩 Incoming request:", req.method, req.path);
+  console.log("📨 Headers snapshot:", headers);
+
+  if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
+    console.log("✅ Found init-data header!");
+    const initData = req.headers["x-init-data"] || req.headers["x-telegram-init-data"];
+    console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
+  } else {
+    console.warn("⚠️ No init-data header received for", req.path);
+  }
+
+  next();
+});
 function tFor(lang){ return PANEL_TEXTS[lang] || PANEL_TEXTS.en; }
 function panelKeyboard(lang="en") {
   const t = tFor(lang);
