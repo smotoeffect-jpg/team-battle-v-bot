@@ -51,13 +51,13 @@ body{
 .partner-input{background:#0f0f1a;border:1px solid var(--pink);color:#fff;border-radius:8px;padding:10px 12px;width:260px;text-align:center}
 .btn.share::before{content:"📩 ";}
 
-/* === ACTION BUTTONS – perfectly balanced layout === */
+/* === ACTION BUTTONS – larger buttons, smaller text === */
 .action-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 20px;
   flex-wrap: nowrap;
 }
 
@@ -65,47 +65,47 @@ body{
   flex: 1;
   max-width: 30%;
   min-width: 30%;
-  font-size: 1rem;
+  height: 68px; /* 🔹 כפתור גבוה יותר */
+  font-size: 0.85rem; /* 🔹 טקסט קטן ומדויק */
   font-weight: 800;
-  padding: 14px 0;
-  border-radius: 10px;
+  border-radius: 12px;
   text-transform: uppercase;
   white-space: nowrap;
   text-align: center;
   border: none;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 /* צבעים מקוריים */
 #btn-tap {
   background: linear-gradient(180deg,#5aa9ff,#3a7fe0);
   color: #fff;
-  box-shadow: 0 0 12px rgba(90,169,255,.35);
+  box-shadow: 0 0 14px rgba(90,169,255,.35);
 }
 #btn-super {
   background: linear-gradient(180deg,#ff4dc4,#e028a5);
   color: #fff;
-  box-shadow: 0 0 12px rgba(255,77,196,.35);
+  box-shadow: 0 0 14px rgba(255,77,196,.35);
 }
 #btn-switch {
   background: #2a2a3f;
   color: #fff;
 }
 
-/* אפקט ריחוף עדין */
+/* ריחוף קל */
 .action-row button:hover {
-  transform: scale(1.03);
-  box-shadow: 0 0 18px rgba(255,255,255,.15);
+  transform: scale(1.04);
+  box-shadow: 0 0 20px rgba(255,255,255,.15);
 }
 
-/* מובייל – שמירה על שורה אחת אך טקסט קטן טיפה */
+/* מובייל */
 @media (max-width: 600px) {
   .action-row {
-    gap: 6px;
+    gap: 8px;
   }
   .action-row button {
-    font-size: 0.9rem;
-    padding: 12px 0;
+    height: 60px;
+    font-size: 0.78rem;
   }
 }
 /* === EXTRA TAP SECTION (ONE LINE, ORIGINAL COLORS) === */
