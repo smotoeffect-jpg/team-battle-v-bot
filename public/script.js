@@ -277,3 +277,32 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
 });  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
+// === TON Wallet Connect ===
+const tonConnect = new TonConnect({
+  manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+});
+
+const connectBtn = document.getElementById("connect-ton");
+const addressDiv = document.getElementById("ton-address");
+
+async function connectTonWallet() {
+  try {
+    await tonConnect.connectWallet();
+  } catch (err) {
+    console.error("TON connect error:", err);
+  }
+}
+
+// When connected
+tonConnect.onStatusChange(wallet => {
+  if (wallet) {
+    const addr = wallet.account.address;
+    addressDiv.textContent = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
+    connectBtn.style.display = "none";
+  } else {
+    connectBtn.style.display = "inline-block";
+    addressDiv.textContent = "";
+  }
+});
+
+connectBtn.addEventListener("click", connectTonWallet);
