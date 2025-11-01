@@ -2,13 +2,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const WebApp = window.Telegram?.WebApp;
   if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
 
-  // === תיקון קריטי: userId מהטלגרם ===
+  // ===== DEBUG: Show Telegram initData =====
   let telegramUserId = null;
   try {
+    console.log("initDataUnsafe =", WebApp?.initDataUnsafe);
     telegramUserId = WebApp?.initDataUnsafe?.user?.id || null;
-    console.log("Telegram userId:", telegramUserId);
+    console.log("Detected Telegram userId:", telegramUserId);
   } catch (e) {
-    console.warn("No Telegram user id found.");
+    console.error("Cannot read Telegram user info:", e);
   }
 
   const i18n = {
@@ -38,20 +39,16 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   const headers = {}; 
-  try{ if(WebApp?.initData) headers['X-Init-Data']=WebApp.initData; }catch(_){}
+  try { 
+    if(WebApp?.initData) headers['X-Init-Data'] = WebApp.initData; 
+  } catch(_){}
 
   async function getJSON(u){ const r=await fetch(u,{headers}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   async function postJSON(u,b){ const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(b||{})}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
 
-  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:telegramUserId,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
+  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:null,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
 
-  function paintDoubleXp(){
-    const l=getLang(); const line=document.getElementById('double-xp');
-    if(!line) return;
-    if(GAME.doubleXP){ line.textContent=i18n[l].doubleOn; line.style.color='var(--gold)'; line.style.textShadow='var(--gold-glow)'; }
-    else{ line.textContent=i18n[l].doubleOff; line.style.color='#c8c8d8'; line.style.textShadow='none'; }
-  }
   function paintScores(){ setText('score-israel-value', GAME.scores?.israel??0); setText('score-gaza-value', GAME.scores?.gaza??0); }
   function paintMe(){
     setText('me-stars', String(GAME.me.stars ?? '–'));
@@ -74,9 +71,8 @@ document.addEventListener("DOMContentLoaded", () => {
   async function refreshAll(){
     try{
       const state=await getJSON('/api/state');
-      GAME.doubleXP=!!(state.doubleXP ?? state.doubleXp ?? state.double_xp);
       if(state.scores) GAME.scores=state.scores;
-      paintDoubleXp(); paintScores();
+      paintScores();
     }catch(_){}
     try{
       const me=await getJSON('/api/me');
