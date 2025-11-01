@@ -37,13 +37,15 @@
     const dx=$("#double-xp"); if(dx){ dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
   }
   function bindLanguageButtons(){
-    $$(".lang-switch .chip").forEach(btn=>{
+    const map=[["HE","he"],["EN","en"],["AR","ar"]];
+    document.querySelectorAll(".lang-switch .chip").forEach((btn,idx)=>{
+      btn.dataset.lang = map[idx]?.[1] || "en";
       btn.addEventListener("click",()=>{
-        $$(".lang-switch .chip").forEach(b=>b.classList.remove("active"));
+        document.querySelectorAll(".lang-switch .chip").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active"); setLang(btn.dataset.lang);
       });
     });
-    (document.querySelector(`.chip[data-lang="${state.lang}"]`)||document.querySelector('.chip[data-lang="he"]'))?.classList.add("active");
+    (document.querySelector(`.chip[data-lang="${state.lang}"]`)||document.querySelector('.chip'))?.classList.add("active");
     setLang(state.lang);
   }
 
@@ -62,17 +64,18 @@
 
   async function fetchJSON(url,opts){ const r=await fetch(url,Object.assign({credentials:'include'},opts||{})); if(!r.ok) throw new Error(`HTTP ${r.status}`); return await r.json(); }
 
-  async function fetchState(){ try{ const data=await fetchJSON("/api/state"); state.scores=data?.score||state.scores; state.doubleXP=!!data?.doubleXP;
+  async function fetchState(){ try{ const data=await fetchJSON("/api/state"); const s=data?.scores||data?.score; if(s){ state.scores=s; }
+    state.doubleXP=!!(data?.doubleXP?.on||data?.doubleXP);
     $("#score-israel")&&($("#score-israel").textContent=state.scores.israel??0);
     $("#score-gaza")&&($("#score-gaza").textContent=state.scores.gaza??0);
     const dx=$("#double-xp"); if(dx){ dx.classList.toggle("on",state.doubleXP); dx.classList.toggle("off",!state.doubleXP); dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
   }catch(e){} }
 
-  async function fetchMe(){ try{ const data=await fetchJSON("/api/me"); state.me=data||{};
-    $("#stars-extra")&&($("#stars-extra").textContent=data?.starsExtra??data?.stars??0);
-    $("#player-level")&&($("#player-level").textContent=data?.level??1);
-    $("#invited-count")&&($("#invited-count").textContent=data?.invited??data?.referrals??0);
-    const tapsToday=data?.tapsToday??0, maxTaps=data?.maxTaps??300;
+  async function fetchMe(){ try{ const data=await fetchJSON("/api/me"); const me=data?.me||data||{}; state.me=me;
+    $("#stars-extra")&&($("#stars-extra").textContent=me?.starsExtra??me?.stars??0);
+    $("#player-level")&&($("#player-level").textContent=me?.level??1);
+    $("#invited-count")&&($("#invited-count").textContent=me?.invited??me?.referrals??0);
+    const tapsToday=me?.tapsToday??0, maxTaps=me?.maxTaps??300;
     $("#taps-today")&&($("#taps-today").textContent=`${tapsToday}/${maxTaps}`);
   }catch(e){} }
 
@@ -80,7 +83,7 @@
     state.leaderboard=items.slice(0,20);
     const ol=$("#top-list"); if(ol){ ol.innerHTML=""; state.leaderboard.forEach((entry,i)=>{
       const li=document.createElement("li");
-      const name=entry?.name||entry?.username||`Player #${i+1}`;
+      const name=entry?.name||entry?.displayName||entry?.username||`Player #${i+1}`;
       const pts=entry?.points??entry?.score??0;
       li.textContent=`${i+1}. ${name} — ${pts}`;
       ol.appendChild(li);
@@ -90,7 +93,7 @@
   function bindActions(){
     $("#tap-btn")&&($("#tap-btn").onclick=async()=>{ try{ const r=await fetch("/api/tap",{method:"POST"}); if(r.ok){ feed(`+1 ${state.selectedTeam}`); fetchMe(); fetchState(); } }catch(e){} });
     $("#super-btn")&&($("#super-btn").onclick=async()=>{ try{ const r=await fetch("/api/super",{method:"POST"}); if(r.ok){ feed(`Super Boost +25`); fetchMe(); fetchState(); } }catch(e){} });
-    $("#switch-btn")&&($("#switch-btn").onclick=()=>{ state.selectedTeam=(state.selectedTeam==="israel")?"gaza":"israel"; toast(`Team: ${state.selectedTeam}`); });
+    $("#switch-btn")&&($("#switch-btn").onclick=()=>{ state.selectedTeam=(state.selectedTeam==="israel")?"gaza":"israel"; /* toast not essential */ });
     $("#extra-btn")&&($("#extra-btn").onclick=async()=>{
       const val=parseInt(($("#extra-amount")?.value||"10"),10); const amount=Math.max(1,Math.min(1000,isNaN(val)?10:val));
       if($("#extra-amount")) $("#extra-amount").value=amount;
@@ -98,8 +101,7 @@
         const r=await fetch("/api/create-invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:"Extra Tap",description:"Donate Stars for team boost",amount,payload:`extra_${Date.now()}`})});
         const data=await r.json();
         if(data?.ok&&data?.url){ (window.Telegram?.WebApp?.openInvoice)?Telegram.WebApp.openInvoice(data.url):(location.href=data.url); }
-        else{ toast("Payment error"); console.log("create-invoice:",data); }
-      }catch(e){ toast("Payment error"); }
+      }catch(e){}
     });
   }
 
