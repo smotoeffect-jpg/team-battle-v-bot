@@ -102,6 +102,7 @@ body{
   .action-row {
     gap: 8px;
   }
+  
   .action-row button {
     max-width: 33%;
     min-width: 33%;
