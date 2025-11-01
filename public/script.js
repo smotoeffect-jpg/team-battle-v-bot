@@ -1,104 +1,270 @@
-(function(){
-  const WebApp = window.Telegram?.WebApp;
-  if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
+/* i18n */
+const i18n = {
+  en: {
+    doubleOn: "Double XP Active!",
+    doubleOff: "Double XP Off",
+    tap: "Tap",
+    super: "Super Boost",
+    switch: "Switch Team",
+    extra: "Extra Tap",
+    israel: "Israel",
+    gaza: "Gaza",
+    myPanel: "My Panel",
+    starsExtra: "Stars | Extra Tap",
+    playerLevel: "Player Level",
+    invited: "Invited",
+    tapsToday: "Taps Today",
+    top20: "Top 20",
+    battleMessages: "Battle Messages",
+    partnerTitle: "Partner Program",
+    copy: "Copy Link"
+  },
+  he: {
+    doubleOn: "דאבל אקספי פעיל!",
+    doubleOff: "דאבל אקספי כבוי",
+    tap: "טאפ",
+    super: "סופר בוסט",
+    switch: "החלף קבוצה",
+    extra: "Extra Tap",
+    israel: "ישראל",
+    gaza: "עזה",
+    myPanel: "הלוח שלי",
+    starsExtra: "כוכבים | Extra Tap",
+    playerLevel: "רמת השחקן",
+    invited: "מוזמנים",
+    tapsToday: "טאפים היום",
+    top20: "טופ 20",
+    battleMessages: "הודעות קרב",
+    partnerTitle: "תוכנית שותפים",
+    copy: "העתק קישור"
+  },
+  ar: {
+    doubleOn: "دابل إكس بي يعمل!",
+    doubleOff: "دابل إكس بي متوقف",
+    tap: "نقرة",
+    super: "تعزيز سوبر",
+    switch: "تبديل الفريق",
+    extra: "Extra Tap",
+    israel: "إسرائيل",
+    gaza: "غزة",
+    myPanel: "لوحتي",
+    starsExtra: "النجوم | Extra Tap",
+    playerLevel: "مستوى اللاعب",
+    invited: "مدعوون",
+    tapsToday: "نقرات اليوم",
+    top20: "أفضل 20",
+    battleMessages: "رسائل المعركة",
+    partnerTitle: "برنامج الشركاء",
+    copy: "نسخ الرابط"
+  }
+};
 
-  const i18n = {
-    en:{israel:"Israel",gaza:"Gaza",tap:"Tap (+1)",superBoost:"Super Boost (+25)",switchTeam:"Switch Team",extraTap:"Extra Tap",myBoard:"My Board",stars:"Stars / Extra Tap",playerLevel:"Player Level",referrals:"Invited Friends",tapsToday:"Taps today",doubleOn:"🟢 Double XP Active!",doubleOff:"⚪ Double XP Off",top20:"Top 20",copied:"Copied!",err:"Something went wrong"},
-    he:{israel:"ישראל",gaza:"עזה",tap:"טאפ (+1)",superBoost:"סופר בוסט (+25)",switchTeam:"החלף קבוצה",extraTap:"Extra Tap",myBoard:"הלוח שלי",stars:"כוכבים / Extra Tap",playerLevel:"רמת שחקן",referrals:"מוזמנים",tapsToday:"טאפים היום",doubleOn:"🟢 דאבל אקספי פעיל!",doubleOff:"⚪ דאבל אקספי כבוי",top20:"טופ 20",copied:"הועתק!",err:"אירעה שגיאה"},
-    ar:{israel:"إسرائيل",gaza:"غزة",tap:"انقر (+1)",superBoost:"تعزيز سوبر (+25)",switchTeam:"بدّل الفريق",extraTap:"Extra Tap",myBoard:"لوحتي",stars:"نجوم / Extra Tap",playerLevel:"مستوى اللاعب",referrals:"الأصدقاء المدعوون",tapsToday:"نقرات اليوم",doubleOn:"🟢 دابل إكس‌بي يعمل!",doubleOff:"⚪ دابل إکس‌بي متوقف",top20:"أفضل 20",copied:"تم النسخ!",err:"حدث خطأ ما"}
-  };
+const state = {
+  lang: "en",
+  botUsername: "TeamBattle_vBot",
+  selectedTeam: "israel", // default, can be toggled
+  me: null,
+  leaderboard: [],
+  scores: { israel: 0, gaza: 0 },
+  doubleXP: false
+};
 
-  function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
-  function setLang(l){
-    document.documentElement.setAttribute('data-lang', l);
-    localStorage.setItem('tb_lang', l);
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const k = el.getAttribute('data-i18n');
-      el.textContent = i18n[l]?.[k] || k;
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+function t(key){ return i18n[state.lang][key] || key; }
+
+function setLang(lang){
+  state.lang = lang;
+  // static texts
+  $("#tap-btn").textContent = t("tap");
+  $("#super-btn").textContent = t("super");
+  $("#switch-btn").textContent = t("switch");
+  $("#extra-btn").textContent = t("extra");
+  $(".partner-title").textContent = t("partnerTitle");
+  $("#copy-ref").textContent = t("copy");
+  $("[data-i18n='israel']").textContent = t("israel");
+  $("[data-i18n='gaza']").textContent = t("gaza");
+  $("[data-i18n='myPanel']").textContent = t("myPanel");
+  $("[data-i18n='starsExtra']").textContent = t("starsExtra");
+  $("[data-i18n='playerLevel']").textContent = t("playerLevel");
+  $("[data-i18n='invited']").textContent = t("invited");
+  $("[data-i18n='tapsToday']").textContent = t("tapsToday");
+  $("[data-i18n='top20']").textContent = t("top20");
+  $("[data-i18n='battleMessages']").textContent = t("battleMessages");
+
+  // double xp text
+  const dx = $("#double-xp");
+  dx.textContent = state.doubleXP ? t("doubleOn") : t("doubleOff");
+
+  // RTL for Arabic / Hebrew
+  document.body.dir = (lang === "he" || lang === "ar") ? "rtl" : "ltr";
+}
+
+function bindLanguageButtons(){
+  $$(".lang-switch .chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".lang-switch .chip").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      setLang(btn.dataset.lang);
     });
-    paintDoubleXp();
-  }
-  document.querySelectorAll('.lang-switch [data-lang]').forEach(btn=>btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
-  (function(){ const s=localStorage.getItem('tb_lang'); if(s) setLang(s); else { const t=(WebApp?.initDataUnsafe?.user?.language_code||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); } })();
-
-  const headers = {}; try{ if(WebApp?.initData) headers['X-Init-Data']=WebApp.initData; }catch(_){}
-
-  async function getJSON(u){ const r=await fetch(u,{headers}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
-  async function postJSON(u,b){ const r=await fetch(u,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},headers),body:JSON.stringify(b||{})}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
-  function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
-
-  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:null,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
-
-  function paintDoubleXp(){
-    const l=getLang(); const line=document.getElementById('double-xp');
-    if(GAME.doubleXP){ line.textContent=i18n[l].doubleOn; line.style.color='var(--gold)'; line.style.textShadow='var(--gold-glow)'; }
-    else{ line.textContent=i18n[l].doubleOff; line.style.color='#c8c8d8'; line.style.textShadow='none'; }
-  }
-  function paintScores(){ setText('score-israel-value', GAME.scores.israel??0); setText('score-gaza-value', GAME.scores.gaza??0); }
-  function paintMe(){
-    setText('me-stars', String(GAME.me.stars ?? '–'));
-    setText('me-level', String(GAME.me.level ?? '–'));
-    setText('me-referrals', String(GAME.me.referrals ?? '–'));
-    setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
-  }
-  function paintTop20(){
-    const ul=document.getElementById('top20-list'); ul.innerHTML='';
-    (GAME.leaderboard||[]).forEach((p,idx)=>{
-      const li=document.createElement('li');
-      const name=document.createElement('span'); name.className='name';
-      const pts=document.createElement('span'); pts.className='pts';
-      name.textContent = p.username ? p.username : `Player #${idx+1}`;
-      pts.textContent = (p.points ?? p.score ?? 0) + ' pts';
-      li.appendChild(name); li.appendChild(pts); ul.appendChild(li);
-    });
-  }
-
-  async function refreshAll(){
-    try{
-      const state=await getJSON('/api/state');
-      GAME.doubleXP=!!(state.doubleXP ?? state.doubleXp ?? state.double_xp);
-      if(state.scores) GAME.scores=state.scores;
-      paintDoubleXp(); paintScores();
-    }catch(_){}
-    try{
-      const me=await getJSON('/api/me');
-      GAME.me={
-        id:me.id??me.userId??me.user_id??null,
-        team:me.team??null,
-        tapsToday:me.tapsToday??me.taps_today??me.taps??0,
-        tapsLimit:me.tapsLimit??me.taps_limit??300,
-        level:me.level??1,
-        referrals:me.referrals??me.invited??0,
-        stars:me.stars??me.balance??0,
-        username:me.username??null
-      };
-      paintMe();
-    }catch(_){}
-    try{
-      const lb=await getJSON('/api/leaderboard');
-      if(Array.isArray(lb)) GAME.leaderboard=lb.slice(0,20);
-      else if(Array.isArray(lb?.leaders)) GAME.leaderboard=lb.leaders.slice(0,20);
-      paintTop20();
-    }catch(_){}
-  }
-  setInterval(refreshAll, 5000);
-  refreshAll();
-
-  const statusLine=document.getElementById('status-line');
-  function flashStatus(m){ statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
-
-  document.getElementById('btn-tap').addEventListener('click',async()=>{ try{ await postJSON('/api/tap'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
-  document.getElementById('btn-super').addEventListener('click',async()=>{ try{ await postJSON('/api/super'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
-  document.getElementById('btn-switch').addEventListener('click',async()=>{ try{ await postJSON('/api/switch-team'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
-
-  document.getElementById('btn-extra').addEventListener('click', async ()=>{
-    const amount = Math.max(1, Math.min(1000, parseInt(document.getElementById('stars-input').value || '0')));
-    try{
-      const r=await postJSON('/api/create-invoice',{ title:'Extra Tap', description:'Donate Stars for team points', amount, payload:'extra_'+Date.now() });
-      if(r?.ok && r.url){
-        if(WebApp?.openInvoice){ WebApp.openInvoice(r.url, ()=>refreshAll()); }
-        else{ window.location.href=r.url; }
-      }
-    }catch(_){ flashStatus(i18n[getLang()].err); }
   });
-})();
+  // default active EN
+  document.querySelector('.chip[data-lang="en"]').classList.add("active");
+}
+
+function initRefLink(){
+  const tgui = window.Telegram?.WebApp?.initDataUnsafe;
+  const uid = tgui?.user?.id || 0;
+  const link = `https://t.me/${state.botUsername}/app?start_param=${uid}`;
+  $("#ref-link").value = link;
+  $("#copy-ref").onclick = async () => {
+    try{
+      await navigator.clipboard.writeText(link);
+      toast("Copied");
+    }catch(e){}
+  };
+}
+
+function toast(msg){
+  const el = document.createElement("div");
+  el.textContent = msg;
+  el.style.position = "fixed";
+  el.style.bottom = "12px";
+  el.style.left = "50%";
+  el.style.transform = "translateX(-50%)";
+  el.style.background = "#1b233b";
+  el.style.color = "#fff";
+  el.style.padding = "8px 12px";
+  el.style.borderRadius = "8px";
+  el.style.boxShadow = "0 6px 24px rgba(0,0,0,.35)";
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 1200);
+}
+
+/* API polling */
+async function fetchState(){
+  try{
+    const r = await fetch("/api/state");
+    if(!r.ok) return;
+    const data = await r.json();
+    state.scores = data?.score || state.scores;
+    state.doubleXP = !!data?.doubleXP;
+
+    $("#score-israel").textContent = state.scores.israel ?? 0;
+    $("#score-gaza").textContent  = state.scores.gaza ?? 0;
+
+    const dx = $("#double-xp");
+    dx.classList.toggle("on", state.doubleXP);
+    dx.classList.toggle("off", !state.doubleXP);
+    dx.textContent = state.doubleXP ? t("doubleOn") : t("doubleOff");
+  }catch(e){ /* silent */ }
+}
+
+async function fetchMe(){
+  try{
+    const r = await fetch("/api/me");
+    if(!r.ok) return;
+    const data = await r.json();
+    state.me = data;
+    $("#stars-extra").textContent = data?.starsExtra ?? 0;
+    $("#player-level").textContent = data?.level ?? 1;
+    const invited = data?.invited ?? 0;
+    $("#invited-count").textContent = invited;
+    const tapsToday = data?.tapsToday ?? 0;
+    const maxTaps = data?.maxTaps ?? 300;
+    $("#taps-today").textContent = `${tapsToday}/${maxTaps}`;
+  }catch(e){}
+}
+
+async function fetchLeaderboard(){
+  try{
+    const r = await fetch("/api/leaderboard");
+    if(!r.ok) return;
+    const list = await r.json();
+    state.leaderboard = Array.isArray(list) ? list.slice(0,20) : [];
+    const ol = $("#top-list");
+    ol.innerHTML = "";
+    state.leaderboard.forEach((entry, i) => {
+      const li = document.createElement("li");
+      const name = entry?.name || `Player #${i+1}`;
+      const pts = entry?.points ?? entry?.score ?? 0;
+      li.textContent = `${name} — ${pts}`;
+      ol.appendChild(li);
+    });
+  }catch(e){}
+}
+
+/* Actions */
+function bindActions(){
+  $("#tap-btn").onclick = async () => {
+    try{
+      const r = await fetch("/api/tap", { method:"POST" });
+      if(r.ok){ feed(`+1 ${state.selectedTeam}`); fetchMe(); fetchState(); }
+    }catch(e){}
+  };
+  $("#super-btn").onclick = async () => {
+    try{
+      const r = await fetch("/api/super", { method:"POST" });
+      if(r.ok){ feed(`Super Boost +25`); fetchMe(); fetchState(); }
+    }catch(e){}
+  };
+  $("#switch-btn").onclick = () => {
+    state.selectedTeam = (state.selectedTeam === "israel") ? "gaza" : "israel";
+    toast(`Team: ${state.selectedTeam}`);
+  };
+  $("#extra-btn").onclick = async () => {
+    const amount = Math.max(1, Math.min(1000, parseInt($("#extra-amount").value||"10")));
+    $("#extra-amount").value = amount;
+    try{
+      const r = await fetch("/api/create-invoice", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          title: "Extra Tap",
+          description: "Donate Stars for team boost",
+          amount,
+          payload: `extra_${Date.now()}`
+        })
+      });
+      const data = await r.json();
+      if(data?.ok && data?.url){
+        // Open Telegram Stars payment inside the WebApp if possible
+        Telegram.WebApp.openInvoice(data.url);
+      }else{
+        toast("Payment error");
+        console.log("create-invoice:", data);
+      }
+    }catch(e){
+      toast("Payment error");
+    }
+  };
+}
+
+function feed(txt){
+  const box = $("#feed");
+  const item = document.createElement("div");
+  item.className = "item";
+  const now = new Date().toLocaleTimeString();
+  item.textContent = `[${now}] ${txt}`;
+  box.appendChild(item);
+  box.scrollTop = box.scrollHeight;
+}
+
+function init(){
+  Telegram.WebApp.ready?.();
+  Telegram.WebApp.expand?.();
+
+  bindLanguageButtons();
+  setLang("en");
+  initRefLink();
+  bindActions();
+
+  // initial pulls
+  fetchState(); fetchMe(); fetchLeaderboard();
+  // polling
+  setInterval(fetchState, 5000);
+  setInterval(fetchMe, 7000);
+  setInterval(fetchLeaderboard, 12000);
+}
+
+document.addEventListener("DOMContentLoaded", init);

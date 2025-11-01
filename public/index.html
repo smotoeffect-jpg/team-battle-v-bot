@@ -2,84 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>TeamBattle • Israel Vs Gaza</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css"/>
   <script>
-    (function(){ const l=localStorage.getItem('tb_lang'); if(l) document.documentElement.setAttribute('data-lang', l); })();
+    // Telegram WebApp shim (prevents errors in desktop/browser testing)
+    window.Telegram = window.Telegram || {};
+    Telegram.WebApp = Telegram.WebApp || {
+      initDataUnsafe: { user: { id: 0, username: "Guest", first_name: "Guest"} },
+      ready: ()=>{},
+      expand: ()=>{},
+      openInvoice: (url)=>{ try{ window.open(url, "_blank"); }catch(e){ location.href=url; } },
+      HapticFeedback: { impactOccurred: ()=>{}, notificationOccurred: ()=>{} },
+      CloudStorage: { getItem: (k,cb)=>cb(null,null), setItem: (k,v,cb)=>cb&&cb() }
+    };
   </script>
 </head>
 <body>
-  <div id="app" class="wrap">
-    <div id="double-xp" class="doublexp-line" aria-live="polite"></div>
-    <header class="title">
-      <div class="brand">TeamBattle</div>
-      <div class="subtitle">Israel Vs Gaza</div>
+  <div id="app" class="container">
+    <!-- Double XP indicator -->
+    <div id="double-xp" class="doublexp off">Double XP Off</div>
+
+    <!-- Title -->
+    <header class="title-wrap">
+      <h1 class="title glow">TeamBattle</h1>
+      <h2 class="subtitle glow">Israel Vs Gaza</h2>
     </header>
 
-    <div class="toolbar">
+    <!-- Language + Partner Program -->
+    <section class="toolbar">
       <div class="lang-switch">
-        <button class="btn btn-small" data-lang="he">עברית</button>
-        <button class="btn btn-small" data-lang="en">English</button>
-        <button class="btn btn-small" data-lang="ar">العربية</button>
+        <button class="chip" data-lang="en">EN</button>
+        <button class="chip" data-lang="he">HE</button>
+        <button class="chip" data-lang="ar">AR</button>
       </div>
-    </div>
-
-    <section class="scores-row">
-      <div class="score-card" id="score-israel">
-        <div class="score-label" data-i18n="israel">Israel</div>
-        <div class="score-value" id="score-israel-value">0</div>
-      </div>
-      <div class="score-card" id="score-gaza">
-        <div class="score-label" data-i18n="gaza">Gaza</div>
-        <div class="score-value" id="score-gaza-value">0</div>
-      </div>
-    </section>
-
-    <section class="row actions">
-      <button id="btn-tap" class="btn btn-blue" data-i18n="tap">Tap (+1)</button>
-      <button id="btn-super" class="btn btn-pink" data-i18n="superBoost">Super Boost (+25)</button>
-      <button id="btn-switch" class="btn btn-gray" data-i18n="switchTeam">החלף קבוצה</button>
-    </section>
-
-    <section class="row extra-tap">
-      <input id="stars-input" type="number" min="1" max="1000" value="10" class="stars-input" />
-      <button id="btn-extra" class="btn btn-gold" data-i18n="extraTap">Extra Tap</button>
-    </section>
-
-    <main class="main-grid">
-      <section class="panel" id="my-board">
-        <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
-        <div class="kv">
-          <div class="k" data-i18n="stars">Stars / Extra Tap</div>
-          <div class="v" id="me-stars">–</div>
-
-          <div class="k" data-i18n="playerLevel">Player Level</div>
-          <div class="v" id="me-level">–</div>
-
-          <div class="k" data-i18n="referrals">Invited Friends</div>
-          <div class="v" id="me-referrals">–</div>
-
-          <div class="k" data-i18n="tapsToday">Taps today</div>
-          <div class="v" id="me-taps">0/300</div>
+      <div class="partner-row">
+          <input id="ref-link" class="partner-input" readonly />
+          <button id="copy-ref" class="btn small"></button>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="panel" id="top20">
-        <div class="panel-title">Top 20</div>
-        <ol id="top20-list" class="top-list" aria-live="polite"></ol>
-      </section>
-    </main>
+    <!-- Buttons rows -->
+    <section class="actions">
+      <div class="row">
+        <button id="tap-btn" class="btn primary"></button>
+        <button id="super-btn" class="btn warn"></button>
+        <button id="switch-btn" class="btn ghost"></button>
+      </div>
+      <div class="row">
+        <div class="extra-group">
+          <input id="extra-amount" type="number" min="1" max="1000" value="10" />
+          <button id="extra-btn" class="btn gold"></button>
+        </div>
+      </div>
+    
+    <!-- Referral (moved under Extra Tap per user approval) -->
+    <div id="partner" class="partner-box">
+        <div class="partner-title"></div>
+        
 
-    <footer class="foot">
-      <span id="status-line"></span>
-    </footer>
+    </section>
+
+    <!-- Scores -->
+    <section class="scores">
+      <div class="score-card israel">
+        <div class="score-title" data-i18n="israel">Israel</div>
+        <div id="score-israel" class="score-value">0</div>
+      </div>
+      <div class="score-card gaza">
+        <div class="score-title" data-i18n="gaza">Gaza</div>
+        <div id="score-gaza" class="score-value">0</div>
+      </div>
+    </section>
+
+    <!-- Main split: My Panel + Top20 -->
+    <section class="split">
+      <div class="panel">
+        <h3 class="section-title" data-i18n="myPanel">My Panel</h3>
+        <div class="kv"><span data-i18n="starsExtra">Stars | Extra Tap</span> <span id="stars-extra">0</span></div>
+        <div class="kv"><span data-i18n="playerLevel">Player Level</span> <span id="player-level">1</span></div>
+        <div class="kv"><span data-i18n="invited">Invited</span> <span id="invited-count">0</span></div>
+        <div class="kv"><span data-i18n="tapsToday">Taps Today</span> <span id="taps-today">0/300</span></div>
+      </div>
+      <div class="toplist">
+        <h3 class="section-title" data-i18n="top20">Top 20</h3>
+        <ol id="top-list"></ol>
+      </div>
+    </section>
+
+    <!-- Messages -->
+    <section class="messages">
+      <h3 class="section-title" data-i18n="battleMessages">Battle Messages</h3>
+      <div id="feed" class="feed"></div>
+    </section>
   </div>
 
-  <script>
-    window.Telegram = window.Telegram || {};
-    Telegram.WebApp = Telegram.WebApp || undefined;
-  </script>
-  <script src="./script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
