@@ -1,112 +1,104 @@
-/* TeamBattle V2.7 — Client (functionality upgrade per user spec; UI locked except approved points) */
-(() => {
-  'use strict';
-  const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-  try { tg?.expand(); tg?.ready(); } catch(e){}
+(function(){
+  const WebApp = window.Telegram?.WebApp;
+  if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
 
-  const i18n={
-    en:{doubleOn:"Double XP Active!",doubleOff:"Double XP Off",tap:"Tap",super:"Super Boost",switch:"Switch Team",extra:"Extra Tap",israel:"Israel",gaza:"Gaza",myPanel:"My Panel",starsExtra:"Stars | Extra Tap",playerLevel:"Player Level",invited:"Invited",tapsToday:"Taps Today",top20:"Top 20",battleMessages:"Battle Messages",partnerTitle:"Partner Program",copy:"Copy Link",copied:"Copied"},
-    he:{doubleOn:"דאבל אקספי פעיל!",doubleOff:"דאבל אקספי כבוי",tap:"טאפ",super:"סופר בוסט",switch:"החלף קבוצה",extra:"Extra Tap",israel:"ישראל",gaza:"עזה",myPanel:"הלוח שלי",starsExtra:"כוכבים | Extra Tap",playerLevel:"רמת השחקן",invited:"מוזמנים",tapsToday:"טאפים היום",top20:"טופ 20",battleMessages:"הודעות קרב",partnerTitle:"תוכנית שותפים",copy:"העתק קישור",copied:"הועתק"},
-    ar:{doubleOn:"دابل إكس بي يعمل!",doubleOff:"دابل إكس بي متوقف",tap:"نقرة",super:"تعزيز سوبر",switch:"تبديل الفريق",extra:"Extra Tap",israel:"إسرائيل",gaza:"غزة",myPanel:"لوحتي",starsExtra:"النجوم | Extra Tap",playerLevel:"مستوى اللاعب",invited:"مدعوون",tapsToday:"نقرات اليوم",top20:"أفضل 20",battleMessages:"رسائل المعركة",partnerTitle:"برنامج الشركاء",copy:"نسخ الرابط",copied:"نُسخ"}
+  const i18n = {
+    en:{israel:"Israel",gaza:"Gaza",tap:"Tap (+1)",superBoost:"Super Boost (+25)",switchTeam:"Switch Team",extraTap:"Extra Tap",myBoard:"My Board",stars:"Stars / Extra Tap",playerLevel:"Player Level",referrals:"Invited Friends",tapsToday:"Taps today",doubleOn:"🟢 Double XP Active!",doubleOff:"⚪ Double XP Off",top20:"Top 20",copied:"Copied!",err:"Something went wrong"},
+    he:{israel:"ישראל",gaza:"עזה",tap:"טאפ (+1)",superBoost:"סופר בוסט (+25)",switchTeam:"החלף קבוצה",extraTap:"Extra Tap",myBoard:"הלוח שלי",stars:"כוכבים / Extra Tap",playerLevel:"רמת שחקן",referrals:"מוזמנים",tapsToday:"טאפים היום",doubleOn:"🟢 דאבל אקספי פעיל!",doubleOff:"⚪ דאבל אקספי כבוי",top20:"טופ 20",copied:"הועתק!",err:"אירעה שגיאה"},
+    ar:{israel:"إسرائيل",gaza:"غزة",tap:"انقر (+1)",superBoost:"تعزيز سوبر (+25)",switchTeam:"بدّل الفريق",extraTap:"Extra Tap",myBoard:"لوحتي",stars:"نجوم / Extra Tap",playerLevel:"مستوى اللاعب",referrals:"الأصدقاء المدعوون",tapsToday:"نقرات اليوم",doubleOn:"🟢 دابل إكس‌بي يعمل!",doubleOff:"⚪ دابل إکس‌بي متوقف",top20:"أفضل 20",copied:"تم النسخ!",err:"حدث خطأ ما"}
   };
 
-  const state={
-    lang: localStorage.getItem('tb_lang') || 'he',
-    selectedTeam:'israel',
-    doubleXP:false,
-    scores:{israel:0,gaza:0},
-    me:null,
-    leaderboard:[]
-  };
-
-  const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s), t=k=>(i18n[state.lang]&&i18n[state.lang][k])||k;
-
-  function setLang(lang){
-    state.lang=lang; localStorage.setItem('tb_lang',lang);
-    $("#tap-btn")&&($("#tap-btn").textContent=t("tap"));
-    $("#super-btn")&&($("#super-btn").textContent=t("super"));
-    $("#switch-btn")&&($("#switch-btn").textContent=t("switch"));
-    $("#extra-btn")&&($("#extra-btn").textContent=t("extra"));
-    const set=(sel,key)=>{const el=document.querySelector(sel); if(el) el.textContent=t(key);};
-    set(".partner-title","partnerTitle"); $("#copy-ref")&&($("#copy-ref").textContent=t("copy"));
-    set("[data-i18n='israel']","israel"); set("[data-i18n='gaza']","gaza");
-    set("[data-i18n='myPanel']","myPanel"); set("[data-i18n='starsExtra']","starsExtra");
-    set("[data-i18n='playerLevel']","playerLevel"); set("[data-i18n='invited']","invited");
-    set("[data-i18n='tapsToday']","tapsToday"); set("[data-i18n='top20']","top20"); set("[data-i18n='battleMessages']","battleMessages");
-    document.body.dir=(lang==="he"||lang==="ar")?"rtl":"ltr";
-    const dx=$("#double-xp"); if(dx){ dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
-  }
-  function bindLanguageButtons(){
-    const map=[["HE","he"],["EN","en"],["AR","ar"]];
-    document.querySelectorAll(".lang-switch .chip").forEach((btn,idx)=>{
-      btn.dataset.lang = map[idx]?.[1] || "en";
-      btn.addEventListener("click",()=>{
-        document.querySelectorAll(".lang-switch .chip").forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active"); setLang(btn.dataset.lang);
-      });
+  function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
+  function setLang(l){
+    document.documentElement.setAttribute('data-lang', l);
+    localStorage.setItem('tb_lang', l);
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const k = el.getAttribute('data-i18n');
+      el.textContent = i18n[l]?.[k] || k;
     });
-    (document.querySelector(`.chip[data-lang="${state.lang}"]`)||document.querySelector('.chip'))?.classList.add("active");
-    setLang(state.lang);
+    paintDoubleXp();
   }
+  document.querySelectorAll('.lang-switch [data-lang]').forEach(btn=>btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
+  (function(){ const s=localStorage.getItem('tb_lang'); if(s) setLang(s); else { const t=(WebApp?.initDataUnsafe?.user?.language_code||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); } })();
 
-  function toast(msg){
-    const el=document.createElement("div");
-    el.textContent=msg; Object.assign(el.style,{position:"fixed",bottom:"12px",left:"50%",transform:"translateX(-50%)",background:"#1b233b",color:"#fff",padding:"8px 12px",borderRadius:"8px",boxShadow:"0 6px 24px rgba(0,0,0,.35)",zIndex:"9999"});
-    document.body.appendChild(el); setTimeout(()=>el.remove(),1200);
+  const headers = {}; try{ if(WebApp?.initData) headers['X-Init-Data']=WebApp.initData; }catch(_){}
+
+  async function getJSON(u){ const r=await fetch(u,{headers}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+  async function postJSON(u,b){ const r=await fetch(u,{method:'POST',headers:Object.assign({'Content-Type':'application/json'},headers),body:JSON.stringify(b||{})}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+  function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+
+  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:null,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
+
+  function paintDoubleXp(){
+    const l=getLang(); const line=document.getElementById('double-xp');
+    if(GAME.doubleXP){ line.textContent=i18n[l].doubleOn; line.style.color='var(--gold)'; line.style.textShadow='var(--gold-glow)'; }
+    else{ line.textContent=i18n[l].doubleOff; line.style.color='#c8c8d8'; line.style.textShadow='none'; }
   }
-
-  function initRefLink(){
-    const uid=window.Telegram?.WebApp?.initDataUnsafe?.user?.id||0;
-    const link=`https://t.me/TeamBattle_vBot/app?start_param=${uid}`;
-    $("#ref-link") && ($("#ref-link").value=link);
-    const btn=$("#copy-ref"); if(btn) btn.onclick=async()=>{ try{ await navigator.clipboard.writeText(link); toast(t("copied")); }catch(e){} };
+  function paintScores(){ setText('score-israel-value', GAME.scores.israel??0); setText('score-gaza-value', GAME.scores.gaza??0); }
+  function paintMe(){
+    setText('me-stars', String(GAME.me.stars ?? '–'));
+    setText('me-level', String(GAME.me.level ?? '–'));
+    setText('me-referrals', String(GAME.me.referrals ?? '–'));
+    setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
   }
-
-  async function fetchJSON(url,opts){ const r=await fetch(url,Object.assign({credentials:'include'},opts||{})); if(!r.ok) throw new Error(`HTTP ${r.status}`); return await r.json(); }
-
-  async function fetchState(){ try{ const data=await fetchJSON("/api/state"); const s=data?.scores||data?.score; if(s){ state.scores=s; }
-    state.doubleXP=!!(data?.doubleXP?.on||data?.doubleXP);
-    $("#score-israel")&&($("#score-israel").textContent=state.scores.israel??0);
-    $("#score-gaza")&&($("#score-gaza").textContent=state.scores.gaza??0);
-    const dx=$("#double-xp"); if(dx){ dx.classList.toggle("on",state.doubleXP); dx.classList.toggle("off",!state.doubleXP); dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
-  }catch(e){} }
-
-  async function fetchMe(){ try{ const data=await fetchJSON("/api/me"); const me=data?.me||data||{}; state.me=me;
-    $("#stars-extra")&&($("#stars-extra").textContent=me?.starsExtra??me?.stars??0);
-    $("#player-level")&&($("#player-level").textContent=me?.level??1);
-    $("#invited-count")&&($("#invited-count").textContent=me?.invited??me?.referrals??0);
-    const tapsToday=me?.tapsToday??0, maxTaps=me?.maxTaps??300;
-    $("#taps-today")&&($("#taps-today").textContent=`${tapsToday}/${maxTaps}`);
-  }catch(e){} }
-
-  async function fetchLeaderboard(){ try{ const list=await fetchJSON("/api/leaderboard"); const items=Array.isArray(list)?list:(list?.rows||list?.top||[]);
-    state.leaderboard=items.slice(0,20);
-    const ol=$("#top-list"); if(ol){ ol.innerHTML=""; state.leaderboard.forEach((entry,i)=>{
-      const li=document.createElement("li");
-      const name=entry?.name||entry?.displayName||entry?.username||`Player #${i+1}`;
-      const pts=entry?.points??entry?.score??0;
-      li.textContent=`${i+1}. ${name} — ${pts}`;
-      ol.appendChild(li);
-    }); }
-  }catch(e){} }
-
-  function bindActions(){
-    $("#tap-btn")&&($("#tap-btn").onclick=async()=>{ try{ const r=await fetch("/api/tap",{method:"POST"}); if(r.ok){ feed(`+1 ${state.selectedTeam}`); fetchMe(); fetchState(); } }catch(e){} });
-    $("#super-btn")&&($("#super-btn").onclick=async()=>{ try{ const r=await fetch("/api/super",{method:"POST"}); if(r.ok){ feed(`Super Boost +25`); fetchMe(); fetchState(); } }catch(e){} });
-    $("#switch-btn")&&($("#switch-btn").onclick=()=>{ state.selectedTeam=(state.selectedTeam==="israel")?"gaza":"israel"; /* toast not essential */ });
-    $("#extra-btn")&&($("#extra-btn").onclick=async()=>{
-      const val=parseInt(($("#extra-amount")?.value||"10"),10); const amount=Math.max(1,Math.min(1000,isNaN(val)?10:val));
-      if($("#extra-amount")) $("#extra-amount").value=amount;
-      try{
-        const r=await fetch("/api/create-invoice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:"Extra Tap",description:"Donate Stars for team boost",amount,payload:`extra_${Date.now()}`})});
-        const data=await r.json();
-        if(data?.ok&&data?.url){ (window.Telegram?.WebApp?.openInvoice)?Telegram.WebApp.openInvoice(data.url):(location.href=data.url); }
-      }catch(e){}
+  function paintTop20(){
+    const ul=document.getElementById('top20-list'); ul.innerHTML='';
+    (GAME.leaderboard||[]).forEach((p,idx)=>{
+      const li=document.createElement('li');
+      const name=document.createElement('span'); name.className='name';
+      const pts=document.createElement('span'); pts.className='pts';
+      name.textContent = p.username ? p.username : `Player #${idx+1}`;
+      pts.textContent = (p.points ?? p.score ?? 0) + ' pts';
+      li.appendChild(name); li.appendChild(pts); ul.appendChild(li);
     });
   }
 
-  function feed(txt){ const box=$("#feed"); if(!box) return; const item=document.createElement("div"); item.className="item"; const now=new Date().toLocaleTimeString(); item.textContent=`[${now}] ${txt}`; box.appendChild(item); box.scrollTop=box.scrollHeight; }
+  async function refreshAll(){
+    try{
+      const state=await getJSON('/api/state');
+      GAME.doubleXP=!!(state.doubleXP ?? state.doubleXp ?? state.double_xp);
+      if(state.scores) GAME.scores=state.scores;
+      paintDoubleXp(); paintScores();
+    }catch(_){}
+    try{
+      const me=await getJSON('/api/me');
+      GAME.me={
+        id:me.id??me.userId??me.user_id??null,
+        team:me.team??null,
+        tapsToday:me.tapsToday??me.taps_today??me.taps??0,
+        tapsLimit:me.tapsLimit??me.taps_limit??300,
+        level:me.level??1,
+        referrals:me.referrals??me.invited??0,
+        stars:me.stars??me.balance??0,
+        username:me.username??null
+      };
+      paintMe();
+    }catch(_){}
+    try{
+      const lb=await getJSON('/api/leaderboard');
+      if(Array.isArray(lb)) GAME.leaderboard=lb.slice(0,20);
+      else if(Array.isArray(lb?.leaders)) GAME.leaderboard=lb.leaders.slice(0,20);
+      paintTop20();
+    }catch(_){}
+  }
+  setInterval(refreshAll, 5000);
+  refreshAll();
 
-  function init(){ tg?.ready?.(); tg?.expand?.(); bindLanguageButtons(); initRefLink(); bindActions(); fetchState(); fetchMe(); fetchLeaderboard(); setInterval(fetchState,5000); setInterval(fetchMe,7000); setInterval(fetchLeaderboard,12000); }
-  document.addEventListener("DOMContentLoaded",init);
+  const statusLine=document.getElementById('status-line');
+  function flashStatus(m){ statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
+
+  document.getElementById('btn-tap').addEventListener('click',async()=>{ try{ await postJSON('/api/tap'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
+  document.getElementById('btn-super').addEventListener('click',async()=>{ try{ await postJSON('/api/super'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
+  document.getElementById('btn-switch').addEventListener('click',async()=>{ try{ await postJSON('/api/switch-team'); await refreshAll(); }catch(_){ flashStatus(i18n[getLang()].err); } });
+
+  document.getElementById('btn-extra').addEventListener('click', async ()=>{
+    const amount = Math.max(1, Math.min(1000, parseInt(document.getElementById('stars-input').value || '0')));
+    try{
+      const r=await postJSON('/api/create-invoice',{ title:'Extra Tap', description:'Donate Stars for team points', amount, payload:'extra_'+Date.now() });
+      if(r?.ok && r.url){
+        if(WebApp?.openInvoice){ WebApp.openInvoice(r.url, ()=>refreshAll()); }
+        else{ window.location.href=r.url; }
+      }
+    }catch(_){ flashStatus(i18n[getLang()].err); }
+  });
 })();
