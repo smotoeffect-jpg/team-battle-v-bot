@@ -4,22 +4,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== Detect Telegram user or create fallback ID =====
   let telegramUserId = null;
-  try {
-    console.log("initDataUnsafe =", WebApp?.initDataUnsafe);
-    telegramUserId = WebApp?.initDataUnsafe?.user?.id || null;
-  } catch (e) {
-    console.error("Cannot read Telegram user info:", e);
+    async function waitForTelegramUser() {
+    for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
+      if (WebApp?.initDataUnsafe?.user?.id) {
+        return WebApp.initDataUnsafe.user.id;
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return null;
   }
 
+  telegramUserId = await waitForTelegramUser();
+
   if (!telegramUserId) {
-    // fallback temporary id for non-Telegram usage
+    console.warn("⚠️ Telegram userId not found — using fallback guest ID");
     telegramUserId = localStorage.getItem("tb_fallback_id");
     if (!telegramUserId) {
       telegramUserId = "guest_" + Math.floor(Math.random() * 9999999);
       localStorage.setItem("tb_fallback_id", telegramUserId);
     }
   }
-  console.log("Active userId:", telegramUserId);
+
+  console.log("✅ Active userId:", telegramUserId);
+
 
   // ====== Translations ======
   const i18n = {
