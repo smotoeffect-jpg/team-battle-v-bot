@@ -1,7 +1,26 @@
-console.log("🌐 WebApp Detected:", !!window.Telegram?.WebApp);
-console.log("🔑 initData:", window.Telegram?.WebApp?.initData);
+// === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
+console.log("⏳ Waiting for Telegram WebApp...");
+function waitForWebApp(maxWait = 2000) {
+  return new Promise(resolve => {
+    let waited = 0;
+    const iv = setInterval(() => {
+      if (window.Telegram?.WebApp) {
+        clearInterval(iv);
+        console.log("🌐 WebApp Detected:", true);
+        resolve(window.Telegram.WebApp);
+      }
+      waited += 100;
+      if (waited >= maxWait) {
+        clearInterval(iv);
+        console.warn("⚠️ Telegram WebApp not detected after wait — using fallback.");
+        resolve(null);
+      }
+    }, 100);
+  });
+}
 document.addEventListener("DOMContentLoaded", async () => {
-  const WebApp = window.Telegram?.WebApp;
+  const WebApp = await waitForWebApp();
+  console.log("🔑 initData:", WebApp?.initData);
   // ====== FORCE Telegram InitData Injection (for some Android/iOS/Desktop issues) ======
 if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   try {
