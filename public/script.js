@@ -2,6 +2,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const WebApp = window.Telegram?.WebApp;
   if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
 
+  // === תיקון קריטי: userId מהטלגרם ===
+  let telegramUserId = null;
+  try {
+    telegramUserId = WebApp?.initDataUnsafe?.user?.id || null;
+    console.log("Telegram userId:", telegramUserId);
+  } catch (e) {
+    console.warn("No Telegram user id found.");
+  }
+
   const i18n = {
     en:{israel:"Israel",gaza:"Gaza",tap:"Tap (+1)",superBoost:"Super Boost (+25)",switchTeam:"Switch Team",extraTap:"Extra Tap",myBoard:"My Board",stars:"Stars / Extra Tap",playerLevel:"Player Level",referrals:"Invited Friends",tapsToday:"Taps today",doubleOn:"⚡ Double XP is ON",doubleOff:"⚪ Double XP Off",top20:"Top 20",copied:"Copied!",err:"Something went wrong",partnerTitle:"Affiliate Program",copy:"Copy Link"},
     he:{israel:"ישראל",gaza:"עזה",tap:"טאפ (+1)",superBoost:"סופר בוסט (+25)",switchTeam:"החלף קבוצה",extraTap:"Extra Tap",myBoard:"הלוח שלי",stars:"Stars / Extra Tap",playerLevel:"רמת שחקן",referrals:"מספר הזמנות",tapsToday:"טאפים היום",doubleOn:"⚡ אקספי מוכפל פעיל",doubleOff:"אקספי מוכפל כבוי",top20:"טופ 20",copied:"הועתק!",err:"אירעה שגיאה",partnerTitle:"תוכנית שותפים",copy:"העתק קישור"},
@@ -28,13 +37,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if(s) setLang(s); else { const t=(navigator.language||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); }
   })();
 
-  const headers = {}; try{ if(WebApp?.initData) headers['X-Init-Data']=WebApp.initData; }catch(_){}
+  const headers = {}; 
+  try{ if(WebApp?.initData) headers['X-Init-Data']=WebApp.initData; }catch(_){}
 
   async function getJSON(u){ const r=await fetch(u,{headers}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   async function postJSON(u,b){ const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(b||{})}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
 
-  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:null,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
+  let GAME={doubleXP:false,scores:{israel:0,gaza:0},me:{id:telegramUserId,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
 
   function paintDoubleXp(){
     const l=getLang(); const line=document.getElementById('double-xp');
@@ -71,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try{
       const me=await getJSON('/api/me');
       GAME.me={
-        id:me.id??me.userId??me.user_id??null,
+        id:me.id??me.userId??me.user_id??telegramUserId??null,
         team:me.team??null,
         tapsToday:me.tapsToday??me.taps_today??me.taps??0,
         tapsLimit:me.tapsLimit??me.taps_limit??300,
