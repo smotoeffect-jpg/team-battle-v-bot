@@ -296,7 +296,11 @@ console.log("💎 Initializing TON Connect...");
 
     async function connectTonWallet() {
       try {
-        await tonConnect.connect();
+        // ✅ שימוש נכון בגרסה החדשה של SDK
+        await tonConnect.connect({
+          universalLink: "https://app.tonkeeper.com/ton-connect",
+          bridgeUrl: "https://bridge.tonapi.io/bridge"
+        });
       } catch (err) {
         console.error("TON connect error:", err);
       }
@@ -319,5 +323,5 @@ console.log("💎 Initializing TON Connect...");
     console.error("TON Connect initialization failed:", err);
   }
 })();
-
+  
 });  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
