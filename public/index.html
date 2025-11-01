@@ -3,80 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Team Battle: Israel Vs Gaza</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>TeamBattle • Israel Vs Gaza</title>
+  <link rel="stylesheet" href="./style.css" />
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      if (window.Telegram && Telegram.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
-    });
+    (function(){ const l=localStorage.getItem('tb_lang'); if(l) document.documentElement.setAttribute('data-lang', l); })();
   </script>
 </head>
 <body>
-  <main class="wrap">
-    <h1 class="title"><span>TeamBattle - Israel</span><br/><span>Vs Gaza</span></h1>
+  <div id="app" class="wrap">
+    <div id="double-xp" class="doublexp-line" aria-live="polite"></div>
+    <header class="title">
+      <div class="brand">TeamBattle</div>
+      <div class="subtitle">Israel Vs Gaza</div>
+    </header>
 
-    <div class="lang-row">
-      <button class="chip" data-lang="ar">العربية</button>
-      <button class="chip" data-lang="en">English</button>
-      <button class="chip" data-lang="he">עברית</button>
+    <div class="toolbar">
+      <div class="lang-switch">
+        <button class="btn btn-small" data-lang="he">עברית</button>
+        <button class="btn btn-small" data-lang="en">English</button>
+        <button class="btn btn-small" data-lang="ar">العربية</button>
+      </div>
     </div>
 
-    <section class="score-row">
-      <div class="score-card">
-        <div class="score-title" data-i18n="gaza">עזה</div>
-        <div class="score-value" id="score-gaza">0</div>
+    <section class="scores-row">
+      <div class="score-card" id="score-israel">
+        <div class="score-label" data-i18n="israel">Israel</div>
+        <div class="score-value" id="score-israel-value">0</div>
       </div>
-      <div class="score-card">
-        <div class="score-title" data-i18n="israel">ישראל</div>
-        <div class="score-value" id="score-israel">0</div>
+      <div class="score-card" id="score-gaza">
+        <div class="score-label" data-i18n="gaza">Gaza</div>
+        <div class="score-value" id="score-gaza-value">0</div>
       </div>
     </section>
 
-    <p class="mini-desc" id="rules-line">
-      <span data-i18n="superPerDay">סופר פעם/יום</span> ⚡ ·
-      <span data-i18n="dailyTaps">יומי/טאפים 300</span> 💥 ·
-      <span data-i18n="starsRule">⭐ 'כל 2 = 1'</span>
-    </p>
-
-    <div class="action-row">
-      <button id="btn-switch" class="btn secondary" data-i18n="switchTeam">החלף קבוצה</button>
-      <button id="btn-super" class="btn pink" data-i18n="superBoost">סופר-בוסט</button>
-      <button id="btn-tap" class="btn primary" data-i18n="tap">TAP (+1)</button>
-    </div>
-
-    <div class="limits-row" id="limits">
-      <span data-i18n="dailyTapsShort">טאפים יומיים</span>:
-      <b id="taps-used">0</b>/<b id="taps-max">300</b>
-      <span> / </span>
-      <b id="super-used">0</b>
-      <span data-i18n="superToday">/ 1 סופר היום</span>
-    </div>
-
-    <section class="donate-row">
-      <button class="btn gold ghost" id="btn-extra" data-i18n="extraTap">Extra TAP +2</button>
-      <div class="donate-inline">
-        <input id="stars-input" type="number" min="1" max="1000" value="610" />
-      </div>
+    <section class="row actions">
+      <button id="btn-tap" class="btn btn-blue" data-i18n="tap">Tap (+1)</button>
+      <button id="btn-super" class="btn btn-pink" data-i18n="superBoost">Super Boost (+25)</button>
+      <button id="btn-switch" class="btn btn-gray" data-i18n="switchTeam">החלף קבוצה</button>
     </section>
 
-    <section class="ref-box">
-      <h3 class="ref-title" data-i18n="refTitle">תוכנית שותפים 🤝</h3>
-      <p class="ref-desc" data-i18n="refDesc">
-        הזמן חברים בעזרת הקישור האישי שלך. כשאנשים תורמים ⭐ אתה מקבל בונוס של 10% נקודות לקבוצה שלך!
-      </p>
-
-      <div class="ref-actions">
-        <button id="share-btn" class="btn primary ghost" data-i18n="shareTelegram">שתף בטלגרם</button>
-        <button id="copy-btn" class="btn secondary ghost" data-i18n="copyLink">העתק קישור</button>
-        <input id="ref-input" class="ref-input" readonly value="" />
-      </div>
+    <section class="row extra-tap">
+      <input id="stars-input" type="number" min="1" max="1000" value="10" class="stars-input" />
+      <button id="btn-extra" class="btn btn-gold" data-i18n="extraTap">Extra Tap</button>
     </section>
 
-    <h2 class="board-title" data-i18n="myBoard">הלוח שלי</h2>
+    <main class="main-grid">
+      <section class="panel" id="my-board">
+        <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
+        <div class="kv">
+          <div class="k" data-i18n="stars">Stars / Extra Tap</div>
+          <div class="v" id="me-stars">–</div>
 
-    <footer class="footer">© TeamBattle</footer>
-  </main>
+          <div class="k" data-i18n="playerLevel">Player Level</div>
+          <div class="v" id="me-level">–</div>
 
-  <script src="script.js"></script>
+          <div class="k" data-i18n="referrals">Invited Friends</div>
+          <div class="v" id="me-referrals">–</div>
+
+          <div class="k" data-i18n="tapsToday">Taps today</div>
+          <div class="v" id="me-taps">0/300</div>
+        </div>
+      </section>
+
+      <section class="panel" id="top20">
+        <div class="panel-title">Top 20</div>
+        <ol id="top20-list" class="top-list" aria-live="polite"></ol>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <span id="status-line"></span>
+    </footer>
+  </div>
+
+  <script>
+    window.Telegram = window.Telegram || {};
+    Telegram.WebApp = Telegram.WebApp || undefined;
+  </script>
+  <script src="./script.js"></script>
 </body>
 </html>
