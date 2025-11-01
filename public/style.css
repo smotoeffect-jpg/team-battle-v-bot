@@ -39,3 +39,16 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;c
 .top-list li{margin:6px 0;padding:8px 10px;border-radius:10px;background:var(--panel-2);border:1px solid #2a2a49;display:flex;justify-content:space-between;gap:10px}
 .top-list .name{font-weight:800} .top-list .pts{color:var(--muted)}
 .foot{margin-top:16px;text-align:center;color:var(--muted);font-size:12px}
+
+/* V2.7 tweaks per user approval:
+   - Keep My Panel + Top20 side-by-side on all screen sizes
+   - Make group names and numbers more prominent
+*/
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width: 860px){
+  /* override previous single-column rule */
+  .split{grid-template-columns:1fr 1fr}
+}
+.score-title{font-size:16px;font-weight:900}
+.score-value{font-size:34px;font-weight:900}
+.score-title .flag{margin-left:6px;filter:saturate(1.1)}
