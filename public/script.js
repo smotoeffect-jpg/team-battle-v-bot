@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   console.log("✅ Active userId:", telegramUserId);
-
+console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
   // ====== Translations ======
   const i18n = {
