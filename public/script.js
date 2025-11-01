@@ -2,6 +2,22 @@ console.log("🌐 WebApp Detected:", !!window.Telegram?.WebApp);
 console.log("🔑 initData:", window.Telegram?.WebApp?.initData);
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = window.Telegram?.WebApp;
+  // ====== FORCE Telegram InitData Injection (for some Android/iOS/Desktop issues) ======
+if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("tgWebAppData");
+    if (data) {
+      if (!window.Telegram) window.Telegram = {};
+      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+      window.Telegram.WebApp.initData = decodeURIComponent(data);
+      window.Telegram.WebApp.initDataUnsafe = JSON.parse(Object.fromEntries(new URLSearchParams(data)).user || "{}");
+      console.log("🧩 Fixed Telegram initData from URL!");
+    }
+  } catch (e) {
+    console.warn("InitData fix failed:", e);
+  }
+}
   if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
 
   // ===== Detect Telegram user or create fallback ID =====
