@@ -165,29 +165,58 @@ body{
     font-size: 0.65rem;
   }
 }
+/* === TON Wallet === */
 .ton-wallet {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 18px;
 }
 
 #connect-ton {
+  display: inline-block;
   width: 100%;
-  padding: 12px 0;
-  font-weight: 800;
-  font-size: 1rem;
-  background: linear-gradient(180deg,#ff4dc4,#e028a5);
-  color: #fff;
+  padding: 14px 0;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
   border: none;
   border-radius: 10px;
-  box-shadow: 0 0 16px rgba(255,77,196,.35);
   cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #00e1ff, #0077ff);
+  box-shadow: 0 0 18px rgba(0, 225, 255, 0.45);
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+/* 💎 הוספת אייקון יהלום לפני הטקסט */
+#connect-ton::before {
+  content: "💎 ";
+  font-size: 1.1rem;
+}
+
+#connect-ton:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 25px rgba(0, 225, 255, 0.7);
 }
 
 #ton-address {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: var(--muted);
-  font-weight: 600;
+  margin-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #00e1ff;
+  text-shadow: 0 0 12px rgba(0, 225, 255, 0.55);
   text-align: center;
+  letter-spacing: 0.4px;
   word-break: break-all;
+}
+
+/* מובייל */
+@media (max-width: 600px) {
+  #connect-ton {
+    font-size: 0.85rem;
+    padding: 12px 0;
+  }
+  #ton-address {
+    font-size: 0.9rem;
+  }
 }
