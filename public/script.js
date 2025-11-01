@@ -21,6 +21,20 @@ function waitForWebApp(maxWait = 2000) {
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
   console.log("🔑 initData:", WebApp?.initData);
+ // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
+if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get("tgWebAppData");
+  if (data) {
+    console.log("🧩 Injecting initData manually from URL (early)!");
+    if (!window.Telegram) window.Telegram = {};
+    if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+    window.Telegram.WebApp.initData = decodeURIComponent(data);
+  }
+}
+  if (window.Telegram?.WebApp?.initData) {
+  WebApp.initData = window.Telegram.WebApp.initData;
+}
   // ====== FORCE Telegram InitData Injection (for some Android/iOS/Desktop issues) ======
 if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   try {
@@ -53,7 +67,10 @@ if (!window.Telegram?.WebApp?.initData && window.location.hash.includes("tgWebAp
     console.warn("InitData hash fix failed:", e);
   }
 }
-  if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
+// ✅ אם הצלחנו לשחזר את initData - ודא שהאובייקט הראשי מעודכן
+if (window.Telegram?.WebApp?.initData) {
+  WebApp.initData = window.Telegram.WebApp.initData;
+}
 
   // ===== Detect Telegram user or create fallback ID =====
   let telegramUserId = null;
@@ -109,6 +126,9 @@ console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
   })();
 
   // ===== API helpers =====
+  if (window.Telegram?.WebApp?.initData) {
+  WebApp.initData = window.Telegram.WebApp.initData;
+}
   const headers = {}; 
   try { if(WebApp?.initData) headers['X-Init-Data'] = WebApp.initData; } catch(_){}
 // ✅ תיקון: ודא שתמיד יש userId כלשהו בכותרת
