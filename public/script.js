@@ -149,17 +149,18 @@ if (telegramUserId) {
       paintScores();
     }catch(_){}
     try{
-      const me=await getJSON('/api/me?userId='+telegramUserId);
-      GAME.me={
-        id:me.id??me.userId??me.user_id??telegramUserId,
-        team:me.team??null,
-        tapsToday:me.tapsToday??me.taps_today??me.taps??0,
-        tapsLimit:me.tapsLimit??me.taps_limit??300,
-        level:me.level??1,
-        referrals:me.referrals??me.invited??0,
-        stars:me.stars??me.balance??0,
-        username:me.username??null
-      };
+      const meResp = await getJSON('/api/me?userId=' + telegramUserId);
+const M = meResp?.me || meResp || {};
+GAME.me = {
+  id: M.userId ?? M.id ?? telegramUserId,
+  team: M.team ?? null,
+  tapsToday: M.tapsToday ?? M.taps_today ?? M.taps ?? 0,
+  tapsLimit: meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? 300,
+  level: M.level ?? 1,
+  referrals: M.referrals ?? M.invited ?? 0,
+  stars: M.starsDonated ?? M.stars ?? M.balance ?? 0,
+  username: M.username ?? null
+};
       paintMe();
 
       // ===== Affiliate / Referral Section =====
@@ -183,10 +184,11 @@ if (telegramUserId) {
 
     }catch(_){}
     try{
-      const lb=await getJSON('/api/leaderboard');
-      if(Array.isArray(lb)) GAME.leaderboard=lb.slice(0,20);
-      else if(Array.isArray(lb?.leaders)) GAME.leaderboard=lb.leaders.slice(0,20);
-      paintTop20();
+      const lb = await getJSON('/api/leaderboard');
+if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
+else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
+else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
+paintTop20();
     }catch(_){}
   }
 
