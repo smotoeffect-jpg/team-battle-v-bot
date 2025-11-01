@@ -1,4 +1,4 @@
-/* TeamBattle V2.9 — Functionality only (UI/colors locked) */
+/* TeamBattle V2.5 — Functional upgrades only (design locked) */
 (() => {
   'use strict';
   const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
@@ -10,7 +10,15 @@
     ar:{doubleOn:"دابل إكس بي يعمل!",doubleOff:"دابل إكس بي متوقف",tap:"نقرة",super:"تعزيز سوبر",switch:"تبديل الفريق",extra:"Extra Tap",israel:"إسرائيل",gaza:"غزة",myPanel:"لوحتي",starsExtra:"النجوم | Extra Tap",playerLevel:"مستوى اللاعب",invited:"مدعوون",tapsToday:"نقرات اليوم",top20:"أفضل 20",battleMessages:"رسائل المعركة",partnerTitle:"برنامج الشركاء",copy:"نسخ الرابط",copied:"نُسخ"}
   };
 
-  const state={lang:localStorage.getItem('tb_lang')||'he',selectedTeam:'israel',doubleXP:false,scores:{israel:0,gaza:0},me:null,leaderboard:[]};
+  const state={
+    lang: localStorage.getItem('tb_lang') || 'he',
+    selectedTeam:'israel',
+    doubleXP:false,
+    scores:{israel:0,gaza:0},
+    me:null,
+    leaderboard:[]
+  };
+
   const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s), t=k=>(i18n[state.lang]&&i18n[state.lang][k])||k;
 
   function setLang(lang){
@@ -25,13 +33,13 @@
     set("[data-i18n='myPanel']","myPanel"); set("[data-i18n='starsExtra']","starsExtra");
     set("[data-i18n='playerLevel']","playerLevel"); set("[data-i18n='invited']","invited");
     set("[data-i18n='tapsToday']","tapsToday"); set("[data-i18n='top20']","top20"); set("[data-i18n='battleMessages']","battleMessages");
-    document.body.dir=(lang==='he'||lang==='ar')?'rtl':'ltr';
+    document.body.dir=(lang==="he"||lang==="ar")?"rtl":"ltr";
     const dx=$("#double-xp"); if(dx){ dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
   }
   function bindLanguageButtons(){
     const map=[["HE","he"],["EN","en"],["AR","ar"]];
     $$(".lang-switch .chip").forEach((btn,idx)=>{
-      btn.dataset.lang=map[idx]?.[1]||"en";
+      btn.dataset.lang = map[idx]?.[1] || "en";
       btn.addEventListener("click",()=>{
         $$(".lang-switch .chip").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active"); setLang(btn.dataset.lang);
@@ -41,10 +49,12 @@
     setLang(state.lang);
   }
 
-  function uid(){ return window.Telegram?.WebApp?.initDataUnsafe?.user?.id||0; }
+  // Utils
+  function uid(){ return window.Telegram?.WebApp?.initDataUnsafe?.user?.id || 0; }
   async function fetchJSON(url,opts){ const r=await fetch(url,Object.assign({credentials:'include'},opts||{})); if(!r.ok) throw new Error(`HTTP ${r.status}`); return await r.json(); }
   function toast(msg){ const el=document.createElement("div"); el.textContent=msg; Object.assign(el.style,{position:"fixed",bottom:"12px",left:"50%",transform:"translateX(-50%)",background:"#1b233b",color:"#fff",padding:"8px 12px",borderRadius:"8px",boxShadow:"0 6px 24px rgba(0,0,0,.35)",zIndex:"9999"}); document.body.appendChild(el); setTimeout(()=>el.remove(),1200); }
 
+  // Referral
   function initRefLink(){
     const id=uid();
     const link=id?`https://t.me/TeamBattle_vBot/app?start_param=${id}`:"";
@@ -52,14 +62,18 @@
     const btn=$("#copy-ref"); if(btn) btn.onclick=async()=>{ try{ await navigator.clipboard.writeText(link); toast(t("copied")); }catch(e){} };
   }
 
-  async function fetchState(){ try{ const data=await fetchJSON("/api/state"); const s=data?.scores||data?.score; if(s) state.scores=s;
+  // API sync
+  async function fetchState(){ try{ const data=await fetchJSON("/api/state"); const s=data?.scores||data?.score; if(s){ state.scores=s; }
     state.doubleXP=!!(data?.doubleXP?.on||data?.doubleXP);
     $("#score-israel")&&($("#score-israel").textContent=state.scores.israel??0);
     $("#score-gaza")&&($("#score-gaza").textContent=state.scores.gaza??0);
     const dx=$("#double-xp"); if(dx){ dx.classList.toggle("on",state.doubleXP); dx.classList.toggle("off",!state.doubleXP); dx.textContent=state.doubleXP?t("doubleOn"):t("doubleOff"); }
   }catch(e){} }
 
-  function levelLine(xp=0,level=1){ const step=100, prev=(level-1)*step, next=level*step, curr=Math.max(0,Math.min(next-prev,xp-prev)); return `Level ${level} (${curr}/${step} XP) 🎖️`; }
+  function levelLine(xp=0, level=1){
+    const step=100, prev=(level-1)*step, next=level*step, curr=Math.max(0,Math.min(next-prev,xp-prev));
+    return `Level ${level} (${curr}/${step} XP) 🎖️`;
+  }
 
   async function fetchMe(){ try{ const id=uid(); const data=await fetchJSON(`/api/me?userId=${id}`); const me=data?.me||data||{}; state.me=me;
     $("#stars-extra")&&($("#stars-extra").textContent=me?.starsExtra??me?.stars??0);
@@ -74,6 +88,7 @@
       const name=entry?.displayName||entry?.name||entry?.username||`Player #${i+1}`; const pts=entry?.points??entry?.score??0; li.textContent=`${i+1}. ${name} — ${pts}`; ol.appendChild(li); }); }
   }catch(e){} }
 
+  // Actions
   function feed(txt){ const box=$("#feed"); if(!box) return; const item=document.createElement("div"); item.className="item"; const now=new Date().toLocaleTimeString(); item.textContent=`[${now}] ${txt}`; box.appendChild(item); box.scrollTop=box.scrollHeight; }
 
   function bindActions(){
