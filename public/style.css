@@ -67,7 +67,7 @@ body{
   max-width: 30%;
   min-width: 30%;
   height: 68px; /* נשאר אותו גודל כפתור */
-  font-size: 0.7rem; /* 🔹 מוקטן עוד */
+  font-size: 0.6rem; /* 🔹 מוקטן עוד */
   font-weight: 800;
   border-radius: 12px;
   text-transform: uppercase;
