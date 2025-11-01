@@ -274,4 +274,5 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
     console.error("❌ [EXTRA] Error:", err);
     flashStatus(i18n[getLang()].err);
   }
-});
+});  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
+});  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
