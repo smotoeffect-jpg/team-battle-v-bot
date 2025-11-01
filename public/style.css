@@ -50,3 +50,113 @@ body{
 .partner-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 .partner-input{background:#0f0f1a;border:1px solid var(--pink);color:#fff;border-radius:8px;padding:10px 12px;width:260px;text-align:center}
 .btn.share::before{content:"📩 ";}
+
+/* === ACTION BUTTONS ALWAYS IN ONE LINE === */
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: nowrap; /* ❗ לא יירדו שורה */
+  overflow-x: auto; /* מאפשר גלילה אם המסך קטן מדי */
+}
+
+.action-row button {
+  flex: 1;
+  min-width: 30%;
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 22px 0;
+  border-radius: 14px;
+  background: #000;
+  color: #fff;
+  border: 3px solid #ff3cf0;
+  box-shadow: 0 0 16px #ff3cf0aa;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* לא נשבר טקסט */
+}
+
+.action-row button:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 25px #ff3cf0;
+}
+
+/* === EXTRA TAP SECTION (ALWAYS ONE LINE) === */
+.extra-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 25px;
+  flex-wrap: nowrap; /* ❗ לא יורד שורה */
+  overflow-x: auto; /* גלילה אם צפוף מדי במובייל */
+}
+
+.extra-row input {
+  flex: 1;
+  min-width: 40%;
+  font-size: 1.4rem;
+  font-weight: 600;
+  padding: 20px;
+  text-align: center;
+  border: 3px solid #ff3cf0;
+  border-radius: 12px;
+  background: #000;
+  color: #fff;
+  box-shadow: 0 0 14px #ff3cf0aa;
+  white-space: nowrap;
+}
+
+.extra-row button {
+  flex: 1;
+  min-width: 40%;
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 22px 0;
+  border-radius: 14px;
+  background: #000;
+  color: #fff;
+  border: 3px solid #ff3cf0;
+  box-shadow: 0 0 16px #ff3cf0aa;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.extra-row button:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 25px #ff3cf0;
+}
+/* === CENTER ACTION ROWS ON ALL DEVICES === */
+.action-row, .extra-row {
+  max-width: 100%;
+  justify-content: center;
+}
+
+.action-row button,
+.extra-row button,
+.extra-row input {
+  flex: none;
+  width: 30%; /* שלושת כפתורי Tap | Super | Switch */
+}
+
+.extra-row input {
+  width: 35%;
+}
+
+/* למובייל – שמירה על אותה שורה, אבל גודל טקסט מותאם */
+@media (max-width: 600px) {
+  .action-row button {
+    width: 32%;
+    font-size: 1.2rem;
+    padding: 18px 0;
+  }
+  .extra-row input,
+  .extra-row button {
+    width: 45%;
+    font-size: 1.2rem;
+    padding: 18px 0;
+  }
+}
