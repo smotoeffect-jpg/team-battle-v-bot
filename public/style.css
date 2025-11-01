@@ -63,9 +63,9 @@ body{
 
 .action-row button {
   flex: 1;
-  max-width: 33%;   /* 🔹 היה 30% → עכשיו יותר רחב */
-  min-width: 33%;
-  height: 68px;     /* אותו גובה */
+  max-width: 36%;   /* 🔹 היה 33% → עכשיו מעט רחב יותר */
+  min-width: 36%;
+  height: 64px;     /* 🔹 מעט פחות עבה, כדי להיראות מאוזן */
   font-size: 0.7rem;
   font-weight: 800;
   border-radius: 12px;
