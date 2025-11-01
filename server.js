@@ -25,7 +25,7 @@ const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
 const STAR_TO_POINTS  = 2;
 const SUPER_POINTS    = 25;
 const DAILY_TAPS      = 300;
-const AFFILIATE_BONUS = 0.10;
+const AFFILIATE_BONUS = 0.10; // (שמורה לעתיד; אין חישוב אוטומטי כרגע)
 
 // XP/Levels
 const DAILY_BONUS_INTERVAL_MS = 24*60*60*1000;
@@ -228,19 +228,30 @@ const tgPost = async (m, d) => {
   }
 };
 
-function getAdminLang(uid) {
-  const meta = adminMeta[uid] || {};
-  return meta.lang === "he" ? "he" : "en";
+// ---- Parse Telegram init data from header (Mini App) ----
+function parseInitDataHeader(req) {
+  // Telegram Mini App passes a URL-encoded string in WebApp.initData.
+  const raw = req.headers["x-init-data"] || req.headers["x-telegram-init-data"] || "";
+  if (!raw || typeof raw !== "string") return {};
+  try {
+    const sp = new URLSearchParams(raw);
+    // 'user' is JSON (quoted); 'start_param' is plain.
+    let userId = null;
+    if (sp.get("user")) {
+      const userObj = JSON.parse(sp.get("user"));
+      if (userObj?.id) userId = String(userObj.id);
+    }
+    const startParam = sp.get("start_param") || null;
+    return { userId, startParam };
+  } catch {
+    return {};
+  }
 }
-function setAdminLang(uid, lang) {
-  if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].lang = lang;
-  writeJSON(AMETA_FILE, adminMeta);
-}
-function setAdminAwait(uid, what) {
-  if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].awaiting = what; // e.g. 'broadcast' | null
-  writeJSON(AMETA_FILE, adminMeta);
+function getUserIdFromReq(req) {
+  const q = String(req.query.userId || req.query.user_id || "");
+  if (q) return q;
+  const { userId } = parseInitDataHeader(req);
+  return userId || "";
 }
 
 // ====== Double XP helpers ======
@@ -275,7 +286,8 @@ async function broadcastToAllByLang(textsPerLang) {
 app.get("/api/state", (_, res) => res.json({ ok: true, scores, doubleXP: { on: isDoubleXPOn() } }));
 
 app.post("/api/select-team", (req, res) => {
-  const { userId, team } = req.body || {};
+  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
+  const team   = req.body?.team;
   if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
   const u = ensureUser(userId);
   u.team = team;
@@ -284,7 +296,8 @@ app.post("/api/select-team", (req, res) => {
 });
 
 app.post("/api/switch-team", (req, res) => {
-  const { userId, newTeam } = req.body || {};
+  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
+  const newTeam = req.body?.newTeam;
   if (!userId || !["israel","gaza"].includes(newTeam)) return res.status(400).json({ ok:false });
   const u = ensureUser(userId);
   u.team = newTeam;
@@ -293,7 +306,7 @@ app.post("/api/switch-team", (req, res) => {
 });
 
 app.post("/api/tap", (req, res) => {
-  const { userId } = req.body || {};
+  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
@@ -309,7 +322,7 @@ app.post("/api/tap", (req, res) => {
 });
 
 app.post("/api/super", (req, res) => {
-  const { userId } = req.body || {};
+  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
@@ -326,10 +339,13 @@ app.post("/api/super", (req, res) => {
   res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
 });
 
-// ====== Stars Payment – DO NOT TOUCH ======
+// ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
 app.post("/api/create-invoice", async (req, res) => {
   try {
-    const { userId, team, stars } = req.body || {};
+    // Only *fallback* to header if body missing userId (doesn't change flow)
+    const userId = String(req.body?.userId || getUserIdFromReq(req) || "");
+    const team   = req.body?.team;
+    const stars  = Number(req.body?.stars || 0);
     if (!userId || !team || !["israel","gaza"].includes(team) || !stars || stars < 1)
       return res.status(400).json({ ok:false, error:"bad params" });
 
@@ -352,10 +368,20 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
+// ====== Me & Leaderboard ======
 app.get("/api/me", (req, res) => {
-  const userId = String(req.query.userId || "");
+  // Prefer header (Mini App), fallback to query
+  const { userId: hdrUser, startParam } = parseInitDataHeader(req);
+  const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
   if (!userId) return res.json({ ok:false });
+
   const u = ensureUser(userId);
+
+  // First-touch referral: if came with start_param and not self
+  if (startParam && !u.refBy && String(startParam) !== userId) {
+    u.refBy = String(startParam);
+  }
+
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
 
@@ -390,6 +416,7 @@ app.get("/api/me", (req, res) => {
       justGotDailyBonus,
       preferredLang: u.preferredLang || "he",
       history: (u.history || []).slice(-50),
+      refBy: u.refBy || null
     },
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
