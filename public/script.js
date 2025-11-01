@@ -296,7 +296,7 @@ console.log("💎 Initializing TON Connect...");
 
     async function connectTonWallet() {
       try {
-        await tonConnect.connectWallet();
+        await tonConnect.connect();
       } catch (err) {
         console.error("TON connect error:", err);
       }
