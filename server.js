@@ -185,30 +185,48 @@ function ensureUser(userId) {
       tapsDate: null, tapsToday: 0,
       superDate: null, superUsed: 0,
       refBy: null,
+      referrals: 0,
+      referrer: null,
       starsDonated: 0,
       bonusStars: 0,
-      username: null, first_name: null, last_name: null, displayName: null,
-      xp: 0, level: 1, lastDailyBonus: 0,
-      history: [], // {ts,type,stars,points,team,from,xp}
+      username: null, first_name: "", last_name: "",
+      xp: 0, level: 1, lastDailyBonus: null,
+      history: [],
       active: true,
       preferredLang: "he",
-      country: "" // unknown by default
+      country: ""
     };
   }
   return users[userId];
 }
+
 function updateUserProfileFromTG(from) {
   if (!from?.id) return;
   const uid = String(from.id);
   const u = ensureUser(uid);
+
   if (from.username) u.username = from.username;
   if (from.first_name !== undefined) u.first_name = from.first_name;
-  if (from.last_name  !== undefined) u.last_name  = from.last_name;
+  if (from.last_name !== undefined) u.last_name = from.last_name;
   const fn = u.first_name || "";
   const ln = u.last_name || "";
-  u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : (u.username ? `@${u.username}` : u.displayName);
+  u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
   u.active = true;
+
+  // ✅ Referral link detection (V1.5)
+  try {
+    const ref = from.start_param || from.ref || from.referrerId;
+    if (ref && users[ref] && !u.referrer) {
+      u.referrer = ref;
+      users[ref].referrals = (users[ref].referrals || 0) + 1;
+      console.log(`👥 Referral registered: ${ref} invited ${uid}`);
+    }
+  } catch (err) {
+    console.warn("Referral tracking error:", err);
+  }
+
   writeJSON(USERS_FILE, users);
+}
 }
 function addXpAndMaybeLevelUp(u, addXp) {
   if (!addXp) return;
@@ -381,24 +399,26 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
-// ====== Me & Leaderboard ======
+// ====== Me (referrals + stats) ======
 app.get("/api/me", (req, res) => {
-  // Prefer header (Mini App), fallback to query
   const { userId: hdrUser, startParam } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
   if (!userId) return res.json({ ok:false });
 
   const u = ensureUser(userId);
 
-  // First-touch referral: if came with start_param and not self
-  if (startParam && !u.refBy && String(startParam) !== userId) {
-    u.refBy = String(startParam);
+  // ✅ Referral tracking (real-time)
+  if (startParam && !u.referrer && String(startParam) !== userId) {
+    u.referrer = String(startParam);
+    if (!users[startParam]) ensureUser(startParam);
+    users[startParam].referrals = (users[startParam].referrals || 0) + 1;
+    console.log(`👥 Referral registered: ${startParam} invited ${userId}`);
   }
 
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
 
-  // Daily bonus
+  // ✅ Daily bonus logic (unchanged)
   let justGotDailyBonus = false;
   const now = nowTs();
   if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
@@ -410,8 +430,10 @@ app.get("/api/me", (req, res) => {
     justGotDailyBonus = true;
     writeJSON(SCORES_FILE, scores);
   }
+
   writeJSON(USERS_FILE, users);
 
+  // ✅ Return extended user info (referrals + referrer)
   res.json({
     ok: true,
     me: {
@@ -429,13 +451,13 @@ app.get("/api/me", (req, res) => {
       justGotDailyBonus,
       preferredLang: u.preferredLang || "he",
       history: (u.history || []).slice(-50),
-      refBy: u.refBy || null
+      referrals: u.referrals || 0,
+      referrer: u.referrer || null
     },
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
   });
 });
-
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
