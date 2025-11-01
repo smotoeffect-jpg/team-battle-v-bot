@@ -277,37 +277,48 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
 // === TON Wallet Connect ===
-try {
-  const tonConnect = new window.TonConnect({
-    manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
-  });
+console.log("💎 Initializing TON Connect...");
 
-  const connectBtn = document.getElementById("connect-ton");
-  const addressDiv = document.getElementById("ton-address");
+(async () => {
+  try {
+    // בדוק אם TonConnect קיים בשם אחר (window.TonConnectSDK)
+    const TonSDK = window.TonConnect || window.TonConnectSDK?.TonConnect;
 
-  async function connectTonWallet() {
-    try {
-      await tonConnect.connectWallet();
-    } catch (err) {
-      console.error("TON connect error:", err);
+    if (!TonSDK) {
+      console.error("❌ TON SDK not loaded correctly!");
+      return;
     }
-  }
 
-  tonConnect.onStatusChange(wallet => {
-    if (wallet) {
-      const addr = wallet.account.address;
-      addressDiv.textContent = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
-      connectBtn.style.display = "none";
-    } else {
-      connectBtn.style.display = "inline-block";
-      addressDiv.textContent = "";
+    const tonConnect = new TonSDK({
+      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+    });
+
+    const connectBtn = document.getElementById("connect-ton");
+    const addressDiv = document.getElementById("ton-address");
+
+    async function connectTonWallet() {
+      try {
+        await tonConnect.connectWallet();
+      } catch (err) {
+        console.error("TON connect error:", err);
+      }
     }
-  });
 
-  if (connectBtn) {
+    tonConnect.onStatusChange(wallet => {
+      if (wallet) {
+        const addr = wallet.account.address;
+        addressDiv.textContent = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
+        connectBtn.style.display = "none";
+      } else {
+        connectBtn.style.display = "inline-block";
+        addressDiv.textContent = "";
+      }
+    });
+
     connectBtn.addEventListener("click", connectTonWallet);
+
+    console.log("✅ TON Connect initialized successfully");
+  } catch (err) {
+    console.error("TON Connect initialization failed:", err);
   }
-} catch (e) {
-  console.warn("TON Connect initialization failed:", e);
-}
-});  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
+})();
