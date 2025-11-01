@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Battle: Israel Vs Gaza</title>
+  <link rel="stylesheet" href="style.css" />
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      if (window.Telegram && Telegram.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
+    });
+  </script>
+</head>
+<body>
+  <main class="wrap">
+    <h1 class="title"><span>TeamBattle - Israel</span><br/><span>Vs Gaza</span></h1>
+
+    <div class="lang-row">
+      <button class="chip" data-lang="ar">العربية</button>
+      <button class="chip" data-lang="en">English</button>
+      <button class="chip" data-lang="he">עברית</button>
+    </div>
+
+    <section class="score-row">
+      <div class="score-card">
+        <div class="score-title" data-i18n="gaza">עזה</div>
+        <div class="score-value" id="score-gaza">0</div>
+      </div>
+      <div class="score-card">
+        <div class="score-title" data-i18n="israel">ישראל</div>
+        <div class="score-value" id="score-israel">0</div>
+      </div>
+    </section>
+
+    <p class="mini-desc" id="rules-line">
+      <span data-i18n="superPerDay">סופר פעם/יום</span> ⚡ ·
+      <span data-i18n="dailyTaps">יומי/טאפים 300</span> 💥 ·
+      <span data-i18n="starsRule">⭐ 'כל 2 = 1'</span>
+    </p>
+
+    <div class="action-row">
+      <button id="btn-switch" class="btn secondary" data-i18n="switchTeam">החלף קבוצה</button>
+      <button id="btn-super" class="btn pink" data-i18n="superBoost">סופר-בוסט</button>
+      <button id="btn-tap" class="btn primary" data-i18n="tap">TAP (+1)</button>
+    </div>
+
+    <div class="limits-row" id="limits">
+      <span data-i18n="dailyTapsShort">טאפים יומיים</span>:
+      <b id="taps-used">0</b>/<b id="taps-max">300</b>
+      <span> / </span>
+      <b id="super-used">0</b>
+      <span data-i18n="superToday">/ 1 סופר היום</span>
+    </div>
+
+    <section class="donate-row">
+      <button class="btn gold ghost" id="btn-extra" data-i18n="extraTap">Extra TAP +2</button>
+      <div class="donate-inline">
+        <input id="stars-input" type="number" min="1" max="1000" value="610" />
+      </div>
+    </section>
+
+    <section class="ref-box">
+      <h3 class="ref-title" data-i18n="refTitle">תוכנית שותפים 🤝</h3>
+      <p class="ref-desc" data-i18n="refDesc">
+        הזמן חברים בעזרת הקישור האישי שלך. כשאנשים תורמים ⭐ אתה מקבל בונוס של 10% נקודות לקבוצה שלך!
+      </p>
+
+      <div class="ref-actions">
+        <button id="share-btn" class="btn primary ghost" data-i18n="shareTelegram">שתף בטלגרם</button>
+        <button id="copy-btn" class="btn secondary ghost" data-i18n="copyLink">העתק קישור</button>
+        <input id="ref-input" class="ref-input" readonly value="" />
+      </div>
+    </section>
+
+    <h2 class="board-title" data-i18n="myBoard">הלוח שלי</h2>
+
+    <footer class="footer">© TeamBattle</footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
