@@ -51,23 +51,22 @@ body{
 .partner-input{background:#0f0f1a;border:1px solid var(--pink);color:#fff;border-radius:8px;padding:10px 12px;width:260px;text-align:center}
 .btn.share::before{content:"📩 ";}
 
-/* === ACTION BUTTONS – larger buttons, smaller text === */
+/* === ACTION BUTTONS – wider (longer) look === */
 .action-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 12px;
+  gap: 14px; /* טיפה יותר רווח בין הכפתורים */
   margin-top: 20px;
   flex-wrap: nowrap;
 }
 
-/* === ACTION BUTTONS TEXT SMALLER === */
 .action-row button {
   flex: 1;
-  max-width: 30%;
-  min-width: 30%;
-  height: 68px; /* נשאר אותו גודל כפתור */
-  font-size: 0.6rem; /* 🔹 מוקטן עוד */
+  max-width: 33%;   /* 🔹 היה 30% → עכשיו יותר רחב */
+  min-width: 33%;
+  height: 68px;     /* אותו גובה */
+  font-size: 0.7rem;
   font-weight: 800;
   border-radius: 12px;
   text-transform: uppercase;
@@ -77,7 +76,7 @@ body{
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* צבעים מקוריים */
+/* צבעים נשארים בדיוק כמו קודם */
 #btn-tap {
   background: linear-gradient(180deg,#5aa9ff,#3a7fe0);
   color: #fff;
@@ -93,20 +92,21 @@ body{
   color: #fff;
 }
 
-/* ריחוף קל */
 .action-row button:hover {
   transform: scale(1.04);
   box-shadow: 0 0 20px rgba(255,255,255,.15);
 }
 
-/* מובייל */
+/* מובייל – נשמר באותה שורה */
 @media (max-width: 600px) {
   .action-row {
     gap: 8px;
   }
   .action-row button {
+    max-width: 33%;
+    min-width: 33%;
     height: 60px;
-    font-size: 0.78rem;
+    font-size: 0.65rem;
   }
 }
 /* === EXTRA TAP SECTION (ONE LINE, ORIGINAL COLORS) === */
