@@ -18,6 +18,22 @@ if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWeb
     console.warn("InitData fix failed:", e);
   }
 }
+  // ====== Desktop & WebApp fallback ======
+if (!window.Telegram?.WebApp?.initData && window.location.hash.includes("tgWebAppData=")) {
+  try {
+    const hash = window.location.hash.split("tgWebAppData=")[1];
+    const data = decodeURIComponent(hash.split("&")[0]);
+    if (data) {
+      if (!window.Telegram) window.Telegram = {};
+      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+      window.Telegram.WebApp.initData = data;
+      window.Telegram.WebApp.initDataUnsafe = JSON.parse(Object.fromEntries(new URLSearchParams(data)).user || "{}");
+      console.log("🧩 Fixed Telegram initData from hash fragment!");
+    }
+  } catch (e) {
+    console.warn("InitData hash fix failed:", e);
+  }
+}
   if (WebApp) { try { WebApp.ready(); WebApp.expand(); } catch(_){} }
 
   // ===== Detect Telegram user or create fallback ID =====
