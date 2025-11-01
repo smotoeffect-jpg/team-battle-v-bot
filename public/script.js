@@ -51,7 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===== API helpers =====
   const headers = {}; 
   try { if(WebApp?.initData) headers['X-Init-Data'] = WebApp.initData; } catch(_){}
-
+// ✅ תיקון: ודא שתמיד יש userId כלשהו בכותרת
+if (telegramUserId) {
+  headers['X-Telegram-UserId'] = telegramUserId;
+}
   async function getJSON(u){ const r=await fetch(u,{headers}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   async function postJSON(u,b){ const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(b||{})}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
   function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
