@@ -5,9 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TeamBattle • Israel Vs Gaza</title>
   <link rel="stylesheet" href="./style.css" />
-  <script src="https://unpkg.com/@tonconnect/sdk@2.1.0/dist/tonconnect-sdk.min.js"></script>
   <script>
-    (function(){ const l=localStorage.getItem('tb_lang'); if(l) document.documentElement.setAttribute('data-lang', l); })();
+    (function(){ 
+      const l = localStorage.getItem('tb_lang'); 
+      if(l) document.documentElement.setAttribute('data-lang', l); 
+    })();
   </script>
 </head>
 <body>
@@ -38,20 +40,20 @@
       </div>
     </section>
 
-<!-- === Main Action Buttons === -->
-<div class="action-row">
-  <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
-  <button id="btn-super" data-i18n="superBoost">Super Boost (+25)</button>
-  <button id="btn-switch" data-i18n="switchTeam">Switch Team</button>
-</div>
+    <!-- === Main Action Buttons === -->
+    <div class="action-row">
+      <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
+      <button id="btn-super" data-i18n="superBoost">Super Boost (+25)</button>
+      <button id="btn-switch" data-i18n="switchTeam">Switch Team</button>
+    </div>
 
-<!-- === Extra Tap Section === -->
-<div class="extra-row">
-  <input id="stars-input" type="number" min="1" max="1000" value="10">
-  <button id="btn-extra" data-i18n="extraTap">Extra Tap</button>
-</div>
+    <!-- === Extra Tap Section === -->
+    <div class="extra-row">
+      <input id="stars-input" type="number" min="1" max="1000" value="10">
+      <button id="btn-extra" data-i18n="extraTap">Extra Tap</button>
+    </div>
 
-    <!-- Referral Program (added under Extra Tap) -->
+    <!-- Referral Program -->
     <div id="partner" class="partner-box">
       <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
       <div class="partner-row">
@@ -61,29 +63,30 @@
       </div>
     </div>
 
+    <!-- === Main Grid === -->
     <main class="main-grid">
-     <section class="panel" id="my-board">
-  <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
-  <div class="kv">
-    <div class="k" data-i18n="stars">Stars / Extra Tap</div>
-    <div class="v" id="me-stars">–</div>
+      <section class="panel" id="my-board">
+        <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
+        <div class="kv">
+          <div class="k" data-i18n="stars">Stars / Extra Tap</div>
+          <div class="v" id="me-stars">–</div>
 
-    <div class="k" data-i18n="playerLevel">Player Level</div>
-    <div class="v" id="me-level">–</div>
+          <div class="k" data-i18n="playerLevel">Player Level</div>
+          <div class="v" id="me-level">–</div>
 
-    <div class="k" data-i18n="referrals">Invited Friends</div>
-    <div class="v" id="me-referrals">–</div>
+          <div class="k" data-i18n="referrals">Invited Friends</div>
+          <div class="v" id="me-referrals">–</div>
 
-    <div class="k" data-i18n="tapsToday">Taps today</div>
-    <div class="v" id="me-taps">0/300</div>
-  </div>
+          <div class="k" data-i18n="tapsToday">Taps today</div>
+          <div class="v" id="me-taps">0/300</div>
+        </div>
 
-  <!-- ✅ Ton Wallet Connect Button -->
-  <div class="ton-wallet">
-    <button id="connect-ton" class="btn btn-pink">Connect TON Wallet</button>
-    <div id="ton-address" class="wallet-address"></div>
-  </div>
-</section>
+        <!-- ✅ Ton Wallet Connect -->
+        <div class="ton-wallet">
+          <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
+          <div id="ton-address" class="wallet-address"></div>
+        </div>
+      </section>
 
       <section class="panel" id="top20">
         <div class="panel-title">Top 20</div>
@@ -91,13 +94,19 @@
       </section>
     </main>
 
-  <footer class="foot">
-    <span id="status-line"></span>
-  </footer>
-</div>
+    <footer class="foot">
+      <span id="status-line"></span>
+    </footer>
+  </div>
 
-<!-- חובה: SDK של טלגרם -->
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="./script.js"></script>
+  <!-- === SDKs and Scripts === -->
+  <!-- Telegram SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- ✅ TON Connect SDK (חובה לפני script.js) -->
+  <script src="https://unpkg.com/@tonconnect/sdk@2.1.0/dist/tonconnect-sdk.min.js"></script>
+
+  <!-- Main Script -->
+  <script src="./script.js"></script>
 </body>
 </html>
