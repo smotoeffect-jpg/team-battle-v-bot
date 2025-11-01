@@ -146,6 +146,7 @@ if (telegramUserId) {
   function paintMe(){
     setText('me-stars', String(GAME.me.stars ?? '–'));
     setText('me-level', String(GAME.me.level ?? '–'));
+    setText('me-tap-power', String(GAME.me.level)); // Tap Power = Level
     setText('me-referrals', String(GAME.me.referrals ?? '–'));
     setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
   }
