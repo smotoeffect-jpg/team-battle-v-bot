@@ -1,0 +1,131 @@
+body {
+  background: #000;
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.app {
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px auto;
+  max-width: 280px;
+}
+
+button {
+  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.btn-blue {
+  background: #007bff;
+  color: #fff;
+  box-shadow: 0 0 10px #007bff66;
+}
+
+.btn-blue:hover {
+  background: #3399ff;
+  box-shadow: 0 0 18px #3399ffcc;
+}
+
+.btn-gold {
+  background: #ffb700;
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 0 10px #ffb70066;
+}
+
+.btn-gold:hover {
+  background: #ffd84d;
+  box-shadow: 0 0 20px #ffd84dcc;
+}
+
+.btn-vip {
+  background: linear-gradient(90deg, #ff007f, #ff66b2);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 0 12px #ff4da6;
+}
+
+.btn-vip:hover {
+  box-shadow: 0 0 25px #ff4da6;
+}
+
+input {
+  padding: 10px;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  background: #111;
+  color: #fff;
+  text-align: center;
+}
+
+.hint {
+  color: #aaa;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.messages {
+  margin-top: 20px;
+  text-align: start;
+  padding: 10px;
+  background: #111;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #222 inset;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  z-index: 999;
+}
+
+.loader {
+  border: 4px solid #333;
+  border-top: 4px solid #ff66b2;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.footer {
+  margin-top: 30px;
+  font-size: 13px;
+  color: #555;
+}
