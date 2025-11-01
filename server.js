@@ -335,20 +335,45 @@ app.post("/api/switch-team", (req, res) => {
   res.json({ ok:true, team:newTeam });
 });
 
+// ====== Tap endpoint with level-based bonus ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
-  if (u.tapsToday >= DAILY_TAPS) return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+
+  if (u.tapsToday >= DAILY_TAPS)
+    return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+
+  // ⚡ חישוב טאפ לפי רמה
+  const basePoints = 1;                  // נקודת בסיס
+  const tapPoints = basePoints + (u.level || 1);  // כל רמה מוסיפה +1
+
   u.tapsToday += 1;
-  scores[u.team] = (scores[u.team] || 0) + 1;
-  addXpAndMaybeLevelUp(u, isDoubleXPOn() ? 2 : 1);
+  scores[u.team] = (scores[u.team] || 0) + tapPoints;
+
+  // XP מחושב גם לפי כמות הנקודות
+  addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
+
+  // היסטוריה
+  u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team, xp: tapPoints });
+  if (u.history.length > 200) u.history.shift();
+
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, tapsToday: u.tapsToday, limit: DAILY_TAPS, doubleXP: isDoubleXPOn() });
+
+  res.json({
+    ok:true,
+    scores,
+    tapsToday: u.tapsToday,
+    tapPoints,
+    level: u.level,
+    limit: DAILY_TAPS,
+    doubleXP: isDoubleXPOn()
+  });
 });
 
 app.post("/api/super", (req, res) => {
