@@ -276,12 +276,6 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
     flashStatus(i18n[getLang()].err);
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
-// ===== Extra Tap / Payment =====
-const btnExtra = document.getElementById('btn-extra');
-if (btnExtra) btnExtra.addEventListener('click', async () => {
-  ...
-});  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
-
 
 // === TON Wallet Connect ===
 console.log("💎 Initializing TON Connect...");
