@@ -205,14 +205,7 @@ if (btnSwitch) btnSwitch.addEventListener('click', async () => {
     console.error("❌ [SWITCH] Error:", err);
     flashStatus(i18n[getLang()].err);
   }
-});
-    try{
-      const to = (GAME.me.team==='israel')?'gaza':'israel';
-      await postJSON('/api/switch-team',{userId:GAME.me.id,newTeam:to}); 
-      await refreshAll();
-    }catch(_){ flashStatus(i18n[getLang()].err); } 
-  });
-
+});  
   // ===== Extra Tap / Payment =====
 const btnExtra = document.getElementById('btn-extra');
 if (btnExtra) btnExtra.addEventListener('click', async () => {
@@ -240,15 +233,4 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
     console.error("❌ [EXTRA] Error:", err);
     flashStatus(i18n[getLang()].err);
   }
-});
-    const starsInput=document.getElementById('stars-input');
-    const amount = Math.max(1, Math.min(1000, parseInt(starsInput?.value || '0')));
-    try{
-      const r=await postJSON('/api/create-invoice',{ userId:GAME.me.id, team:GAME.me.team, stars:amount });
-      if(r?.ok && r.url){
-        if(WebApp?.openInvoice){ WebApp.openInvoice(r.url, ()=>refreshAll()); }
-        else{ window.location.href=r.url; }
-      }
-    }catch(_){ flashStatus(i18n[getLang()].err); }
-  });
 });
