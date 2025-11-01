@@ -279,47 +279,55 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
 
 // === TON Wallet Connect (Telegram compatible) ===
 console.log("💎 Initializing TON Connect...");
-(async () => {
-  try {
-    if (!window.TonConnect) {
-      console.error("❌ TON SDK not found!");
-      return;
-    }
+try {
+  // נסה למצוא את המחלקה בכל אחת מהאפשרויות
+  const TonConnectClass =
+    window.TonConnectSDK?.TonConnect ||
+    window.TonConnect ||
+    window.TON_CONNECT?.TonConnect;
 
-    const tonConnect = new window.TonConnect({
-      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+  if (!TonConnectClass) {
+    console.error("❌ TON SDK not found in window!");
+  } else {
+    const tonConnect = new TonConnectClass({
+      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
     });
+
+    console.log("✅ TON Connect initialized successfully");
 
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
-    // אם כבר מחובר - הצג כתובת
-    const restored = await tonConnect.restoreConnection();
-    if (restored) {
-      const wallet = tonConnect.wallet;
-      if (wallet?.account?.address) {
-        addressDiv.textContent = `Connected: ${wallet.account.address.slice(0,6)}...${wallet.account.address.slice(-4)}`;
-        connectBtn.style.display = "none";
-      }
-    }
-
-    connectBtn.addEventListener("click", async () => {
+    async function connectTonWallet() {
       try {
-        console.log("💎 Opening TON wallet modal...");
-        const wallet = await tonConnect.connect();
-        if (wallet?.account?.address) {
-          addressDiv.textContent = `Connected: ${wallet.account.address.slice(0,6)}...${wallet.account.address.slice(-4)}`;
+        const connectedWallet = await tonConnect.connect();
+        if (connectedWallet?.account?.address) {
+          const addr = connectedWallet.account.address;
+          addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
           connectBtn.style.display = "none";
-          console.log("✅ Wallet connected:", wallet.account.address);
         }
       } catch (err) {
         console.error("❌ TON connect error:", err);
+        window.location.href =
+          "https://app.tonkeeper.com/ton-connect?manifestUrl=https://team-battle-v-bot.onrender.com/tonconnect-manifest.json";
+      }
+    }
+
+    tonConnect.onStatusChange((wallet) => {
+      if (wallet?.account?.address) {
+        const addr = wallet.account.address;
+        addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+        connectBtn.style.display = "none";
+      } else {
+        connectBtn.style.display = "inline-block";
+        addressDiv.textContent = "";
       }
     });
 
-    console.log("✅ TON Connect ready (Telegram-safe)");
-  } catch (err) {
-    console.error("TON Connect initialization failed:", err);
+    connectBtn.addEventListener("click", connectTonWallet);
   }
-})();
-});  // ← ← ← זה הסוגר האחרון של DOMContentLoaded
+} catch (err) {
+  console.error("❌ TON Connect initialization failed:", err);
+}
+
+}); // ← ← ← סוגר רק את ה-DOMContentLoaded (לא את TON Connect!)
