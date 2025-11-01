@@ -435,11 +435,23 @@ app.get("/api/me", (req, res) => {
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
   });
 });
-// ====== Debug: check Telegram init headers ======
+// ====== Deep Debug: Telegram Init Data & Headers ======
 app.use((req, res, next) => {
+  const headers = Object.keys(req.headers)
+    .filter(k => k.startsWith('x-') || k.startsWith('content'))
+    .reduce((obj, k) => { obj[k] = req.headers[k]; return obj; }, {});
+
+  console.log("🧩 Incoming request:", req.method, req.path);
+  console.log("📨 Headers snapshot:", headers);
+
   if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
-    console.log("📦 Telegram init headers received:", (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]).slice(0,200));
+    console.log("✅ Found init-data header!");
+    const initData = req.headers["x-init-data"] || req.headers["x-telegram-init-data"];
+    console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
+  } else {
+    console.warn("⚠️ No init-data header received for", req.path);
   }
+
   next();
 });
 app.get("/api/leaderboard", (req, res) => {
