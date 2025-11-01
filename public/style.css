@@ -51,44 +51,47 @@ body{
 .partner-input{background:#0f0f1a;border:1px solid var(--pink);color:#fff;border-radius:8px;padding:10px 12px;width:260px;text-align:center}
 .btn.share::before{content:"📩 ";}
 
-/* === ACTION BUTTONS ALWAYS IN ONE LINE – Original Colors === */
+/* === ACTION BUTTONS ALWAYS IN ONE LINE – smaller original size === */
 .action-row {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 18px;
   flex-wrap: nowrap;
 }
 
 .action-row button {
   flex: none;
-  width: 30%;
-  font-size: 1.1rem; /* 🔹 קטן יותר כדי שהטקסט לא ייצא מהכפתור */
+  width: 28%;
+  font-size: 0.95rem;  /* 🔹 מוקטן טיפה */
   font-weight: 800;
-  padding: 14px 0; /* 🔹 גם גובה מותאם */
+  padding: 10px 0;     /* 🔹 פחות גובה */
   border-radius: 10px;
   text-transform: uppercase;
   white-space: nowrap;
+  border: none;
+  transition: transform .1s ease;
 }
 
-/* מחזירים את צבעי המקור */
+.action-row button:hover {
+  transform: scale(1.03);
+}
+
+/* צבעים מקוריים */
 #btn-tap {
   background: linear-gradient(180deg,#5aa9ff,#3a7fe0);
   color: #fff;
-  box-shadow: 0 0 12px rgba(90,169,255,.35);
-  border: none;
+  box-shadow: 0 0 10px rgba(90,169,255,.35);
 }
 #btn-super {
   background: linear-gradient(180deg,#ff4dc4,#e028a5);
   color: #fff;
-  box-shadow: 0 0 12px rgba(255,77,196,.35);
-  border: none;
+  box-shadow: 0 0 10px rgba(255,77,196,.35);
 }
 #btn-switch {
   background: #2a2a3f;
   color: #fff;
-  border: none;
 }
 
 /* === EXTRA TAP SECTION (ONE LINE, ORIGINAL COLORS) === */
