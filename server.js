@@ -227,7 +227,6 @@ function updateUserProfileFromTG(from) {
 
   writeJSON(USERS_FILE, users);
 }
-}
 function addXpAndMaybeLevelUp(u, addXp) {
   if (!addXp) return;
   u.xp += addXp;
