@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const k = el.getAttribute('data-i18n');
       el.textContent = i18n[l]?.[k] || k;
     });
-    paintDoubleXp();
   }
 
   const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
