@@ -191,8 +191,21 @@ if (telegramUserId) {
     catch(_){ flashStatus(i18n[getLang()].err); } 
   });
 
-  const btnSwitch=document.getElementById('btn-switch');
-  if(btnSwitch) btnSwitch.addEventListener('click',async()=>{ 
+  // ===== Switch Team Button =====
+const btnSwitch = document.getElementById('btn-switch');
+if (btnSwitch) btnSwitch.addEventListener('click', async () => {
+  console.log("🌀 [SWITCH] Button clicked! Current team:", GAME.me.team, "UserID:", GAME.me.id);
+  try {
+    const to = (GAME.me.team === 'israel') ? 'gaza' : 'israel';
+    console.log("➡️ [SWITCH] Sending switch request to:", to);
+    const res = await postJSON('/api/switch-team', { userId: GAME.me.id, newTeam: to });
+    console.log("✅ [SWITCH] Response from server:", res);
+    await refreshAll();
+  } catch (err) {
+    console.error("❌ [SWITCH] Error:", err);
+    flashStatus(i18n[getLang()].err);
+  }
+});
     try{
       const to = (GAME.me.team==='israel')?'gaza':'israel';
       await postJSON('/api/switch-team',{userId:GAME.me.id,newTeam:to}); 
@@ -200,8 +213,34 @@ if (telegramUserId) {
     }catch(_){ flashStatus(i18n[getLang()].err); } 
   });
 
-  const btnExtra=document.getElementById('btn-extra');
-  if(btnExtra) btnExtra.addEventListener('click', async ()=>{
+  // ===== Extra Tap / Payment =====
+const btnExtra = document.getElementById('btn-extra');
+if (btnExtra) btnExtra.addEventListener('click', async () => {
+  console.log("💰 [EXTRA] Button clicked!");
+  const starsInput = document.getElementById('stars-input');
+  const amount = Math.max(1, Math.min(1000, parseInt(starsInput?.value || '0')));
+  console.log("💫 [EXTRA] Creating invoice for", amount, "stars. UserID:", GAME.me.id, "Team:", GAME.me.team);
+  try {
+    const r = await postJSON('/api/create-invoice', { userId: GAME.me.id, team: GAME.me.team, stars: amount });
+    console.log("✅ [EXTRA] Server response:", r);
+    if (r?.ok && r.url) {
+      console.log("🧾 [EXTRA] Invoice URL:", r.url);
+      if (WebApp?.openInvoice) {
+        WebApp.openInvoice(r.url, () => {
+          console.log("📲 [EXTRA] Invoice closed or paid.");
+          refreshAll();
+        });
+      } else {
+        window.location.href = r.url;
+      }
+    } else {
+      console.warn("⚠️ [EXTRA] Invoice creation failed:", r);
+    }
+  } catch (err) {
+    console.error("❌ [EXTRA] Error:", err);
+    flashStatus(i18n[getLang()].err);
+  }
+});
     const starsInput=document.getElementById('stars-input');
     const amount = Math.max(1, Math.min(1000, parseInt(starsInput?.value || '0')));
     try{
