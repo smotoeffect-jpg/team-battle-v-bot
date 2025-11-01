@@ -37,16 +37,18 @@
       </div>
     </section>
 
-    <section class="row actions">
-      <button id="btn-tap" class="btn btn-blue" data-i18n="tap">Tap (+1)</button>
-      <button id="btn-super" class="btn btn-pink" data-i18n="superBoost">Super Boost (+25)</button>
-      <button id="btn-switch" class="btn btn-gray" data-i18n="switchTeam">החלף קבוצה</button>
-    </section>
+<!-- === Main Action Buttons === -->
+<div class="action-row">
+  <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
+  <button id="btn-super" data-i18n="superBoost">Super Boost (+25)</button>
+  <button id="btn-switch" data-i18n="switchTeam">Switch Team</button>
+</div>
 
-    <section class="row extra-tap">
-      <input id="stars-input" type="number" min="1" max="1000" value="10" class="stars-input" />
-      <button id="btn-extra" class="btn btn-gold" data-i18n="extraTap">Extra Tap</button>
-    </section>
+<!-- === Extra Tap Section === -->
+<div class="extra-row">
+  <input id="stars-input" type="number" min="1" max="1000" value="10">
+  <button id="btn-extra" data-i18n="extraTap">Extra Tap</button>
+</div>
 
     <!-- Referral Program (added under Extra Tap) -->
     <div id="partner" class="partner-box">
