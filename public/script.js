@@ -299,19 +299,21 @@ try {
 
     // --- חיבור לארנק ---
     async function connectTonWallet() {
-      try {
-        console.log("💎 Opening TON Connect Wallet...");
-        const link = tonConnect.connectWallet();
+  try {
+    console.log("💎 Opening TON Connect Wallet...");
+    const connectedWallet = await tonConnect.connect();
 
-        if (link && typeof link === "string") {
-          console.log("🌐 Redirecting to wallet:", link);
-          window.location.href = link;
-        }
-      } catch (err) {
-        console.error("❌ TON connect error:", err);
-        flashStatus("TON Connect Error");
-      }
+    if (connectedWallet?.account?.address) {
+      const addr = connectedWallet.account.address;
+      addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+      connectBtn.style.display = "none";
+      console.log("✅ Wallet connected successfully:", addr);
     }
+  } catch (err) {
+    console.error("❌ TON connect error:", err);
+    flashStatus("TON Connect Error");
+  }
+}
 
     // --- מאזין סטטוס יחיד ---
     tonConnect.onStatusChange((wallet) => {
