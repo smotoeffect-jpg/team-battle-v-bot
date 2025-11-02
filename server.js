@@ -1043,12 +1043,13 @@ app.post("/api/referral", (req, res) => {
     inviter.battleBalance += 5;
 
     writeJSON(USERS_FILE, users);
-    res.json({ ok: true, referrals: inviter.referrals });
-  } catch (err) {
-    console.error("❌ /api/referral error:", err);
-        res.status(500).json({ ok: false, error: "server_error" });
-  }
+res.json({ ok: true, referrals: inviter.referrals });
+} catch (err) {
+  console.error("❌ /api/referral error:", err);
+  res.status(500).json({ ok: false, error: "server_error" });
+}
 }); // ← סוגר את app.post("/api/referral")
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT}`));
+});
