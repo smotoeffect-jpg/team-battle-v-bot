@@ -296,6 +296,19 @@ if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
 const btnSuper = document.getElementById('btn-super');
 if (btnSuper) btnSuper.addEventListener('click', () => handleAction('super', 25));
 
+  // ✨ אפקט ויזואלי קל לעדכון XP
+function flashXP() {
+  const xpEl = document.getElementById('me-xp');
+  if (!xpEl) return;
+  xpEl.style.transition = 'none';
+  xpEl.style.transform = 'scale(1.25)';
+  xpEl.style.color = '#ffd76b';
+  setTimeout(() => {
+    xpEl.style.transition = 'all 0.3s ease';
+    xpEl.style.transform = 'scale(1)';
+    xpEl.style.color = '';
+  }, 80);
+}
   // ===== Switch Team Button =====
 const btnSwitch = document.getElementById('btn-switch');
 if (btnSwitch) btnSwitch.addEventListener('click', async () => {
