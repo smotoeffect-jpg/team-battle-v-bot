@@ -145,7 +145,6 @@ if (telegramUserId) {
   function paintScores(){ setText('score-israel-value', GAME.scores?.israel??0); setText('score-gaza-value', GAME.scores?.gaza??0); }
   function paintMe(){
     setText('me-stars', String(GAME.me.stars ?? '–'));
-    // ✅ הצגה חכמה של ערך $BATTLE (עיגול + קיצור אלפים)
 function formatBattle(value) {
   const num = Number(value ?? 0);
   if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
@@ -153,7 +152,8 @@ function formatBattle(value) {
   return num.toFixed(2);
 }
 
-setText('me-battle', `$${formatBattle(GAME.me.battle)} BATTLE`);
+// הצגת יתרת $BATTLE
+setText('me-battle', formatBattle(GAME.me.battle));
     setText('me-level', String(GAME.me.level ?? '–'));
     setText('me-tap-power', String(GAME.me.level)); // Tap Power = Level
     setText('me-referrals', String(GAME.me.referrals ?? '–'));
