@@ -393,7 +393,7 @@ app.post("/api/tap", (req, res) => {
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
-});
+
   // ⚡ Tap value = current level
   const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
