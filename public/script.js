@@ -289,10 +289,17 @@ try {
     console.error("❌ TON SDK not found in window!");
   } else {
     // ✅ טוענים את הארנק ידנית
-    const connectedWallet = await tonConnect.connect({
-  universalLink: "https://app.tonkeeper.com/ton-connect",
-  bridgeUrl: "https://bridge.tonapi.io/bridge"
-});
+    const tonConnect = new TonConnectClass({
+      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
+      walletsList: [
+        {
+          name: "Tonkeeper",
+          appName: "tonkeeper",
+          imageUrl: "https://tonkeeper.com/assets/tonconnect-icon.png",
+          bridgeUrl: "https://bridge.tonapi.io/bridge",
+          universalLink: "https://app.tonkeeper.com/ton-connect"
+        }
+      ]
     });
 
     console.log("✅ TON Connect initialized successfully (manual wallet mode)");
@@ -301,16 +308,16 @@ try {
     const addressDiv = document.getElementById("ton-address");
 
     async function connectTonWallet() {
-  try {
-    delete window.tonConnectUI; // ✅ מנקה חיבור קודם כדי למנוע injected wallet
-    console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
+      try {
+        delete window.tonConnectUI; // ✅ מנקה חיבור קודם כדי למנוע injected wallet
+        console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
 
-    const connectedWallet = await tonConnect.connect({
-      universalLink: "https://app.tonkeeper.com/ton-connect",
-      bridgeUrl: "https://bridge.tonapi.io/bridge",
-      jsBridgeKey: "tonkeeper",
-      walletsListSource: "remote" // ✅ מונע ניסיון חיבור ל-injected wallets
-    });
+        const connectedWallet = await tonConnect.connect({
+          universalLink: "https://app.tonkeeper.com/ton-connect",
+          bridgeUrl: "https://bridge.tonapi.io/bridge",
+          jsBridgeKey: "tonkeeper",
+          walletsListSource: "remote" // ✅ מונע ניסיון חיבור ל-injected wallets
+        });
 
         if (!connectedWallet?.account) {
           const fallbackLink =
@@ -342,8 +349,9 @@ try {
     });
 
     connectBtn.addEventListener("click", connectTonWallet);
-  }
+  } // ✅ ←←← סוגר את ה־else
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
-}); // ← ← ← סוגר את כל ה-DOMContentLoaded בסוף הקובץ
+
+}); // ✅ ←←← סוגר את כל ה־DOMContentLoaded בסוף הקובץ
