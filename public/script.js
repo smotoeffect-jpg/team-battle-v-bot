@@ -268,11 +268,10 @@ if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
 else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
 else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
 paintTop20();
-    }catch(_){}
-  }
+} catch(_) {}
 
-  setInterval(refreshAll, 5000);
-  refreshAll();
+setInterval(refreshAll, 5000);
+refreshAll();
 
   // ===== Status Bar =====
   const statusLine=document.getElementById('status-line');
