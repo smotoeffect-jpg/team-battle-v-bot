@@ -336,6 +336,9 @@ try {
           if (connectedWallet?.account?.address) {
             const addr = connectedWallet.account.address;
             addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+            // 💾 שמירת כתובת הארנק מקומית כדי לשחזר בהמשך
+            localStorage.setItem("tb_wallet_address", addr);
+            console.log("💾 Wallet address saved locally:", addr);
             connectBtn.style.display = "none";
             console.log("✅ Wallet connected via injected provider:", addr);
             return;
@@ -392,5 +395,12 @@ try {
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
-
+// ✅ Auto-restore saved TON wallet on load
+const savedWallet = localStorage.getItem("tb_wallet_address");
+if (savedWallet) {
+  const shortAddr = savedWallet.slice(0, 6) + "..." + savedWallet.slice(-4);
+  document.getElementById("ton-address").textContent = `Connected: ${shortAddr}`;
+  document.getElementById("connect-ton").style.display = "none";
+  console.log("🔁 Restored saved wallet:", savedWallet);
+}
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
