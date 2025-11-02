@@ -394,15 +394,7 @@ app.post("/api/tap", (req, res) => {
   writeJSON(SCORES_FILE, scores);
   res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
 });
-  // ⚡ Tap value = current level
-  const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
-  u.tapsToday += 1;
-  scores[u.team] = (scores[u.team] || 0) + tapPoints;
-// 💰 הוספת מטבע $BATTLE על כל Tap
-u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
-  // XP מתעדכן בהתאם לעוצמת הטאפ
-  addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
 
   // היסטוריה
   u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team, xp: tapPoints });
