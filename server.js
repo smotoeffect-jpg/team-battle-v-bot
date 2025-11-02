@@ -278,7 +278,7 @@ function addXP(user, action, amount = 0) {
 
   // ✅ שמירה מידית כדי למנוע איפוס XP
   writeJSON(USERS_FILE, users);
-}
+
 }
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
