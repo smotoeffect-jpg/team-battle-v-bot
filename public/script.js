@@ -307,10 +307,9 @@ try {
           bridgeUrl: "https://bridge.tonapi.io/bridge"
         };
 
-        const connectedWallet = await tonConnect.connect({
+        const connectedWallet = await tonConnect.connectWallet({
   universalLink: tonkeeper.universalLink,
-  bridgeUrl: tonkeeper.bridgeUrl,
-  jsBridgeKey: 'tonkeeper' // ✅ מאפשר פתיחת modal ישיר בטלגרם מובייל
+  bridgeUrl: tonkeeper.bridgeUrl
 });
 
         if (connectedWallet?.account?.address) {
