@@ -390,23 +390,26 @@ app.post("/api/tap", (req, res) => {
   addXP(u, 'tap');
 
   const today = todayStr();
-  if (u.tapsDate !== today) {
-    u.tapsDate = today;
-    u.tapsToday = 0;
-  }
+if (u.tapsDate !== today) {
+  u.tapsDate = today;
+  u.tapsToday = 0;
+}
 
-  if (u.tapsToday >= DAILY_TAPS) {
-    return res.json({ ok: false, error: "limit" });
-  }
+// ✅ הוספת XP על כל טאפ רק אחרי שהתאריך עודכן
+addXP(u, 'tap');
 
-  u.tapsToday++;
-scores[u.team] = (scores[u.team] || 0) + tapPoints;
+if (u.tapsToday >= DAILY_TAPS) {
+  return res.json({ ok: false, error: "daily_limit" });
+}
+
+u.tapsToday++;
+scores[u.team] = (scores[u.team] || 0) + 1;
 
 writeJSON(USERS_FILE, users);
 writeJSON(SCORES_FILE, scores);
 
-// 🕒 היסטוריה ועדכון סופי
-u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team });
+// 🕓 היסטוריה
+u.history.push({ ts: nowTs(), type: "tap" });
 if (u.history.length > 200) u.history.shift();
 
 const freshUsers = readJSON(USERS_FILE);
