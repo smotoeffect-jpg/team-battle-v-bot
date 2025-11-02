@@ -313,11 +313,12 @@ try {
         console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
 
         const connectedWallet = await tonConnect.connect({
-          universalLink: "https://app.tonkeeper.com/ton-connect",
-          bridgeUrl: "https://bridge.tonapi.io/bridge",
-          jsBridgeKey: "tonkeeper",
-          walletsListSource: "remote" // ✅ מונע ניסיון חיבור ל-injected wallets
-        });
+  universalLink: "https://app.tonkeeper.com/ton-connect",
+  bridgeUrl: "https://bridge.tonapi.io/bridge",
+  jsBridgeKey: "tonkeeper",
+  walletsListSource: "remote",
+  skipInjected: true // ✅ לא לנסות להתחבר ל־injected wallet
+});
 
         if (!connectedWallet?.account) {
           const fallbackLink =
