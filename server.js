@@ -1046,8 +1046,11 @@ app.post("/api/referral", (req, res) => {
     res.json({ ok: true, referrals: inviter.referrals });
   } catch (err) {
     console.error("❌ /api/referral error:", err);
-    res.status(500).json({ ok: false, error: "server_error" });
+        res.status(500).json({ ok: false, error: "server_error" });
   }
-});
+}); // ← סוגר את app.post("/api/referral")
+
+}); // ← סוגר את כל הבלוק הראשי של ה־server (שנפתח קודם)
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
+app.listen(PORT, () => console.log(`✅ Server running on :${PORT}`));
