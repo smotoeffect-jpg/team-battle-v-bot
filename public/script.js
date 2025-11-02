@@ -437,5 +437,5 @@ tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
   }
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
-  
+}
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
