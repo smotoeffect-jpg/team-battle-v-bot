@@ -307,34 +307,34 @@ try {
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
-    async function connectTonWallet() {
+        async function connectTonWallet() {
       try {
-        delete window.tonConnectUI; // ✅ מנקה חיבור קודם כדי למנוע injected wallet
         console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
 
-        const connectedWallet = await tonConnect.connect({
-  universalLink: "https://app.tonkeeper.com/ton-connect",
-  bridgeUrl: "https://bridge.tonapi.io/bridge",
-  jsBridgeKey: "tonkeeper",
-  walletsListSource: "remote",
-  skipInjected: true // ✅ לא לנסות להתחבר ל־injected wallet
-});
-
-        if (!connectedWallet?.account) {
-          const fallbackLink =
-            "https://app.tonkeeper.com/ton-connect?manifestUrl=" +
-            encodeURIComponent("https://team-battle-v-bot.onrender.com/tonconnect-manifest.json");
-          console.log("📱 Opening fallback Tonkeeper link:", fallbackLink);
-          Telegram?.WebApp?.openLink(fallbackLink, { try_instant_view: false });
+        // אם יש injected wallet בדפדפן (כמו באתרים רגילים) — נשתמש בו
+        const hasInjected = !!window.ton || !!window.tonkeeper;
+        if (hasInjected) {
+          console.log("💠 Injected wallet detected, connecting via extension...");
+          const connectedWallet = await tonConnect.connect();
+          if (connectedWallet?.account?.address) {
+            const addr = connectedWallet.account.address;
+            addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+            connectBtn.style.display = "none";
+            console.log("✅ Wallet connected via injected provider:", addr);
+          }
           return;
         }
 
-        const addr = connectedWallet.account.address;
-        addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-        connectBtn.style.display = "none";
-        console.log("✅ Wallet connected successfully:", addr);
+        // ✅ אחרת — נפתח את Tonkeeper ישירות בלינק אוניברסלי
+        const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent(
+          "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+        )}`;
+
+        console.log("📱 Opening Tonkeeper via Telegram WebApp:", link);
+        Telegram?.WebApp?.openLink(link, { try_instant_view: false });
       } catch (err) {
         console.error("❌ TON connect error:", err);
+        flashStatus("TON Connect Error");
       }
     }
 
