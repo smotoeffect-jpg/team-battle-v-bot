@@ -323,7 +323,16 @@ try {
         removeItem: (key) => localStorage.removeItem(key)
       }
     });
-
+// ✅ שומר session של הארנק ב-localStorage כדי שישמר גם אחרי רענון
+tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
+  const wallet = tonConnect.wallet;
+  if (wallet?.account?.address) {
+    const addr = wallet.account.address;
+    document.getElementById("ton-address").textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    document.getElementById("connect-ton").style.display = "none";
+    console.log("🔁 Restored TON wallet from localStorage:", addr);
+  }
+}).catch(e => console.warn("⚠️ Restore failed:", e));
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
