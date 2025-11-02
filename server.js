@@ -400,19 +400,15 @@ app.post("/api/tap", (req, res) => {
   }
 
   u.tapsToday++;
-  scores[u.team] = (scores[u.team] || 0) + 1;
-
-  writeJSON(USERS_FILE, users);
-  writeJSON(SCORES_FILE, scores);
-
-  // 🕓 היסטוריה ועדכון סופי
-u.history.push({ ts: nowTs(), type: "tap", points: 1, team: u.team, xp: 1 });
-if (u.history.length > 200) u.history.shift();
+scores[u.team] = (scores[u.team] || 0) + tapPoints;
 
 writeJSON(USERS_FILE, users);
 writeJSON(SCORES_FILE, scores);
 
-// ✅ טוען מחדש את הנתונים אחרי השמירה, כדי להחזיר את הערכים המעודכנים באמת
+// 🕒 היסטוריה ועדכון סופי
+u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team });
+if (u.history.length > 200) u.history.shift();
+
 const freshUsers = readJSON(USERS_FILE);
 const freshUser = freshUsers[u.userId];
 
