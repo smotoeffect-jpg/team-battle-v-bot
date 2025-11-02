@@ -269,12 +269,16 @@ function addXP(user, action, amount = 0) {
   const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
   user.xp += gain;
 
-  // 💥 Level-up logic (progressively harder)
+  // 💥 רמות מתקדמות לפי קושי עולה
   const required = Math.pow(user.level, 2) * 100;
   if (user.xp >= required) {
     user.level++;
     user.xp -= required;
   }
+
+  // ✅ שמירה מידית כדי למנוע איפוס XP
+  writeJSON(USERS_FILE, users);
+}
 }
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
