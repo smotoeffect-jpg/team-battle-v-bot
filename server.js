@@ -435,6 +435,7 @@ app.post("/api/super", (req, res) => {
 });
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
+// ===== Extra Tap (Stars Payment) =====
 app.post("/api/create-invoice", async (req, res) => {
   try {
     const userId = getUserIdFromReq(req) || req.body?.userId;
@@ -447,11 +448,17 @@ app.post("/api/create-invoice", async (req, res) => {
     const u = ensureUser(userId);
     if (!u.team) u.team = team;
 
-    // XP + Battle (כמו שהיה)
-    addXP(u, "extra");
-    u.battleBalance = (u.battleBalance || 0) + stars;
+    // ✅ הוספת XP לפי התרומה
+    addXP(u, 'extra');
+
+    // 🪙 שמירת Battle עבור כל תרומה
+    if (!u.battleBalance) u.battleBalance = 0;
+    u.battleBalance += stars;
+
+    // 🎯 עדכון ניקוד קבוצה
     scores[team] = (scores[team] || 0) + stars;
 
+    // יצירת לינק תשלום
     const payload = JSON.stringify({ t: "donation", userId, team, stars });
     const invoiceUrl = await createInvoiceLink({
       title: "TeamBattle Extra Tap",
@@ -462,6 +469,7 @@ app.post("/api/create-invoice", async (req, res) => {
       photo_url: "https://team-battle-v-bot.onrender.com/assets/icon.png",
     });
 
+    // שמירה לקבצים
     writeJSON(USERS_FILE, users);
     writeJSON(SCORES_FILE, scores);
 
