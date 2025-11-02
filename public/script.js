@@ -288,20 +288,6 @@ try {
   if (!TonConnectClass) {
     console.error("❌ TON SDK not found in window!");
   } else {
-    const tonConnect = new TonConnectClass({
-      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
-    });
-
-    console.log("💎 Initializing TON Connect...");
-try {
-  const TonConnectClass =
-    window.TonConnectSDK?.TonConnect ||
-    window.TonConnect ||
-    window.TON_CONNECT?.TonConnect;
-
-  if (!TonConnectClass) {
-    console.error("❌ TON SDK not found in window!");
-  } else {
     // ✅ טוענים את הארנק ידנית
     const tonConnect = new TonConnectClass({
       manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
