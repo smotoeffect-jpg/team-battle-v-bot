@@ -308,9 +308,10 @@ try {
         };
 
         const connectedWallet = await tonConnect.connect({
-          universalLink: tonkeeper.universalLink,
-          bridgeUrl: tonkeeper.bridgeUrl
-        });
+  universalLink: tonkeeper.universalLink,
+  bridgeUrl: tonkeeper.bridgeUrl,
+  jsBridgeKey: 'tonkeeper' // ✅ מאפשר פתיחת modal ישיר בטלגרם מובייל
+});
 
         if (connectedWallet?.account?.address) {
           const addr = connectedWallet.account.address;
