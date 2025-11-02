@@ -323,7 +323,7 @@ try {
     }
 
     // ✅ אם ההתחברות הצליחה בפועל
-    if (connectedWallet?.account?.address) {
+        if (connectedWallet?.account?.address) {
       const addr = connectedWallet.account.address;
       addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
       connectBtn.style.display = "none";
@@ -334,4 +334,17 @@ try {
     flashStatus("TON Connect Error");
   }
 }
-}); // ← ← ← סוגר רק את ה-DOMContentLoaded (לא את TON Connect!)
+
+tonConnect.onStatusChange((wallet) => {
+  if (wallet?.account?.address) {
+    const addr = wallet.account.address;
+    addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    connectBtn.style.display = "none";
+  } else {
+    connectBtn.style.display = "inline-block";
+    addressDiv.textContent = "";
+  }
+});
+
+connectBtn.addEventListener("click", connectTonWallet);
+}); // ← ← ← סוגר רק את ה-DOMContentLoaded
