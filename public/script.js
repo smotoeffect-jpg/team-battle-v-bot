@@ -259,9 +259,9 @@ try {
           const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
           window.open(url,"_blank");
         });
-      }catch(_){}
 
     }catch(_){}
+  
     try{
       const lb = await getJSON('/api/leaderboard');
 if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
