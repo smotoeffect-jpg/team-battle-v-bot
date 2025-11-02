@@ -253,40 +253,28 @@ const tgPost = async (m, d) => {
     throw e;
   }
 };
-// === XP SYSTEM – Unified version (stable fixed) ===
+// === XP SYSTEM – Unified version (simplified global handler) ===
 function addXP(user, action, amount = 0) {
   if (!user) return;
-
-  // ✅ טוען את הנתונים מהקובץ כדי לוודא שה־XP נשמר ולא נעלם
-  const users = readJSON(USERS_FILE);
-
   if (!user.xp) user.xp = 0;
   if (!user.level) user.level = 1;
 
-  // מפת ערכים לפי סוג פעולה
   const XP_MAP = {
-    tap: 1,        // טאפ רגיל
-    super: 25,     // סופר טאפ
-    extra: 10,     // אקסטרה טאפ
-    referral: 50   // הזמנה של משתמש חדש
+    tap: 1,
+    super: 25,
+    extra: 10,
+    referral: 50
   };
 
-  // חישוב רווח XP
   const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
   user.xp += gain;
 
-  // חישוב הדרוש לרמה הבאה
-  const required = Math.pow(user.level, 2) * 10; // כל רמה קשה פי 10
-
-  // עליה ברמה אם חצה את הסף
+  // 💥 Level-up logic (progressively harder)
+  const required = Math.pow(user.level, 2) * 100;
   if (user.xp >= required) {
     user.level++;
     user.xp -= required;
   }
-
-  // ✅ עדכון הנתונים במבנה הראשי ושמירה לקובץ
-  users[user.userId] = user;
-  writeJSON(USERS_FILE, users);
 }
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
@@ -547,8 +535,8 @@ app.get("/api/me", (req, res) => {
       battleBalance: u.battleBalance || 0,   // 💰 יתרת $BATTLE
       displayName: u.displayName || null,
       username: u.username || null,
-      xp: Number(u.xp ?? 0),        // ✅ מוודא שהערך נשמר ומוחזר כמספר
-      level: Number(u.level ?? 1),  // ✅ מוודא שגם רמת השחקן נשמרת
+      xp: u.xp || 0,
+      level: u.level || 1,
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
       preferredLang: u.preferredLang || "he",
