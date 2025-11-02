@@ -412,14 +412,18 @@ if (u.history.length > 200) u.history.shift();
 writeJSON(USERS_FILE, users);
 writeJSON(SCORES_FILE, scores);
 
+// ✅ טוען מחדש את הנתונים אחרי השמירה, כדי להחזיר את הערכים המעודכנים באמת
+const freshUsers = readJSON(USERS_FILE);
+const freshUser = freshUsers[u.userId];
+
 res.json({
   ok: true,
-  tapsToday: u.tapsToday,
-  score: scores[u.team],
-  level: u.level,
+  tapsToday: freshUser.tapsToday,
+  score: scores[freshUser.team],
+  xp: freshUser.xp,
+  level: freshUser.level,
   limit: DAILY_TAPS,
   doubleXP: isDoubleXPOn()
-});
 });
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
