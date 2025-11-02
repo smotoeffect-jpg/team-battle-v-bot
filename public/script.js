@@ -310,7 +310,11 @@ try {
     async function connectTonWallet() {
       try {
         console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
-        const connectedWallet = await tonConnect.connectWallet({ jsBridgeKey: "tonkeeper" });
+        const connectedWallet = await tonConnect.connect({
+  universalLink: "https://app.tonkeeper.com/ton-connect",
+  bridgeUrl: "https://bridge.tonapi.io/bridge",
+  jsBridgeKey: "tonkeeper"
+});
 
         if (!connectedWallet?.account) {
           const fallbackLink =
