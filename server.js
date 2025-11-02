@@ -421,6 +421,7 @@ res.json({
   limit: DAILY_TAPS,
   doubleXP: isDoubleXPOn()
 });
+  
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
   const userId = getUserIdFromReq(req) || req.body?.userId;
@@ -1048,6 +1049,7 @@ app.post("/api/referral", (req, res) => {
     console.error("❌ /api/referral error:", err);
     res.status(500).json({ ok: false, error: "server_error" });
   }
-});
+}); // ← סוגר את app.post("/api/referral")
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
