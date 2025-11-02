@@ -392,23 +392,35 @@ app.post("/api/tap", (req, res) => {
 
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
+  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
 
-  // 🕓 היסטוריה ועדכון סופי
-u.history.push({ ts: nowTs(), type: "tap", points: 1, team: u.team, xp: 1 });
-if (u.history.length > 200) u.history.shift();
+  // ⚡ Tap value = current level
+  const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
-writeJSON(USERS_FILE, users);
-writeJSON(SCORES_FILE, scores);
+  u.tapsToday += 1;
+  scores[u.team] = (scores[u.team] || 0) + tapPoints;
+// 💰 הוספת מטבע $BATTLE על כל Tap
+u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
+  // XP מתעדכן בהתאם לעוצמת הטאפ
+  addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
 
-res.json({
-  ok: true,
-  tapsToday: u.tapsToday,
-  score: scores[u.team],
-  level: u.level,
-  limit: DAILY_TAPS,
-  doubleXP: isDoubleXPOn()
-});
-});
+  // היסטוריה
+  u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team, xp: tapPoints });
+  if (u.history.length > 200) u.history.shift();
+
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+
+  res.json({
+    ok:true,
+    scores,
+    tapsToday: u.tapsToday,
+    tapPoints,
+    level: u.level,
+    limit: DAILY_TAPS,
+    doubleXP: isDoubleXPOn()
+  });
+
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
   const userId = getUserIdFromReq(req) || req.body?.userId;
@@ -1034,8 +1046,11 @@ app.post("/api/referral", (req, res) => {
     res.json({ ok: true, referrals: inviter.referrals });
   } catch (err) {
     console.error("❌ /api/referral error:", err);
-    res.status(500).json({ ok: false, error: "server_error" });
+        res.status(500).json({ ok: false, error: "server_error" });
   }
-});
+}); // ← סוגר את app.post("/api/referral")
+
+}); // ← סוגר את כל הבלוק הראשי של ה־server (שנפתח קודם)
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
+app.listen(PORT, () => console.log(`✅ Server running on :${PORT}`));
