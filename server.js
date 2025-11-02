@@ -504,14 +504,14 @@ app.get("/api/leaderboard", (req, res) => {
     team: u.team || null,
     starsDonated: u.starsDonated || 0,
     bonusStars: u.bonusStars || 0,
-    displayName: u.displayName || null,
+    displayName: u.first_name || u.displayName || u.username || "Player",
     username: u.username || null,
-    points: ((u.starsDonated || 0) + (u.bonusStars || 0)) * STAR_TO_POINTS,
+    points: u.battleBalance || 0, // 💰 דירוג לפי $Battle
     xp: u.xp || 0,
     level: u.level || 1,
   }));
   arr.sort((a, b) => b.points - a.points);
-  res.json({ ok:true, top: arr.slice(0, 20) });
+  res.json({ ok: true, top: arr.slice(0, 20) });
 });
 
 // ====== Static Mini-App ======
