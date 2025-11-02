@@ -159,17 +159,53 @@ setText('me-battle', formatBattle(GAME.me.battle));
     setText('me-referrals', String(GAME.me.referrals ?? '–'));
     setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
   }
-  function paintTop20(){
-    const ul=document.getElementById('top20-list'); if(!ul) return; ul.innerHTML='';
-    (GAME.leaderboard||[]).forEach((p,idx)=>{
-      const li=document.createElement('li');
-      const name=document.createElement('span'); name.className='name';
-      const pts=document.createElement('span'); pts.className='pts';
-      name.textContent = p.username ? p.username : `Player #${idx+1}`;
-      pts.textContent = (p.points ?? p.score ?? 0) + ' pts';
-      li.appendChild(name); li.appendChild(pts); ul.appendChild(li);
-    });
-  }
+  function paintTop20() {
+  const ul = document.getElementById('top20-list');
+  if (!ul) return;
+
+  // מיון לפי $Battle מהגבוה לנמוך
+  const sorted = (GAME.leaderboard || [])
+    .filter(p => p && (p.battleBalance || p.battle || 0) > 0)
+    .sort((a, b) => (b.battleBalance || b.battle || 0) - (a.battleBalance || a.battle || 0))
+    .slice(0, 20);
+
+  ul.innerHTML = '';
+
+  sorted.forEach((p, idx) => {
+    const li = document.createElement('li');
+    li.className = 'player-item';
+
+    // 🧩 הצגת שם אמיתי (firstname)
+    let nameText = 'Unknown';
+    if (p.first_name && p.first_name.trim().length > 0) {
+      nameText = p.first_name.trim();
+    } else if (p.username && p.username.trim().length > 0) {
+      nameText = p.username.trim();
+    }
+
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = nameText;
+
+    const battle = document.createElement('span');
+    battle.className = 'battle';
+    const battleVal = Number(p.battleBalance || p.battle || 0);
+    battle.textContent = battleVal >= 1000 
+      ? (battleVal / 1000).toFixed(2) + 'K'
+      : battleVal.toFixed(2);
+
+    if (idx < 5) li.classList.add('top5'); // חמשת הראשונים בולטים יותר
+
+    li.appendChild(name);
+    li.appendChild(battle);
+    ul.appendChild(li);
+  });
+
+  // גלילה אחרי 5 פריטים
+  ul.style.maxHeight = '250px';
+  ul.style.overflowY = 'auto';
+  ul.style.scrollbarWidth = 'thin';
+}
 
   // ===== Refresh Game Data =====
   async function refreshAll(){
