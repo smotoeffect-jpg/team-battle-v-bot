@@ -488,4 +488,13 @@ tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
+  // ✅ REFRESH FIX – keep game synced live
+function safeRefresh() {
+  if (!GAME?.me?.id) return;
+  refreshAll();
+}
+setTimeout(() => {
+  safeRefresh();
+  setInterval(safeRefresh, 5000);
+}, 1500);
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
