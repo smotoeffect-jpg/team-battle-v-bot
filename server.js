@@ -134,7 +134,7 @@ const PANEL_TEXTS_DEFAULT = {
     back: "⬅️ חזרה",
     unauthorized: "❌ אין לך גישה לפאנל הניהול.",
     summary_line: (scores, usersCount) =>
-      `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gזה||0}\n👥 משתמשים: ${usersCount}`,
+      `🇮🇱 ${scores.israel||0}  |  🇵🇸 ${scores.gaza||0}\n👥 משתמשים: ${usersCount}`,
     users_title: (active, inactive, total) =>
       `👥 רשימת משתמשים\nמחוברים: ${active}\nלא פעילים: ${inactive}\nרשומים: ${total}`,
     users_export: "📤 ייצוא CSV",
@@ -196,8 +196,8 @@ function ensureUser(userId) {
       referrer: null,
       starsDonated: 0,
       bonusStars: 0,
-      battleBalance: 0,
-      lastDailyAt: null,
+      battleBalance: 0,     // 💰 נוסף — יתרת מטבע $BATTLE
+      lastDailyAt: null,    // 🕒 נשתמש בעתיד לבונוס יומי
       username: null, first_name: "", last_name: "",
       xp: 0, level: 1, lastDailyBonus: null,
       history: [],
@@ -222,6 +222,7 @@ function updateUserProfileFromTG(from) {
   u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
   u.active = true;
 
+  // ✅ Referral link detection (V1.5)
   try {
     const ref = from.start_param || from.ref || from.referrerId;
     if (ref && users[ref] && !u.referrer) {
@@ -229,40 +230,21 @@ function updateUserProfileFromTG(from) {
       users[ref].referrals = (users[ref].referrals || 0) + 1;
       console.log(`👥 Referral registered: ${ref} invited ${uid}`);
     }
-  } catch (err) { console.warn("Referral tracking error:", err); }
+  } catch (err) {
+    console.warn("Referral tracking error:", err);
+  }
 
   writeJSON(USERS_FILE, users);
 }
-
 function addXpAndMaybeLevelUp(u, addXp) {
   if (!addXp) return;
   u.xp += addXp;
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
-
-// === XP SYSTEM – unified, no shadowing, no double-calls ===
-function addXP(u, action, amount = 0) {
-  if (!u) return;
-  if (!u.xp) u.xp = 0;
-  if (!u.level) u.level = 1;
-
-  const XP_MAP = { tap: 1, super: 25, extra: 10, referral: 50 };
-  const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
-  u.xp += gain;
-
-  const required = Math.pow(u.level, 2) * 10;
-  if (u.xp >= required) {
-    u.level++;
-    u.xp -= required;
-  }
-
-  // ✅ שמירה מיידית לקובץ
-  writeJSON(USERS_FILE, users);
-}
-
 const tgPost = async (m, d) => {
-  try { return await axios.post(`${TG_API}/${m}`, d); }
-  catch (e) {
+  try {
+    return await axios.post(`${TG_API}/${m}`, d);
+  } catch (e) {
     if (d?.chat_id && e?.response?.status === 403) {
       const uid = String(d.chat_id);
       if (users[uid]) { users[uid].active = false; writeJSON(USERS_FILE, users); }
@@ -271,22 +253,49 @@ const tgPost = async (m, d) => {
     throw e;
   }
 };
+// === XP SYSTEM – Unified version (stable fixed) ===
+function addXP(user, action, amount = 0) {
+  if (!user) return;
 
-// ✅ חסרה בעבר – גורמת לקריסה אם לא קיימת
-async function createInvoiceLink(body) {
-  const resp = await axios.post(`${TG_API}/createInvoiceLink`, body);
-  if (!resp.data || !resp.data.ok) {
-    throw new Error("createInvoiceLink failed: " + JSON.stringify(resp.data));
+  // ✅ טוען את הנתונים מהקובץ כדי לוודא שה־XP נשמר ולא נעלם
+  const users = readJSON(USERS_FILE);
+
+  if (!user.xp) user.xp = 0;
+  if (!user.level) user.level = 1;
+
+  // מפת ערכים לפי סוג פעולה
+  const XP_MAP = {
+    tap: 1,        // טאפ רגיל
+    super: 25,     // סופר טאפ
+    extra: 10,     // אקסטרה טאפ
+    referral: 50   // הזמנה של משתמש חדש
+  };
+
+  // חישוב רווח XP
+  const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
+  user.xp += gain;
+
+  // חישוב הדרוש לרמה הבאה
+  const required = Math.pow(user.level, 2) * 10; // כל רמה קשה פי 10
+
+  // עליה ברמה אם חצה את הסף
+  if (user.xp >= required) {
+    user.level++;
+    user.xp -= required;
   }
-  return resp.data.result;
-}
 
+  // ✅ עדכון הנתונים במבנה הראשי ושמירה לקובץ
+  users[user.userId] = user;
+  writeJSON(USERS_FILE, users);
+}
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
+  // Telegram Mini App passes a URL-encoded string in WebApp.initData.
   const raw = req.headers["x-init-data"] || req.headers["x-telegram-init-data"] || "";
   if (!raw || typeof raw !== "string") return {};
   try {
     const sp = new URLSearchParams(raw);
+    // 'user' is JSON (quoted); 'start_param' is plain.
     let userId = null;
     if (sp.get("user")) {
       const userObj = JSON.parse(sp.get("user"));
@@ -294,7 +303,9 @@ function parseInitDataHeader(req) {
     }
     const startParam = sp.get("start_param") || null;
     return { userId, startParam };
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 function getUserIdFromReq(req) {
   const q = String(req.query.userId || req.query.user_id || "");
@@ -316,7 +327,6 @@ function setAdminAwait(uid, what) {
   adminMeta[uid].awaiting = what;
   writeJSON(AMETA_FILE, adminMeta);
 }
-
 // ====== Double XP helpers ======
 function isDoubleXPOn() {
   return doubleXP.on && doubleXP.endTs > Date.now();
@@ -335,10 +345,12 @@ async function broadcastToAllByLang(textsPerLang) {
   let ok=0, fail=0;
   for (const [id, u] of Object.entries(users)) {
     if (!u.active) continue;
-    const lang = (u.preferredLang==="he"||u.preferredLang==="ен")?u.preferredLang:"en";
+    const lang = (u.preferredLang==="he"||u.preferredLang==="en")?u.preferredLang:"en";
     const msg = textsPerLang[lang] || textsPerLang["en"];
-    try { await tgPost("sendMessage", { chat_id: id, text: msg }); ok++; }
-    catch { fail++; }
+    try {
+      await tgPost("sendMessage", { chat_id: id, text: msg });
+      ok++;
+    } catch { fail++; }
   }
   return { ok, fail };
 }
@@ -374,39 +386,41 @@ app.post("/api/tap", (req, res) => {
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
 
-  // יישור תאריך יומי
-  const today = todayStr();
-  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
+  // ✅ הוספת נקודות XP על כל Tap
+  addXP(u, 'tap');
 
-  if (u.tapsToday >= DAILY_TAPS) {
-    return res.json({ ok: false, error: "daily_limit" });
+  const today = todayStr();
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
   }
 
-  // ניקוד
-  u.tapsToday += 1;
+  if (u.tapsToday >= DAILY_TAPS) {
+    return res.json({ ok: false, error: "limit" });
+  }
+
+  u.tapsToday++;
   scores[u.team] = (scores[u.team] || 0) + 1;
-
-  // XP – פעם אחת בלבד
-  addXP(u, "tap");
-
-  // היסטוריה
-  u.history.push({ ts: nowTs(), type: "tap", points: 1, team: u.team });
-  if (u.history.length > 200) u.history.shift();
 
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
 
-  res.json({
-    ok: true,
-    tapsToday: u.tapsToday,
-    score: scores[u.team],
-    xp: u.xp,
-    level: u.level,
-    limit: DAILY_TAPS,
-    doubleXP: isDoubleXPOn()
-  });
-});
+  // 🕓 היסטוריה ועדכון סופי
+u.history.push({ ts: nowTs(), type: "tap", points: 1, team: u.team, xp: 1 });
+if (u.history.length > 200) u.history.shift();
 
+writeJSON(USERS_FILE, users);
+writeJSON(SCORES_FILE, scores);
+
+res.json({
+  ok: true,
+  tapsToday: u.tapsToday,
+  score: scores[u.team],
+  level: u.level,
+  limit: DAILY_TAPS,
+  doubleXP: isDoubleXPOn()
+});
+});
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
   const userId = getUserIdFromReq(req) || req.body?.userId;
@@ -415,8 +429,14 @@ app.post("/api/super", (req, res) => {
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
 
+  // ✅ הוספת נקודות XP על Super Boost
+  addXP(u, 'super');
+
   const today = todayStr();
-  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
 
   if (u.tapsToday >= DAILY_TAPS) {
     return res.json({ ok: false, error: "limit" });
@@ -425,13 +445,9 @@ app.post("/api/super", (req, res) => {
   u.tapsToday += 25;
   scores[u.team] = (scores[u.team] || 0) + 25;
 
-  // XP – פעם אחת בלבד
-  addXP(u, "super");
-
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-
-  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team], xp: u.xp, level: u.level });
+  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
 });
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
@@ -488,7 +504,7 @@ app.get("/api/me", (req, res) => {
 
   const u = ensureUser(userId);
 
-  // Referral tracking
+  // ✅ Referral tracking (real-time)
   if (startParam && !u.referrer && String(startParam) !== userId) {
     u.referrer = String(startParam);
     if (!users[startParam]) ensureUser(startParam);
@@ -499,22 +515,26 @@ app.get("/api/me", (req, res) => {
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
 
-  // Daily bonus
+  // ✅ Daily bonus logic (unchanged)
   let justGotDailyBonus = false;
   const now = nowTs();
   if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
-    scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
-    u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
-    addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
-    u.lastDailyBonus = now;
-    u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
-    if (u.history.length > 200) u.history.shift();
-    justGotDailyBonus = true;
-    writeJSON(SCORES_FILE, scores);
-  }
+  scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
+
+  // 💰 מוסיף בונוס יומי של מטבע $BATTLE
+  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
+
+  addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
+  u.lastDailyBonus = now;
+  u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
+  if (u.history.length > 200) u.history.shift();
+  justGotDailyBonus = true;
+  writeJSON(SCORES_FILE, scores);
+}
 
   writeJSON(USERS_FILE, users);
 
+  // ✅ Return extended user info (referrals + referrer)
   res.json({
     ok: true,
     me: {
@@ -524,11 +544,11 @@ app.get("/api/me", (req, res) => {
       superUsed: u.superUsed || 0,
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
-      battleBalance: u.battleBalance || 0,
+      battleBalance: u.battleBalance || 0,   // 💰 יתרת $BATTLE
       displayName: u.displayName || null,
       username: u.username || null,
-      xp: Number(u.xp ?? 0),
-      level: Number(u.level ?? 1),
+      xp: Number(u.xp ?? 0),        // ✅ מוודא שהערך נשמר ומוחזר כמספר
+      level: Number(u.level ?? 1),  // ✅ מוודא שגם רמת השחקן נשמרת
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
       preferredLang: u.preferredLang || "he",
@@ -540,7 +560,6 @@ app.get("/api/me", (req, res) => {
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
   });
 });
-
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
@@ -549,7 +568,7 @@ app.get("/api/leaderboard", (req, res) => {
     bonusStars: u.bonusStars || 0,
     displayName: u.first_name || u.displayName || u.username || "Player",
     username: u.username || null,
-    points: u.battleBalance || 0,
+    points: u.battleBalance || 0, // 💰 דירוג לפי $Battle
     xp: u.xp || 0,
     level: u.level || 1,
   }));
@@ -565,18 +584,20 @@ app.use((req, res, next) => {
   const headers = Object.keys(req.headers)
     .filter(k => k.startsWith('x-') || k.startsWith('content'))
     .reduce((obj, k) => { obj[k] = req.headers[k]; return obj; }, {});
+
   console.log("🧩 Incoming request:", req.method, req.path);
   console.log("📨 Headers snapshot:", headers);
+
   if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
     console.log("✅ Found init-data header!");
     const initData = req.headers["x-init-data"] || req.headers["x-telegram-init-data"];
-    console.log("📦 Raw init-data (first 300 chars):", String(initData).slice(0,300));
+    console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
   } else {
     console.warn("⚠️ No init-data header received for", req.path);
   }
+
   next();
 });
-
 function tFor(lang){ return PANEL_TEXTS[lang] || PANEL_TEXTS.en; }
 function panelKeyboard(lang="en") {
   const t = tFor(lang);
@@ -619,31 +640,35 @@ app.post("/webhook", async (req, res) => {
 
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
+// ✅ Handle successful payments (Extra Tap purchases)
+if (update.message?.successful_payment) {
+  try {
+    const sp = update.message.successful_payment;
+    const payload = JSON.parse(sp.invoice_payload || "{}");
+    const { userId, team, stars } = payload;
 
-    // successful_payment
-    if (update.message?.successful_payment) {
-      try {
-        const sp = update.message.successful_payment;
-        const payload = JSON.parse(sp.invoice_payload || "{}");
-        const { userId, team, stars } = payload;
+    if (userId && team && stars && users[userId]) {
+      const u = ensureUser(userId);
+      u.starsDonated = (u.starsDonated || 0) + stars;
+      scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
+      addXpAndMaybeLevelUp(u, stars);
 
-        if (userId && team && stars && users[userId]) {
-          const u = ensureUser(userId);
-          u.starsDonated = (u.starsDonated || 0) + stars;
-          scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
-          addXpAndMaybeLevelUp(u, stars);
-          u.battleBalance = (u.battleBalance || 0) + stars;
-          writeJSON(USERS_FILE, users);
-          writeJSON(SCORES_FILE, scores);
-          console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
-        } else {
-          console.warn("⚠️ Missing fields in successful_payment:", payload);
-        }
-      } catch (err) {
-        console.error("❌ Error handling successful_payment:", err);
-      }
+      // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
+      u.battleBalance = (u.battleBalance || 0) + stars;
+
+      // שמירה
+      writeJSON(USERS_FILE, users);
+      writeJSON(SCORES_FILE, scores);
+
+      console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
+    } else {
+      console.warn("⚠️ Missing fields in successful_payment:", payload);
     }
-
+  } catch (err) {
+    console.error("❌ Error handling successful_payment:", err);
+  }
+}
+    // ----- Payments confirmations (NO extra thank-you message here) -----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
         pre_checkout_query_id: update.pre_checkout_query.id,
@@ -651,13 +676,14 @@ app.post("/webhook", async (req, res) => {
       });
     }
 
-    // Messages
+    // ----- Messages -----
     if (update.message?.text) {
       const msg   = update.message;
       const chatId= msg.chat.id;
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
 
+      // Awaiting broadcast text?
       if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
         const lang = getAdminLang(uid);
         const tt = tFor(lang);
@@ -672,6 +698,7 @@ app.post("/webhook", async (req, res) => {
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
 
+      // /start
       if (text.startsWith("/start")) {
         await tgPost("sendMessage", {
           chat_id: chatId,
@@ -689,6 +716,7 @@ app.post("/webhook", async (req, res) => {
         });
       }
 
+      // /panel
       if (text === "/panel") {
         if (!admins.includes(uid)) {
           const tt = tFor(getAdminLang(uid));
@@ -698,6 +726,7 @@ app.post("/webhook", async (req, res) => {
         }
       }
 
+      // Admin management commands (Super Admin only)
       if (text.startsWith("/addadmin")) {
         if (SUPER_ADMINS.has(uid)) {
           const parts = text.split(" ").filter(Boolean);
@@ -728,7 +757,7 @@ app.post("/webhook", async (req, res) => {
       }
     }
 
-    // Callbacks
+    // ----- Callbacks -----
     if (update.callback_query) {
       const cq   = update.callback_query;
       const uid  = String(cq.from.id);
@@ -737,6 +766,7 @@ app.post("/webhook", async (req, res) => {
       const tt   = tFor(lang);
       const msg  = cq.message;
 
+      // Language selection during /start → store preferredLang
       if (data === "lang_en" || data === "lang_he" || data === "lang_ar") {
         const u = ensureUser(uid);
         u.preferredLang = data === "lang_he" ? "he" : "en";
@@ -788,6 +818,7 @@ app.post("/webhook", async (req, res) => {
 
           else if (action === "users_export") {
             await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.users_export_sending });
+            // Build CSV in-memory
             const header = tt.csv_header;
             const rows = [header];
             for (const [id,u] of Object.entries(users)) {
@@ -800,6 +831,7 @@ app.post("/webhook", async (req, res) => {
             const csv = rows.join("\n");
             const buf = Buffer.from(csv, "utf8");
 
+            // sendDocument multipart
             const form = new FormData();
             form.append("chat_id", uid);
             form.append("document", buf, { filename: "users_export.csv", contentType: "text/csv" });
@@ -892,6 +924,7 @@ app.post("/webhook", async (req, res) => {
 
           else if (action === "dxp_start") {
             await setDoubleXP(true);
+            // broadcast
             await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_started_all, en: PANEL_TEXTS.en.dxp_started_all });
             await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⚡ ON" });
             await editToMainPanel(msg, lang);
@@ -989,7 +1022,6 @@ app.get("/setup-webhook", async (_, res) => {
 app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-
 // ===== Referral (Invite friend) =====
 app.post("/api/referral", (req, res) => {
   try {
@@ -998,11 +1030,17 @@ app.post("/api/referral", (req, res) => {
       return res.status(400).json({ ok: false, error: "missing parameters" });
 
     const inviter = ensureUser(inviterId);
-    ensureUser(invitedId); // רק לוודא קיום
+    const invited = ensureUser(invitedId);
 
+    // ✅ עדכון מספר המוזמנים
     inviter.referrals = (inviter.referrals || 0) + 1;
+
+    // ✅ הוספת XP על הזמנה מוצלחת
     addXP(inviter, "referral");
-    inviter.battleBalance = (inviter.battleBalance || 0) + 5;
+
+    // 💰 בונוס קטן ב־Battle (אם רוצים, כרגע רק XP)
+    if (!inviter.battleBalance) inviter.battleBalance = 0;
+    inviter.battleBalance += 5;
 
     writeJSON(USERS_FILE, users);
     res.json({ ok: true, referrals: inviter.referrals });
@@ -1011,7 +1049,5 @@ app.post("/api/referral", (req, res) => {
     res.status(500).json({ ok: false, error: "server_error" });
   }
 });
-
-// ===== Server start =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
