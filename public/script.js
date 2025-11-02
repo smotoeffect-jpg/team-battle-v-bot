@@ -308,13 +308,16 @@ try {
     const addressDiv = document.getElementById("ton-address");
 
     async function connectTonWallet() {
-      try {
-        console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
-        const connectedWallet = await tonConnect.connect({
-  universalLink: "https://app.tonkeeper.com/ton-connect",
-  bridgeUrl: "https://bridge.tonapi.io/bridge",
-  jsBridgeKey: "tonkeeper"
-});
+  try {
+    delete window.tonConnectUI; // ✅ מנקה חיבור קודם כדי למנוע injected wallet
+    console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
+
+    const connectedWallet = await tonConnect.connect({
+      universalLink: "https://app.tonkeeper.com/ton-connect",
+      bridgeUrl: "https://bridge.tonapi.io/bridge",
+      jsBridgeKey: "tonkeeper",
+      walletsListSource: "remote" // ✅ מונע ניסיון חיבור ל-injected wallets
+    });
 
         if (!connectedWallet?.account) {
           const fallbackLink =
