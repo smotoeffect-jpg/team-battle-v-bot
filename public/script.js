@@ -244,31 +244,38 @@ if (telegramUserId) {
 
 // ===== Affiliate / Referral Section =====
 try {
-        const bot="TeamBattle_vBot"; 
-        const uid = GAME.me.id;
-        const refLink = uid ? `https://t.me/${bot}/app?start_param=${uid}` : "";
-        const inp=document.getElementById("ref-link");
-        const cpy=document.getElementById("copy-ref");
-        const shr=document.getElementById("share-ref");
-        if(inp) inp.value = refLink;
-        if(cpy) cpy.addEventListener("click", async ()=>{
-          try{ await navigator.clipboard.writeText(refLink); }catch(_){}
-          const l=getLang(); const old=cpy.textContent; cpy.textContent=i18n[l]?.copied||"Copied!"; setTimeout(()=>cpy.textContent=old,1100);
-        });
-        if(shr) shr.addEventListener("click", ()=>{
-          const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
-          window.open(url,"_blank");
-        });
+  const bot = "TeamBattle_vBot";
+  const uid = GAME.me.id;
+  const refLink = uid ? `https://t.me/${bot}?start=${uid}` : "";
 
-    }catch(_){}
-  
-    try{
-      const lb = await getJSON('/api/leaderboard');
-if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
-else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
-else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
-paintTop20();
-} catch(_) {}
+  const inp = document.getElementById("refLink");
+  const cpy = document.getElementById("copyRef");
+  const shr = document.getElementById("shareRef");
+
+  if (inp) inp.value = refLink;
+
+  if (cpy) cpy.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(refLink); } catch (_) {}
+    const l = getLang();
+    const old = cpy.textContent;
+    cpy.textContent = i18n[l]?.copied || "Copied!";
+    setTimeout(() => cpy.textContent = old, 1100);
+  });
+
+  if (shr) shr.addEventListener("click", () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
+    window.open(url, "_blank");
+  });
+
+} catch (_) {}
+
+try {
+  const lb = await getJSON('/api/leaderboard');
+  if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
+  else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
+  else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
+  paintTop20();
+} catch (_) {}
 
 setInterval(refreshAll, 5000);
 refreshAll();
