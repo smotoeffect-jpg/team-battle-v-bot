@@ -162,51 +162,32 @@ setText('me-battle', formatBattle(GAME.me.battle));
   function paintTop20() {
   const ul = document.getElementById('top20-list');
   if (!ul) return;
-
-  // מיון לפי $Battle מהגבוה לנמוך
-  const sorted = (GAME.leaderboard || [])
-    .filter(p => p && (p.battleBalance || p.battle || 0) > 0)
-    .sort((a, b) => (b.battleBalance || b.battle || 0) - (a.battleBalance || a.battle || 0))
-    .slice(0, 20);
-
   ul.innerHTML = '';
+
+  // 💰 מיון לפי $Battle
+  const sorted = (GAME.leaderboard || [])
+    .filter(p => (p.points || 0) > 0)
+    .sort((a, b) => (b.points || 0) - (a.points || 0))
+    .slice(0, 20);
 
   sorted.forEach((p, idx) => {
     const li = document.createElement('li');
     li.className = 'player-item';
-
-    // 🧩 הצגת שם אמיתי (firstname)
-    let nameText = 'Unknown';
-    if (p.first_name && p.first_name.trim().length > 0) {
-      nameText = p.first_name.trim();
-    } else if (p.username && p.username.trim().length > 0) {
-      nameText = p.username.trim();
-    }
+    if (idx < 5) li.classList.add('top5');
 
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = nameText;
+    name.textContent = p.displayName || p.first_name || p.username || `Player #${idx + 1}`;
 
     const battle = document.createElement('span');
     battle.className = 'battle';
-    const battleVal = Number(p.battleBalance || p.battle || 0);
-    battle.textContent = battleVal >= 1000 
-      ? (battleVal / 1000).toFixed(2) + 'K'
-      : battleVal.toFixed(2);
-
-    if (idx < 5) li.classList.add('top5'); // חמשת הראשונים בולטים יותר
+    battle.textContent = `${(p.points || 0).toFixed(2)} BATTLE`;
 
     li.appendChild(name);
     li.appendChild(battle);
     ul.appendChild(li);
   });
-
-  // גלילה אחרי 5 פריטים
-  ul.style.maxHeight = '250px';
-  ul.style.overflowY = 'auto';
-  ul.style.scrollbarWidth = 'thin';
 }
-
   // ===== Refresh Game Data =====
   async function refreshAll(){
     try{
