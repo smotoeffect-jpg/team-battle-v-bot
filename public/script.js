@@ -232,6 +232,7 @@ GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // ✅ שומר XP בין ר�
 GAME.me.username = M.username ?? GAME.me.username ?? null;
 }
 paintMe();
+} catch (_) {}
 
 // 💰 עדכון $BATTLE בזמן אמת אם השתנה מהשרת
 if (typeof GAME.me.battle === "undefined") GAME.me.battle = 0;
