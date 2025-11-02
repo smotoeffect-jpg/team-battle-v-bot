@@ -298,46 +298,39 @@ try {
     const addressDiv = document.getElementById("ton-address");
 
     async function connectTonWallet() {
-      try {
-        console.log("💎 Opening TON Connect Wallet...");
+  try {
+    console.log("💎 Opening TON Connect Wallet...");
 
-        // ✅ נשתמש ב־Tonkeeper כברירת מחדל
-        const tonkeeper = {
-          universalLink: "https://app.tonkeeper.com/ton-connect",
-          bridgeUrl: "https://bridge.tonapi.io/bridge"
-        };
+    // ✅ הגדרה של Tonkeeper כברירת מחדל
+    const tonkeeper = {
+      universalLink: "https://app.tonkeeper.com/ton-connect",
+      bridgeUrl: "https://bridge.tonapi.io/bridge"
+    };
 
-        const connectedWallet = await tonConnect.connect({
-  universalLink: "https://app.tonkeeper.com/ton-connect",
-  bridgeUrl: "https://bridge.tonapi.io/bridge"
-});
-
-        if (connectedWallet?.account?.address) {
-          const addr = connectedWallet.account.address;
-          addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-          connectBtn.style.display = "none";
-          console.log("✅ Wallet connected successfully:", addr);
-        }
-      } catch (err) {
-        console.error("❌ TON connect error:", err);
-        flashStatus("TON Connect Error");
-      }
-    }
-
-    tonConnect.onStatusChange((wallet) => {
-      if (wallet?.account?.address) {
-        const addr = wallet.account.address;
-        addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-        connectBtn.style.display = "none";
-      } else {
-        connectBtn.style.display = "inline-block";
-        addressDiv.textContent = "";
-      }
+    // ✅ ניסיון התחברות ישיר (לטובת דפדפן רגיל)
+    const connectedWallet = await tonConnect.connect({
+      universalLink: tonkeeper.universalLink,
+      bridgeUrl: tonkeeper.bridgeUrl
     });
 
-    connectBtn.addEventListener("click", connectTonWallet);
+    // ✅ אם אנחנו בתוך טלגרם במובייל – לפתוח את הקישור ידנית
+    if (window.Telegram?.WebApp && !connectedWallet?.account) {
+      const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent("https://team-battle-v-bot.onrender.com/tonconnect-manifest.json")}`;
+      console.log("📱 Opening Tonkeeper via Telegram WebApp:", link);
+      Telegram.WebApp.openLink(link, { try_instant_view: false });
+      return;
+    }
+
+    // ✅ אם ההתחברות הצליחה – עדכן ממשק
+    if (connectedWallet?.account?.address) {
+      const addr = connectedWallet.account.address;
+      addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+      connectBtn.style.display = "none";
+      console.log("✅ Wallet connected successfully:", addr);
+    }
+  } catch (err) {
+    console.error("❌ TON connect error:", err);
+    flashStatus("TON Connect Error");
   }
-} catch (err) {
-  console.error("❌ TON Connect initialization failed:", err);
 }
 }); // ← ← ← סוגר רק את ה-DOMContentLoaded (לא את TON Connect!)
