@@ -274,20 +274,30 @@ paintTop20();
   const statusLine=document.getElementById('status-line');
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
 
-  // ===== Buttons =====
-  // ⚡ פונקציה מאוחדת לעדכון XP והבזק מיידי
+// ===== Buttons =====
+// ⚡ פונקציה מאוחדת לעדכון XP עם הבזק מיידי – בלי לאפס את הערך אחרי שנייה
 async function handleAction(type, xpGain) {
   try {
+    // שולח את הפעולה לשרת
     await postJSON(`/api/${type}`, { userId: GAME.me.id });
+
+    // מוסיף XP מיידית מקומית
     GAME.me.xp = (GAME.me.xp ?? 0) + xpGain;
+
+    // מצייר את הנתונים המעודכנים ומפעיל אפקט
     paintMe();
     flashXP();
-    await refreshAll();
+
+    // 🎯 נעדכן רק את הניקוד של הקבוצות (בלי לדרוס את XP)
+    const state = await getJSON('/api/state');
+    if (state.scores) GAME.scores = state.scores;
+    paintScores();
+
   } catch (_) {
     flashStatus(i18n[getLang()].err);
   }
 }
-  
+
 // 🎯 Tap
 const btnTap = document.getElementById('btn-tap');
 if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
@@ -296,7 +306,7 @@ if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
 const btnSuper = document.getElementById('btn-super');
 if (btnSuper) btnSuper.addEventListener('click', () => handleAction('super', 25));
 
-  // ✨ אפקט ויזואלי קל לעדכון XP
+// ✨ אפקט ויזואלי קל לעדכון XP
 function flashXP() {
   const xpEl = document.getElementById('me-xp');
   if (!xpEl) return;
