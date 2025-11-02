@@ -143,22 +143,42 @@ if (telegramUserId) {
   let GAME={scores:{israel:0,gaza:0},me:{id:null,team:null,tapsToday:0,tapsLimit:300,level:1,referrals:0,stars:0,username:null},leaderboard:[]};
 
   function paintScores(){ setText('score-israel-value', GAME.scores?.israel??0); setText('score-gaza-value', GAME.scores?.gaza??0); }
-  function paintMe(){
-    setText('me-stars', String(GAME.me.stars ?? '–'));
-function formatBattle(value) {
-  const num = Number(value ?? 0);
-  if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
-  if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
-  return num.toFixed(2);
-}
-
-// הצגת יתרת $BATTLE
-setText('me-battle', formatBattle(GAME.me.battle));
-    setText('me-level', String(GAME.me.level ?? '–'));
-    setText('me-tap-power', String(GAME.me.level)); // Tap Power = Level
-    setText('me-referrals', String(GAME.me.referrals ?? '–'));
-    setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
+  function paintMe() {
+  // 🔢 פונקציית עזר לעיצוב מספרים עם K / M
+  function formatNumber(value) {
+    const num = Number(value ?? 0);
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+    return num.toFixed(0);
   }
+
+  // 💰 עיצוב יתרת Battle
+  function formatBattle(value) {
+    const num = Number(value ?? 0);
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+    if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+    return num.toFixed(2);
+  }
+
+  // ⭐ XP
+  setText('me-xp', formatNumber(GAME.me.xp ?? 0));
+
+  // 🌟 Stars
+  setText('me-stars', String(GAME.me.stars ?? '–'));
+
+  // 🪙 $Battle
+  setText('me-battle', formatBattle(GAME.me.battle));
+
+  // 🎮 Level + Tap Power
+  setText('me-level', String(GAME.me.level ?? '–'));
+  setText('me-tap-power', String(GAME.me.level));
+
+  // 👥 Referrals
+  setText('me-referrals', String(GAME.me.referrals ?? '–'));
+
+  // 👆 Taps
+  setText('me-taps', `${GAME.me.tapsToday ?? 0}/${GAME.me.tapsLimit ?? 300}`);
+}
   function paintTop20() {
   const ul = document.getElementById('top20-list');
   if (!ul) return;
@@ -255,17 +275,26 @@ paintTop20();
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
 
   // ===== Buttons =====
-  const btnTap=document.getElementById('btn-tap');
-  if(btnTap) btnTap.addEventListener('click',async()=>{ 
-    try{ await postJSON('/api/tap',{userId:GAME.me.id}); await refreshAll(); } 
-    catch(_){ flashStatus(i18n[getLang()].err); } 
-  });
+  // ⚡ פונקציה מאוחדת לעדכון XP והבזק מיידי
+async function handleAction(type, xpGain) {
+  try {
+    await postJSON(`/api/${type}`, { userId: GAME.me.id });
+    GAME.me.xp = (GAME.me.xp ?? 0) + xpGain;
+    paintMe();
+    flashXP();
+    await refreshAll();
+  } catch (_) {
+    flashStatus(i18n[getLang()].err);
+  }
+}
 
-  const btnSuper=document.getElementById('btn-super');
-  if(btnSuper) btnSuper.addEventListener('click',async()=>{ 
-    try{ await postJSON('/api/super',{userId:GAME.me.id}); await refreshAll(); } 
-    catch(_){ flashStatus(i18n[getLang()].err); } 
-  });
+// 🎯 Tap
+const btnTap = document.getElementById('btn-tap');
+if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
+
+// 💥 Super Boost
+const btnSuper = document.getElementById('btn-super');
+if (btnSuper) btnSuper.addEventListener('click', () => handleAction('super', 25));
 
   // ===== Switch Team Button =====
 const btnSwitch = document.getElementById('btn-switch');
