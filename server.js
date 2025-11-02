@@ -1050,7 +1050,5 @@ app.post("/api/referral", (req, res) => {
   }
 }); // ← סוגר את app.post("/api/referral")
 
-}); // ← סוגר את כל הבלוק הראשי של ה־server (שנפתח קודם)
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT}`));
