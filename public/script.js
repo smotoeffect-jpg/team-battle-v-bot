@@ -347,4 +347,9 @@ tonConnect.onStatusChange((wallet) => {
 });
 
 connectBtn.addEventListener("click", connectTonWallet);
-}); // ← ← ← סוגר רק את ה-DOMContentLoaded
+  }
+} catch (err) {
+  console.error("❌ TON Connect initialization failed:", err);
+}
+
+}); // ← ← ← סוגר את כל ה-DOMContentLoaded בסוף הקובץ
