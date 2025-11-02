@@ -393,7 +393,7 @@ app.post("/api/tap", (req, res) => {
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
   res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
-
+});
   // ⚡ Tap value = current level
   const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
@@ -1043,12 +1043,11 @@ app.post("/api/referral", (req, res) => {
     inviter.battleBalance += 5;
 
     writeJSON(USERS_FILE, users);
-res.json({ ok: true, referrals: inviter.referrals });
-} catch (err) {
-  console.error("❌ /api/referral error:", err);
-  res.status(500).json({ ok: false, error: "server_error" });
-}
-}); // ← סוגר את app.post("/api/referral")
-
+    res.json({ ok: true, referrals: inviter.referrals });
+  } catch (err) {
+    console.error("❌ /api/referral error:", err);
+    res.status(500).json({ ok: false, error: "server_error" });
+  }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
