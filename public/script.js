@@ -145,6 +145,7 @@ if (telegramUserId) {
   function paintScores(){ setText('score-israel-value', GAME.scores?.israel??0); setText('score-gaza-value', GAME.scores?.gaza??0); }
   function paintMe(){
     setText('me-stars', String(GAME.me.stars ?? '–'));
+    setText('me-battle', String(GAME.me.battle ?? 0)); // 💰 $BATTLE balance
     setText('me-level', String(GAME.me.level ?? '–'));
     setText('me-tap-power', String(GAME.me.level)); // Tap Power = Level
     setText('me-referrals', String(GAME.me.referrals ?? '–'));
@@ -180,6 +181,7 @@ GAME.me = {
   level: M.level ?? 1,
   referrals: M.referrals ?? M.invited ?? 0,
   stars: M.starsDonated ?? M.stars ?? M.balance ?? 0,
+  battle: M.battleBalance ?? 0,
   username: M.username ?? null
 };
       paintMe();
