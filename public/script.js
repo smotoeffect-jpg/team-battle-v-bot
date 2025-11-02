@@ -314,16 +314,16 @@ try {
         // אם יש injected wallet בדפדפן (כמו באתרים רגילים) — נשתמש בו
         const hasInjected = !!window.ton || !!window.tonkeeper;
         if (hasInjected) {
-          console.log("💠 Injected wallet detected, connecting via extension...");
-          const connectedWallet = await tonConnect.connect();
-          if (connectedWallet?.account?.address) {
-            const addr = connectedWallet.account.address;
-            addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-            connectBtn.style.display = "none";
-            console.log("✅ Wallet connected via injected provider:", addr);
-          }
-          return;
-        }
+  console.log("💠 Injected wallet detected, connecting via extension...");
+  const connectedWallet = await tonConnect.connect();
+  if (connectedWallet?.account?.address) {
+    const addr = connectedWallet.account.address;
+    addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    connectBtn.style.display = "none";
+    console.log("✅ Wallet connected via injected provider:", addr);
+    return; // ✅ עצור כאן, אל תפתח את Tonkeeper
+  }
+}
 
         // ✅ אחרת — נפתח את Tonkeeper ישירות בלינק אוניברסלי
         const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent(
@@ -332,6 +332,21 @@ try {
 
         console.log("📱 Opening Tonkeeper via Telegram WebApp:", link);
         Telegram?.WebApp?.openLink(link, { try_instant_view: false });
+        console.log("⏳ Waiting for Tonkeeper connection...");
+
+let tries = 0;
+const checkInterval = setInterval(async () => {
+  tries++;
+  const wallet = tonConnect.wallet;
+  if (wallet?.account?.address) {
+    clearInterval(checkInterval);
+    const addr = wallet.account.address;
+    addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    connectBtn.style.display = "none";
+    console.log("✅ Wallet connected via polling:", addr);
+  }
+  if (tries > 60) clearInterval(checkInterval); // מחכה עד דקה
+}, 1000);
       } catch (err) {
         console.error("❌ TON connect error:", err);
         flashStatus("TON Connect Error");
