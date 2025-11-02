@@ -539,8 +539,8 @@ app.get("/api/me", (req, res) => {
       battleBalance: u.battleBalance || 0,   // 💰 יתרת $BATTLE
       displayName: u.displayName || null,
       username: u.username || null,
-      xp: u.xp || 0,
-      level: u.level || 1,
+      xp: Number(u.xp ?? 0),        // ✅ מוודא שהערך נשמר ומוחזר כמספר
+      level: Number(u.level ?? 1),  // ✅ מוודא שגם רמת השחקן נשמרת
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
       preferredLang: u.preferredLang || "he",
