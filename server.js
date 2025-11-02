@@ -420,7 +420,6 @@ u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
     limit: DAILY_TAPS,
     doubleXP: isDoubleXPOn()
   });
-});
 
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
