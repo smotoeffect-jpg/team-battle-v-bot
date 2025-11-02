@@ -279,42 +279,51 @@ paintTop20();
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
 
 // ===== Buttons =====
-// ⚡ פונקציה מאוחדת לעדכון XP + Battle ושמירה מיידית
+// ⚡ גרסה מסונכרנת לחלוטין עם השרת – כולל שמירה מקומית
 async function handleAction(type, xpGain = 0) {
   try {
     // שולח את הפעולה לשרת
     const res = await postJSON(`/api/${type}`, { userId: telegramUserId });
 
-    // אם התקבל מידע תקין מהשרת – עדכון ניקוד הקבוצה
+    // אם הפעולה הצליחה, נמשוך מחדש את מצב המשתמש מהשרת
+    const meResp = await getJSON(`/api/me?userId=${telegramUserId}`);
+    const M = meResp?.me || meResp || {};
+
+    // נוודא שיש מבנה בסיסי
+    if (!GAME.me) GAME.me = {};
+    GAME.me.id = M.userId ?? M.id ?? telegramUserId;
+    GAME.me.team = M.team ?? GAME.me.team ?? null;
+
+    // XP
+    const serverXP = M.xp ?? 0;
+    const clientXP = GAME.me.xp ?? 0;
+    GAME.me.xp = Math.max(clientXP, serverXP) + xpGain;
+    if (isDoubleXPOn) GAME.me.xp += xpGain;
+
+    // Battle
+    if (!GAME.me.battle) GAME.me.battle = 0;
+    const serverBattle = M.battleBalance ?? 0;
+    GAME.me.battle = Math.max(GAME.me.battle, serverBattle);
+    if (type === "tap") GAME.me.battle += 0.01;
+    if (type === "super") GAME.me.battle += 0.25;
+    if (type === "extra") GAME.me.battle += 1;
+
+    // סנכרון ניקוד קבוצה
     if (res?.ok && res.score !== undefined) {
       GAME.scores = GAME.scores || {};
       if (GAME.me?.team) GAME.scores[GAME.me.team] = res.score;
+    } else if (M.team && M.team in GAME.scores) {
+      GAME.scores[M.team] = M.score ?? GAME.scores[M.team];
     }
 
-    // ✅ עדכון XP לפי הפעולה
-    if (xpGain > 0) {
-      GAME.me.xp = (GAME.me.xp ?? 0) + xpGain;
-      if (isDoubleXPOn) GAME.me.xp += xpGain; // מצב XP כפול
-    }
-
-    // ✅ הוספת Battle לפי סוג הפעולה
-    if (!GAME.me.battle) GAME.me.battle = 0;
-    if (type === "tap") GAME.me.battle += 0.01;
-    if (type === "super") GAME.me.battle += 0.25;
-    if (type === "extra") GAME.me.battle += 1; // תרומה בכוכבים (ניתן לשנות)
-
-    // ✅ עדכון גרפי
+    // עדכון חזותי
     paintMe();
     flashXP();
-
-    // ✅ עדכון הניקוד מהשרת לאחר הפעולה
-    const state = await getJSON('/api/state');
-    if (state.scores) GAME.scores = state.scores;
     paintScores();
 
   } catch (err) {
-    console.error(`handleAction error for ${type}:`, err);
-    flashStatus(i18n[getLang()].err);
+    console.error(`handleAction sync error for ${type}:`, err);
+    flashStatus(i18n[getLang()]?.err || "Error");
   }
 }
 
