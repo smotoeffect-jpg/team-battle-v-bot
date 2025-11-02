@@ -194,8 +194,15 @@ GAME.me = {
 };
       paintMe();
 
-      // ===== Affiliate / Referral Section =====
-      try{
+// 💰 עדכון $BATTLE בזמן אמת אם השתנה מהשרת
+if (typeof GAME.me.battle === "undefined") GAME.me.battle = 0;
+if (meResp?.me?.battleBalance !== undefined) {
+  GAME.me.battle = meResp.me.battleBalance;
+  paintMe();
+}
+
+// ===== Affiliate / Referral Section =====
+try {
         const bot="TeamBattle_vBot"; 
         const uid = GAME.me.id;
         const refLink = uid ? `https://t.me/${bot}/app?start_param=${uid}` : "";
