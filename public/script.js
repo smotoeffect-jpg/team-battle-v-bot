@@ -210,32 +210,36 @@ if (telegramUserId) {
 }
   // ===== Refresh Game Data =====
   async function refreshAll(){
-    try{
-      const state=await getJSON('/api/state');
-      if(state.scores) GAME.scores=state.scores;
-      paintScores();
-    }catch(_){}
-    try{
-      const meResp = await getJSON('/api/me?userId=' + telegramUserId);
-const M = meResp?.me || meResp || {};
-GAME.me = {
-  id: M.userId ?? M.id ?? telegramUserId,
-  team: M.team ?? null,
-  tapsToday: M.tapsToday ?? M.taps_today ?? M.taps ?? 0,
-  tapsLimit: meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? 300,
-  level: M.level ?? 1,
-  referrals: M.referrals ?? M.invited ?? 0,
-  stars: M.starsDonated ?? M.stars ?? M.balance ?? 0,
-  battle: M.battleBalance ?? 0,
-  username: M.username ?? null
-};
-      paintMe();
+  try {
+    const state = await getJSON('/api/state');
+    if (state.scores) GAME.scores = state.scores;
+    paintScores();
+  } catch (_) {}
 
-// 💰 עדכון $BATTLE בזמן אמת אם השתנה מהשרת
-if (typeof GAME.me.battle === "undefined") GAME.me.battle = 0;
-if (meResp?.me?.battleBalance !== undefined) {
-  GAME.me.battle = meResp.me.battleBalance;
-  paintMe();
+  try {
+    const meResp = await getJSON('/api/me?userId=' + telegramUserId);
+    const M = meResp?.me || meResp || {};
+
+    if (!GAME.me) GAME.me = {};
+    GAME.me.id = M.userId ?? M.id ?? telegramUserId;
+    GAME.me.team = M.team ?? GAME.me.team ?? null;
+
+    // שמירה על נתונים קיימים, עדכון רק אם הערך מהשרת גבוה יותר
+    GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
+    GAME.me.tapsLimit = meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? GAME.me.tapsLimit ?? 300;
+    GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
+    GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
+    GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
+    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
+    GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // 👈 הוספנו שמירה על XP
+    GAME.me.username = M.username ?? GAME.me.username ?? null;
+
+    // מעדכן את הנתונים במסך
+    paintMe();
+
+  } catch (err) {
+    console.error("refreshAll error:", err);
+  }
 }
 
 // ===== Affiliate / Referral Section =====
@@ -275,25 +279,41 @@ paintTop20();
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
 
 // ===== Buttons =====
-// ⚡ פונקציה מאוחדת לעדכון XP עם הבזק מיידי – בלי לאפס את הערך אחרי שנייה
-async function handleAction(type, xpGain) {
+// ⚡ פונקציה מאוחדת לעדכון XP + Battle ושמירה מיידית
+async function handleAction(type, xpGain = 0) {
   try {
     // שולח את הפעולה לשרת
-    await postJSON(`/api/${type}`, { userId: GAME.me.id });
+    const res = await postJSON(`/api/${type}`, { userId: telegramUserId });
 
-    // מוסיף XP מיידית מקומית
-    GAME.me.xp = (GAME.me.xp ?? 0) + xpGain;
+    // אם התקבל מידע תקין מהשרת – עדכון ניקוד הקבוצה
+    if (res?.ok && res.score !== undefined) {
+      GAME.scores = GAME.scores || {};
+      if (GAME.me?.team) GAME.scores[GAME.me.team] = res.score;
+    }
 
-    // מצייר את הנתונים המעודכנים ומפעיל אפקט
+    // ✅ עדכון XP לפי הפעולה
+    if (xpGain > 0) {
+      GAME.me.xp = (GAME.me.xp ?? 0) + xpGain;
+      if (isDoubleXPOn) GAME.me.xp += xpGain; // מצב XP כפול
+    }
+
+    // ✅ הוספת Battle לפי סוג הפעולה
+    if (!GAME.me.battle) GAME.me.battle = 0;
+    if (type === "tap") GAME.me.battle += 0.01;
+    if (type === "super") GAME.me.battle += 0.25;
+    if (type === "extra") GAME.me.battle += 1; // תרומה בכוכבים (ניתן לשנות)
+
+    // ✅ עדכון גרפי
     paintMe();
     flashXP();
 
-    // 🎯 נעדכן רק את הניקוד של הקבוצות (בלי לדרוס את XP)
+    // ✅ עדכון הניקוד מהשרת לאחר הפעולה
     const state = await getJSON('/api/state');
     if (state.scores) GAME.scores = state.scores;
     paintScores();
 
-  } catch (_) {
+  } catch (err) {
+    console.error(`handleAction error for ${type}:`, err);
     flashStatus(i18n[getLang()].err);
   }
 }
