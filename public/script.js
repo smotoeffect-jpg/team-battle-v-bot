@@ -280,6 +280,38 @@ try {
 setInterval(refreshAll, 5000);
 refreshAll();
 
+// ===== Fix: Wait for user before creating referral link =====
+setTimeout(() => {
+  try {
+    if (!GAME?.me?.id) return; // אם המשתמש עדיין לא נטען, לא נמשיך
+
+    const bot = "TeamBattle_vBot";
+    const uid = GAME.me.id;
+    const refLink = `https://t.me/${bot}?start=${uid}`;
+
+    const inp = document.getElementById("refLink");
+    const cpy = document.getElementById("copyRef");
+    const shr = document.getElementById("shareRef");
+
+    if (inp) inp.value = refLink;
+
+    if (cpy) cpy.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(refLink); } catch (_) {}
+      const l = getLang();
+      const old = cpy.textContent;
+      cpy.textContent = i18n[l]?.copied || "Copied!";
+      setTimeout(() => (cpy.textContent = old), 1100);
+    });
+
+    if (shr) shr.addEventListener("click", () => {
+      const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
+      window.open(url, "_blank");
+    });
+  } catch (err) {
+    console.error("Referral link init error:", err);
+  }
+}, 1500); // מחכה שנייה וחצי כדי לוודא ש-GAME.me נטען
+
   // ===== Status Bar =====
   const statusLine=document.getElementById('status-line');
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
