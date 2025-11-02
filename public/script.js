@@ -277,7 +277,7 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
 
-// === TON Wallet Connect (Telegram compatible) ===
+// === TON Wallet Connect ===
 console.log("💎 Initializing TON Connect...");
 try {
   const TonConnectClass =
@@ -297,35 +297,41 @@ try {
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
-    // --- חיבור לארנק ---
     async function connectTonWallet() {
-  try {
-    console.log("💎 Opening TON Connect Wallet...");
-    const connectedWallet = await tonConnect.connect();
+      try {
+        console.log("💎 Opening TON Connect Wallet...");
 
-    if (connectedWallet?.account?.address) {
-      const addr = connectedWallet.account.address;
-      addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-      connectBtn.style.display = "none";
-      console.log("✅ Wallet connected successfully:", addr);
+        // ✅ נשתמש ב־Tonkeeper כברירת מחדל
+        const tonkeeper = {
+          universalLink: "https://app.tonkeeper.com/ton-connect",
+          bridgeUrl: "https://bridge.tonapi.io/bridge"
+        };
+
+        const connectedWallet = await tonConnect.connect({
+          universalLink: tonkeeper.universalLink,
+          bridgeUrl: tonkeeper.bridgeUrl
+        });
+
+        if (connectedWallet?.account?.address) {
+          const addr = connectedWallet.account.address;
+          addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+          connectBtn.style.display = "none";
+          console.log("✅ Wallet connected successfully:", addr);
+        }
+      } catch (err) {
+        console.error("❌ TON connect error:", err);
+        flashStatus("TON Connect Error");
+      }
     }
-  } catch (err) {
-    console.error("❌ TON connect error:", err);
-    flashStatus("TON Connect Error");
-  }
-}
 
-    // --- מאזין סטטוס יחיד ---
     tonConnect.onStatusChange((wallet) => {
       if (wallet?.account?.address) {
         const addr = wallet.account.address;
         addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
         connectBtn.style.display = "none";
-        console.log("✅ Wallet connected successfully:", addr);
       } else {
         connectBtn.style.display = "inline-block";
         addressDiv.textContent = "";
-        console.log("🔌 Wallet disconnected");
       }
     });
 
