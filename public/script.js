@@ -308,9 +308,10 @@ try {
 
     // ניסיון חיבור רגיל
     const connectedWallet = await tonConnect.connect({
-      universalLink: tonkeeper.universalLink,
-      bridgeUrl: tonkeeper.bridgeUrl
-    });
+  universalLink: tonkeeper.universalLink,
+  bridgeUrl: tonkeeper.bridgeUrl,
+  jsBridgeKey: "tonkeeper" // ✅ מאפשר פתיחת חלון התחברות בטלגרם מובייל
+});
 
     // ✅ אם לא נוצר חיבור והמשתמש בתוך טלגרם מובייל
     if (window.Telegram?.WebApp && !connectedWallet?.account) {
