@@ -1052,4 +1052,3 @@ res.json({ ok: true, referrals: inviter.referrals });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
-});
