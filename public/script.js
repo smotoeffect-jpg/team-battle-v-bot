@@ -301,27 +301,28 @@ try {
   try {
     console.log("💎 Opening TON Connect Wallet...");
 
-    // ✅ הגדרה של Tonkeeper כברירת מחדל
     const tonkeeper = {
       universalLink: "https://app.tonkeeper.com/ton-connect",
       bridgeUrl: "https://bridge.tonapi.io/bridge"
     };
 
-    // ✅ ניסיון התחברות ישיר (לטובת דפדפן רגיל)
+    // ניסיון חיבור רגיל
     const connectedWallet = await tonConnect.connect({
       universalLink: tonkeeper.universalLink,
       bridgeUrl: tonkeeper.bridgeUrl
     });
 
-    // ✅ אם אנחנו בתוך טלגרם במובייל – לפתוח את הקישור ידנית
+    // ✅ אם לא נוצר חיבור והמשתמש בתוך טלגרם מובייל
     if (window.Telegram?.WebApp && !connectedWallet?.account) {
-      const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent("https://team-battle-v-bot.onrender.com/tonconnect-manifest.json")}`;
+      const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent(
+        "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+      )}`;
       console.log("📱 Opening Tonkeeper via Telegram WebApp:", link);
       Telegram.WebApp.openLink(link, { try_instant_view: false });
       return;
     }
 
-    // ✅ אם ההתחברות הצליחה – עדכן ממשק
+    // ✅ אם ההתחברות הצליחה בפועל
     if (connectedWallet?.account?.address) {
       const addr = connectedWallet.account.address;
       addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
