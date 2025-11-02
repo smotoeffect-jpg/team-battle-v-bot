@@ -327,8 +327,8 @@ try {
 
         // ✅ אחרת — נפתח את Tonkeeper ישירות בלינק אוניברסלי
         const link = `https://app.tonkeeper.com/ton-connect?manifestUrl=${encodeURIComponent(
-          "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
-        )}`;
+  "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json"
+)}&ret=${encodeURIComponent(window.location.href)}`;
 
         console.log("📱 Opening Tonkeeper via Telegram WebApp:", link);
         Telegram?.WebApp?.openLink(link, { try_instant_view: false });
