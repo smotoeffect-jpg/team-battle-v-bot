@@ -392,27 +392,23 @@ app.post("/api/tap", (req, res) => {
 
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
+
+  // 🕓 היסטוריה ועדכון סופי
+u.history.push({ ts: nowTs(), type: "tap", points: 1, team: u.team, xp: 1 });
+if (u.history.length > 200) u.history.shift();
+
+writeJSON(USERS_FILE, users);
+writeJSON(SCORES_FILE, scores);
+
+res.json({
+  ok: true,
+  tapsToday: u.tapsToday,
+  score: scores[u.team],
+  level: u.level,
+  limit: DAILY_TAPS,
+  doubleXP: isDoubleXPOn()
 });
-
-
-  // היסטוריה
-
-  if (u.history.length > 200) u.history.shift();
-
-  writeJSON(USERS_FILE, users);
-  writeJSON(SCORES_FILE, scores);
-
-  res.json({
-    ok:true,
-    scores,
-    tapsToday: u.tapsToday,
-    tapPoints,
-    level: u.level,
-    limit: DAILY_TAPS,
-    doubleXP: isDoubleXPOn()
-  });
-
+});
 // ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
   const userId = getUserIdFromReq(req) || req.body?.userId;
