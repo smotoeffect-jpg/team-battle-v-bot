@@ -253,32 +253,40 @@ const tgPost = async (m, d) => {
     throw e;
   }
 };
-// === XP SYSTEM – Unified version (simplified global handler) ===
+// === XP SYSTEM – Unified version (stable fixed) ===
 function addXP(user, action, amount = 0) {
   if (!user) return;
+
+  // ✅ טוען את הנתונים מהקובץ כדי לוודא שה־XP נשמר ולא נעלם
+  const users = readJSON(USERS_FILE);
+
   if (!user.xp) user.xp = 0;
   if (!user.level) user.level = 1;
 
+  // מפת ערכים לפי סוג פעולה
   const XP_MAP = {
-    tap: 1,
-    super: 25,
-    extra: 10,
-    referral: 50
+    tap: 1,        // טאפ רגיל
+    super: 25,     // סופר טאפ
+    extra: 10,     // אקסטרה טאפ
+    referral: 50   // הזמנה של משתמש חדש
   };
 
+  // חישוב רווח XP
   const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
   user.xp += gain;
 
-  // 💥 רמות מתקדמות לפי קושי עולה
-  const required = Math.pow(user.level, 2) * 100;
+  // חישוב הדרוש לרמה הבאה
+  const required = Math.pow(user.level, 2) * 10; // כל רמה קשה פי 10
+
+  // עליה ברמה אם חצה את הסף
   if (user.xp >= required) {
     user.level++;
     user.xp -= required;
   }
 
-  // ✅ שמירה מידית כדי למנוע איפוס XP
+  // ✅ עדכון הנתונים במבנה הראשי ושמירה לקובץ
+  users[user.userId] = user;
   writeJSON(USERS_FILE, users);
-
 }
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
