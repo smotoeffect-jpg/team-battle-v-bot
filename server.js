@@ -27,6 +27,13 @@ const SUPER_POINTS    = 25;
 const DAILY_TAPS      = 300;
 const AFFILIATE_BONUS = 0.10; // (שמורה לעתיד; אין חישוב אוטומטי כרגע)
 
+// === BATTLE (virtual token) rules ===
+const BATTLE_RULES = {
+  PER_TAP: 0.01,       // כל Tap מוסיף 0.01 $BATTLE
+  PER_SUPER: 0.25,     // כל Super Boost מוסיף 0.25 $BATTLE
+  DAILY_BONUS: 5       // בונוס כניסה יומית
+};
+
 // XP/Levels
 const DAILY_BONUS_INTERVAL_MS = 24*60*60*1000;
 const DAILY_BONUS_POINTS = 5;
@@ -189,6 +196,8 @@ function ensureUser(userId) {
       referrer: null,
       starsDonated: 0,
       bonusStars: 0,
+      battleBalance: 0,     // 💰 נוסף — יתרת מטבע $BATTLE
+      lastDailyAt: null,    // 🕒 נשתמש בעתיד לבונוס יומי
       username: null, first_name: "", last_name: "",
       xp: 0, level: 1, lastDailyBonus: null,
       history: [],
@@ -353,7 +362,8 @@ app.post("/api/tap", (req, res) => {
 
   u.tapsToday += 1;
   scores[u.team] = (scores[u.team] || 0) + tapPoints;
-
+// 💰 הוספת מטבע $BATTLE על כל Tap
+u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
   // XP מתעדכן בהתאם לעוצמת הטאפ
   addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
 
@@ -385,6 +395,8 @@ app.post("/api/super", (req, res) => {
   if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
   u.superUsed += 1;
   scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
+  // 💰 בונוס $BATTLE על סופר־בוסט
+  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_SUPER;
   addXpAndMaybeLevelUp(u, SUPER_POINTS * (isDoubleXPOn()?2:1));
   u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
   if (u.history.length > 200) u.history.shift();
@@ -445,14 +457,18 @@ app.get("/api/me", (req, res) => {
   let justGotDailyBonus = false;
   const now = nowTs();
   if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
-    scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
-    addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
-    u.lastDailyBonus = now;
-    u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
-    if (u.history.length > 200) u.history.shift();
-    justGotDailyBonus = true;
-    writeJSON(SCORES_FILE, scores);
-  }
+  scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
+
+  // 💰 מוסיף בונוס יומי של מטבע $BATTLE
+  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
+
+  addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
+  u.lastDailyBonus = now;
+  u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
+  if (u.history.length > 200) u.history.shift();
+  justGotDailyBonus = true;
+  writeJSON(SCORES_FILE, scores);
+}
 
   writeJSON(USERS_FILE, users);
 
@@ -466,6 +482,7 @@ app.get("/api/me", (req, res) => {
       superUsed: u.superUsed || 0,
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
+      battleBalance: u.battleBalance || 0,   // 💰 יתרת $BATTLE
       displayName: u.displayName || null,
       username: u.username || null,
       xp: u.xp || 0,
