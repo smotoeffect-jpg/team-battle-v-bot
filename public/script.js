@@ -289,17 +289,10 @@ try {
     console.error("❌ TON SDK not found in window!");
   } else {
     // ✅ טוענים את הארנק ידנית
-    const tonConnect = new TonConnectClass({
-      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
-      walletsList: [
-        {
-          name: "Tonkeeper",
-          appName: "tonkeeper",
-          imageUrl: "https://tonkeeper.com/assets/tonconnect-icon.png",
-          bridgeUrl: "https://bridge.tonapi.io/bridge",
-          universalLink: "https://app.tonkeeper.com/ton-connect"
-        }
-      ]
+    const connectedWallet = await tonConnect.connect({
+  universalLink: "https://app.tonkeeper.com/ton-connect",
+  bridgeUrl: "https://bridge.tonapi.io/bridge"
+});
     });
 
     console.log("✅ TON Connect initialized successfully (manual wallet mode)");
