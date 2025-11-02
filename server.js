@@ -397,7 +397,7 @@ app.post("/api/tap", (req, res) => {
 
 
   // היסטוריה
-  u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team, xp: tapPoints });
+
   if (u.history.length > 200) u.history.shift();
 
   writeJSON(USERS_FILE, users);
