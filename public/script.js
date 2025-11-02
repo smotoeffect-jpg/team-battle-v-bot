@@ -307,9 +307,9 @@ try {
           bridgeUrl: "https://bridge.tonapi.io/bridge"
         };
 
-        const connectedWallet = await tonConnect.connectWallet({
-  universalLink: tonkeeper.universalLink,
-  bridgeUrl: tonkeeper.bridgeUrl
+        const connectedWallet = await tonConnect.connect({
+  universalLink: "https://app.tonkeeper.com/ton-connect",
+  bridgeUrl: "https://bridge.tonapi.io/bridge"
 });
 
         if (connectedWallet?.account?.address) {
