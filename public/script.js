@@ -287,7 +287,7 @@ async function handleAction(type, xpGain) {
     flashStatus(i18n[getLang()].err);
   }
 }
-
+  
 // 🎯 Tap
 const btnTap = document.getElementById('btn-tap');
 if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
@@ -437,5 +437,5 @@ tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
   }
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
-}
+  
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
