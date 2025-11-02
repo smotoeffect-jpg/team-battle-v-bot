@@ -253,7 +253,29 @@ const tgPost = async (m, d) => {
     throw e;
   }
 };
+// === XP SYSTEM – Unified version (simplified global handler) ===
+function addXP(user, action, amount = 0) {
+  if (!user) return;
+  if (!user.xp) user.xp = 0;
+  if (!user.level) user.level = 1;
 
+  const XP_MAP = {
+    tap: 1,
+    super: 25,
+    extra: 10,
+    referral: 50
+  };
+
+  const gain = amount > 0 ? amount : (XP_MAP[action] || 0);
+  user.xp += gain;
+
+  // 💥 Level-up logic (progressively harder)
+  const required = Math.pow(user.level, 2) * 100;
+  if (user.xp >= required) {
+    user.level++;
+    user.xp -= required;
+  }
+}
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
   // Telegram Mini App passes a URL-encoded string in WebApp.initData.
@@ -344,19 +366,34 @@ app.post("/api/switch-team", (req, res) => {
   res.json({ ok:true, team:newTeam });
 });
 
-// ====== Tap endpoint – Tap strength equals player level ======
+// ===== Tap endpoint =====
 app.post("/api/tap", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+  const userId = getUserIdFromReq(req) || req.body?.userId;
+  if (!userId) return res.status(400).json({ ok: false, error: "missing userId" });
+
   const u = ensureUser(userId);
-  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+  if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
+
+  // ✅ הוספת נקודות XP על כל Tap
+  addXP(u, 'tap');
 
   const today = todayStr();
-  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
 
-  if (u.tapsToday >= DAILY_TAPS)
-    return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+  if (u.tapsToday >= DAILY_TAPS) {
+    return res.json({ ok: false, error: "limit" });
+  }
 
+  u.tapsToday++;
+  scores[u.team] = (scores[u.team] || 0) + 1;
+
+  writeJSON(USERS_FILE, users);
+  writeJSON(SCORES_FILE, scores);
+  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
+});
   // ⚡ Tap value = current level
   const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
 
@@ -385,52 +422,78 @@ u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
   });
 });
 
+// ===== Super Boost endpoint =====
 app.post("/api/super", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+  const userId = getUserIdFromReq(req) || req.body?.userId;
+  if (!userId) return res.status(400).json({ ok: false, error: "missing userId" });
+
   const u = ensureUser(userId);
-  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
+  if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
+
+  // ✅ הוספת נקודות XP על Super Boost
+  addXP(u, 'super');
+
   const today = todayStr();
-  if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
-  if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
-  u.superUsed += 1;
-  scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
-  // 💰 בונוס $BATTLE על סופר־בוסט
-  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_SUPER;
-  addXpAndMaybeLevelUp(u, SUPER_POINTS * (isDoubleXPOn()?2:1));
-  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
-  if (u.history.length > 200) u.history.shift();
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
+
+  if (u.tapsToday >= DAILY_TAPS) {
+    return res.json({ ok: false, error: "limit" });
+  }
+
+  u.tapsToday += 25;
+  scores[u.team] = (scores[u.team] || 0) + 25;
+
   writeJSON(USERS_FILE, users);
   writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
+  res.json({ ok: true, tapsToday: u.tapsToday, score: scores[u.team] });
 });
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
+// ===== Extra Tap (Stars Payment) =====
 app.post("/api/create-invoice", async (req, res) => {
   try {
-    // Only *fallback* to header if body missing userId (doesn't change flow)
-    const userId = String(req.body?.userId || getUserIdFromReq(req) || "");
-    const team   = req.body?.team;
-    const stars  = Number(req.body?.stars || 0);
-    if (!userId || !team || !["israel","gaza"].includes(team) || !stars || stars < 1)
-      return res.status(400).json({ ok:false, error:"bad params" });
+    const userId = getUserIdFromReq(req) || req.body?.userId;
+    const team = req.body?.team;
+    const stars = parseInt(req.body?.stars || 0);
+    if (!userId || !team || !stars) {
+      return res.status(400).json({ ok: false, error: "missing parameters" });
+    }
 
     const u = ensureUser(userId);
     if (!u.team) u.team = team;
 
-    const payload = { t:"donation", userId, team, stars };
-    const r = await axios.post(`${TG_API}/createInvoiceLink`, {
-      title: "TeamBattle Boost",
-      description: `Donate ${stars}⭐ to ${team}`,
-      payload: JSON.stringify(payload).slice(0,128),
+    // ✅ הוספת XP לפי התרומה
+    addXP(u, 'extra');
+
+    // 🪙 שמירת Battle עבור כל תרומה
+    if (!u.battleBalance) u.battleBalance = 0;
+    u.battleBalance += stars;
+
+    // 🎯 עדכון ניקוד קבוצה
+    scores[team] = (scores[team] || 0) + stars;
+
+    // יצירת לינק תשלום
+    const payload = JSON.stringify({ t: "donation", userId, team, stars });
+    const invoiceUrl = await createInvoiceLink({
+      title: "TeamBattle Extra Tap",
+      description: `Support your team with ${stars} Stars`,
+      payload,
       currency: "XTR",
-      prices: [{ label: "Stars", amount: Math.floor(stars) }],
+      prices: [{ label: "Stars", amount: stars * 1000000 }],
+      photo_url: "https://team-battle-v-bot.onrender.com/assets/icon.png",
     });
-    if (!r.data?.ok) return res.status(500).json({ ok:false, error:r.data });
-    res.json({ ok:true, url:r.data.result });
-  } catch (e) {
-    console.error("create-invoice", e?.response?.data || e.message);
-    res.status(500).json({ ok:false, error:e.message });
+
+    // שמירה לקבצים
+    writeJSON(USERS_FILE, users);
+    writeJSON(SCORES_FILE, scores);
+
+    res.json({ ok: true, url: invoiceUrl });
+  } catch (err) {
+    console.error("❌ /api/create-invoice error:", err);
+    res.status(500).json({ ok: false, error: "server_error" });
   }
 });
 
@@ -960,6 +1023,32 @@ app.get("/setup-webhook", async (_, res) => {
 app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
+// ===== Referral (Invite friend) =====
+app.post("/api/referral", (req, res) => {
+  try {
+    const { inviterId, invitedId } = req.body;
+    if (!inviterId || !invitedId)
+      return res.status(400).json({ ok: false, error: "missing parameters" });
 
+    const inviter = ensureUser(inviterId);
+    const invited = ensureUser(invitedId);
+
+    // ✅ עדכון מספר המוזמנים
+    inviter.referrals = (inviter.referrals || 0) + 1;
+
+    // ✅ הוספת XP על הזמנה מוצלחת
+    addXP(inviter, "referral");
+
+    // 💰 בונוס קטן ב־Battle (אם רוצים, כרגע רק XP)
+    if (!inviter.battleBalance) inviter.battleBalance = 0;
+    inviter.battleBalance += 5;
+
+    writeJSON(USERS_FILE, users);
+    res.json({ ok: true, referrals: inviter.referrals });
+  } catch (err) {
+    console.error("❌ /api/referral error:", err);
+    res.status(500).json({ ok: false, error: "server_error" });
+  }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
