@@ -220,3 +220,48 @@ body{
     font-size: 0.9rem;
   }
 }
+
+/* === Top 20 Leaderboard – מבוסס $Battle === */
+#top20-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+#top20-list .player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px dashed rgba(255,255,255,.08);
+  font-size: 14px;
+  color: #fff;
+  transition: background 0.15s ease;
+}
+
+#top20-list .player-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+#top20-list .player-item.top5 {
+  background: rgba(255, 77, 196, 0.08);
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255,77,196,.25);
+}
+
+#top20-list .player-item .name {
+  flex: 1;
+  text-align: left;
+  color: #fff;
+  font-weight: 700;
+}
+
+#top20-list .player-item .battle {
+  flex-shrink: 0;
+  color: var(--pink);
+  font-weight: 800;
+  text-align: right;
+}
