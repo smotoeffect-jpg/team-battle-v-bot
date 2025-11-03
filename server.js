@@ -167,7 +167,7 @@ const PANEL_TEXTS_DEFAULT = {
     dxp_duration_minus:"➖ Duration −15m",
     dxp_started_all: "⚡ Double XP is live now! Earn 2× XP for the next hour!",
     dxp_ended_all: "🔕 Double XP has ended. See you next time!",
-    csv_header: "Name,Username,ID,Language,Country"
+    csv_header: "Name,Username,ID,Language,Country",
     menu_dev_mode: "🧩 Dev Mode",
     menu_referral_settings: "💸 Referral Settings",
     dev_mode_on: "🧩 Dev Mode: ON",
