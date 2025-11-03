@@ -1,0 +1,19 @@
+{
+  "dev_mode": true,
+  "welcome_message": "ברוך הבא %firstname% ל-TeamBattle!",
+  "welcome_buttons": [
+    [
+      {
+        "text": "🚀 פתח משחק (Mini App)",
+        "web_app": { "url": "https://team-battle-v-bot.onrender.com/" }
+      }
+    ],
+    [
+      { "text": "💸 תוכנית שותפים", "callback_data": "referral" }
+    ]
+  ],
+  "broadcast_draft": {
+    "text": "",
+    "buttons": []
+  }
+}
