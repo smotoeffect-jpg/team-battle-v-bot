@@ -661,7 +661,6 @@ function panelKeyboard(lang="en") {
   [{ text: t.menu_dxp, callback_data: "panel:dxp" }],
   [{ text: t.menu_welcome, callback_data: "panel:welcome" }],
   [{ text: t.menu_bc, callback_data: "panel:bc" }],
-  [{ text: t.menu_broadcast, callback_data: "panel:broadcast" }],
   [{ text: t.menu_admins, callback_data: "panel:admins" }],
   [{ text: t.menu_language, callback_data: "panel:lang" }]
 ]
