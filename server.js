@@ -365,6 +365,22 @@ function renderPlaceholders(text, u, uid) {
     .replace(/%username%/g, un)
     .replace(/%mention%/g, mention);
 }
+// === Markdown Safe Formatter ===
+function escapeMarkdown(text) {
+  if (!text || typeof text !== "string") return text;
+  // מנקה תווים שיכולים לשבור את ההודעה במצב Markdown
+  return text
+    .replace(/_/g, "\\_")
+    .replace(/\*/g, "\\*")
+    .replace(/\[/g, "\\[")
+    .replace(/`/g, "\\`")
+    .replace(/>/g, "\\>")
+    .replace(/#/g, "\\#")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/\|/g, "\\|")
+    .replace(/%/g, "\\%"); // גם אחוזים
+}
 
 function parseButtonsFromAdminText(block) {
   const rows = [];
