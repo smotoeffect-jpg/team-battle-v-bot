@@ -47,10 +47,15 @@ const USERS_FILE  = path.join(DATA_DIR, "users.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
 const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // per-admin prefs (e.g. lang, awaiting)
 const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n texts
-const DXP_FILE    = path.join(DATA_DIR, "doublexp.json");   // double xp state
-// === NEW SETTINGS FILE ===
+const DXP_FILE    = path.join(DATA_DIR, "doublexp.json");   // double xp // === NEW SETTINGS FILE ===
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 
+// === REFERRALS FILE ===
+const REFERRALS_FILE = path.join(DATA_DIR, "referrals.json");
+let referrals = readJSON(REFERRALS_FILE, {});
+if (!fs.existsSync(REFERRALS_FILE)) writeJSON(REFERRALS_FILE, {});
+
+// === SETTINGS LOADER ===
 function readSettings() {
   if (!fs.existsSync(SETTINGS_FILE)) {
     fs.writeFileSync(
@@ -273,12 +278,29 @@ function updateUserProfileFromTG(from) {
       u.referrer = ref;
       users[ref].referrals = (users[ref].referrals || 0) + 1;
       console.log(`👥 Referral registered: ${ref} invited ${uid}`);
+      addReferralEarning(ref, uid);
     }
   } catch (err) {
     console.warn("Referral tracking error:", err);
   }
 
   writeJSON(USERS_FILE, users);
+  function addReferralEarning(referrerId, invitedId) {
+  if (!referrerId || !invitedId) return;
+
+  // Update referral file
+  if (!referrals[referrerId]) referrals[referrerId] = { invited: [], earnings: 0 };
+  if (!referrals[referrerId].invited.includes(invitedId)) {
+    referrals[referrerId].invited.push(invitedId);
+    referrals[referrerId].earnings += 2; // +2 $Battle per referral
+    writeJSON(REFERRALS_FILE, referrals);
+  }
+
+  // 🔄 Sync with user's $Battle balance in users.json
+  if (users[referrerId]) {
+    users[referrerId].battleBalance = (users[referrerId].battleBalance || 0) + 2;
+    writeJSON(USERS_FILE, users);
+  }
 }
 function addXpAndMaybeLevelUp(u, addXp) {
   if (!addXp) return;
