@@ -310,14 +310,29 @@ function addXpAndMaybeLevelUp(u, addXp) {
   u.xp += addXp;
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
+// === Telegram Post Wrapper with Markdown Auto-Escape ===
 const tgPost = async (m, d) => {
   try {
+    // אם יש טקסט — מנקה תווים שיכולים לשבור את Markdown
+    if (d && typeof d.text === "string") {
+      d.text = escapeMarkdown(d.text);
+    }
+
+    // ברירת מחדל: parse_mode = Markdown
+    if (!d.parse_mode) d.parse_mode = "Markdown";
+
     return await axios.post(`${TG_API}/${m}`, d);
+
   } catch (e) {
+    // טיפול במקרה שמשתמש חסם את הבוט
     if (d?.chat_id && e?.response?.status === 403) {
       const uid = String(d.chat_id);
-      if (users[uid]) { users[uid].active = false; writeJSON(USERS_FILE, users); }
+      if (users[uid]) {
+        users[uid].active = false;
+        writeJSON(USERS_FILE, users);
+      }
     }
+
     console.error("TG error:", e?.response?.data || e.message);
     throw e;
   }
