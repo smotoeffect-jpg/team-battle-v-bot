@@ -168,6 +168,10 @@ const PANEL_TEXTS_DEFAULT = {
     dxp_started_all: "⚡ Double XP is live now! Earn 2× XP for the next hour!",
     dxp_ended_all: "🔕 Double XP has ended. See you next time!",
     csv_header: "Name,Username,ID,Language,Country"
+    menu_dev_mode: "🧩 Dev Mode",
+    menu_referral_settings: "💸 Referral Settings",
+    dev_mode_on: "🧩 Dev Mode: ON",
+    dev_mode_off: "🧩 Dev Mode: OFF",
   },
   he: {
     title:      () => "*🛠️ פאנל ניהול – TeamBattle*",
@@ -214,6 +218,10 @@ const PANEL_TEXTS_DEFAULT = {
     dxp_started_all: "⚡ אקספי מוכפל יצא לדרך! קבלו 2× XP לשעה הקרובה!",
     dxp_ended_all: "🔕 האקספי המוכפל הסתיים. נתראה בפעם הבאה!",
     csv_header: "Name,Username,ID,Language,Country"
+    menu_dev_mode: "🧩 מצב פיתוח",
+    menu_referral_settings: "💸 הגדרות שותפים",
+    dev_mode_on: "🧩 מצב פיתוח: פעיל",
+    dev_mode_off: "🧩 מצב פיתוח: כבוי",
   }
 };
 
@@ -709,6 +717,21 @@ function panelKeyboard(lang="en") {
   [{ text: t.menu_dxp, callback_data: "panel:dxp" }],
   [{ text: t.menu_welcome, callback_data: "panel:welcome" }],
   [{ text: t.menu_bc, callback_data: "panel:bc" }],
+      // === Dev Mode + Referral Settings ===
+[
+  {
+    text: settings.dev_mode
+      ? (lang === "he" ? "🧩 מצב פיתוח: פעיל" : "🧩 Dev Mode: ON")
+      : (lang === "he" ? "🧩 מצב פיתוח: כבוי" : "🧩 Dev Mode: OFF"),
+    callback_data: "panel:toggle_dev"
+  }
+],
+[
+  {
+    text: lang === "he" ? "💸 הגדרות שותפים" : "💸 Referral Settings",
+    callback_data: "panel:referral_settings"
+  }
+],
   [{ text: t.menu_admins, callback_data: "panel:admins" }],
   [{ text: t.menu_language, callback_data: "panel:lang" }]
 ]
@@ -965,6 +988,20 @@ if (data === "menu:start") {
           await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.unauthorized, show_alert: true });
         } else {
           const [, action, extra] = data.split(":");
+          // ====== TOGGLE DEV MODE ======
+else if (action === "toggle_dev") {
+  settings.dev_mode = !settings.dev_mode;
+  writeJSON(SETTINGS_FILE, settings);
+
+  await tgPost("answerCallbackQuery", {
+    callback_query_id: cq.id,
+    text: settings.dev_mode
+      ? (lang === "he" ? "🧩 מצב פיתוח הופעל" : "🧩 Dev Mode Enabled")
+      : (lang === "he" ? "🌍 מצב פיתוח כובה" : "🌍 Dev Mode Disabled")
+  });
+
+  await editToMainPanel(msg, lang);
+}
 // ====== Welcome & Broadcast Manager (HE + EN) ======
 if (action === "welcome") {
   await tgPost("editMessageText", {
