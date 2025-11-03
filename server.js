@@ -930,16 +930,26 @@ if (data === "referral") {
 if (data === "menu:start") {
   const s = settings;
   const u = ensureUser(uid);
-  const msg = renderPlaceholders(s.welcome_message || "Welcome!", u, uid);
+  const msgText = renderPlaceholders(s.welcome_message || "Welcome!", u, uid);
   const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
 
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text: escapeMarkdown(msg),
-    parse_mode: "Markdown",
-    reply_markup: { inline_keyboard: kb }
-  });
+  if (msg?.chat?.id && msg?.message_id) {
+    await tgPost("editMessageText", {
+      chat_id: msg.chat.id,
+      message_id: msg.message_id,
+      text: escapeMarkdown(msgText),
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: kb }
+    });
+  } else {
+    // fallback: if message doesn't exist, send a new one
+    await tgPost("sendMessage", {
+      chat_id: uid,
+      text: escapeMarkdown(msgText),
+      parse_mode: "Markdown",
+      reply_markup: { inline_keyboard: kb }
+    });
+  }
 }
       if (data.startsWith("panel:")) {
         if (!admins.includes(uid)) {
