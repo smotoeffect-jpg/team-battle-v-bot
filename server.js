@@ -799,9 +799,35 @@ if (update.message?.successful_payment) {
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
 
-      // /start
-      if (text.startsWith("/start")) {
-        setAdminAwait(uid, null);
+     // /start
+if (text.startsWith("/start")) {
+  setAdminAwait(uid, null);
+
+  // ✅ Detect referral from /start message (even without init-data)
+  try {
+    const parts = text.split(" ");
+    if (parts.length > 1) {
+      const ref = parts[1].trim();
+      if (ref && users[ref] && !users[uid]?.referrer) {
+        const u = ensureUser(uid);
+        u.referrer = ref;
+
+        // מוסיף את המוזמן לרשימת ההזמנות של המזמין
+        if (!users[ref].referrals) users[ref].referrals = [];
+        if (!users[ref].referrals.includes(uid)) {
+          users[ref].referrals.push(uid);
+          console.log(`👥 Referral registered via /start: ${ref} invited ${uid}`);
+          addReferralEarning(ref, uid);
+        }
+
+        writeJSON(USERS_FILE, users);
+      }
+    }
+  } catch (err) {
+    console.error("Referral tracking (via /start) error:", err.message);
+  }
+
+  // ✅ continue with welcome message
   const s = settings;
   const u = ensureUser(uid);
   const msg = renderPlaceholders(s.welcome_message || "ברוך הבא!", u, uid);
