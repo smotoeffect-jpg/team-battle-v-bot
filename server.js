@@ -86,7 +86,24 @@ function writeJSON(file, data) {
   try { fs.writeFileSync(file, JSON.stringify(data, null, 2)); }
   catch (e) { console.error("writeJSON error:", e.message); }
 }
+// ====== REFERRAL EARNING SYNC ======
+function addReferralEarning(referrerId, invitedId) {
+  if (!referrerId || !invitedId) return;
 
+  // Update referral file
+  if (!referrals[referrerId]) referrals[referrerId] = { invited: [], earnings: 0 };
+  if (!referrals[referrerId].invited.includes(invitedId)) {
+    referrals[referrerId].invited.push(invitedId);
+    referrals[referrerId].earnings += 2; // +2 $Battle per referral
+    writeJSON(REFERRALS_FILE, referrals);
+  }
+
+  // 🔄 Sync with user's $Battle balance in users.json
+  if (users[referrerId]) {
+    users[referrerId].battleBalance = (users[referrerId].battleBalance || 0) + 2;
+    writeJSON(USERS_FILE, users);
+  }
+}
 const todayStr = () => new Date().toISOString().slice(0,10);
 const nowTs    = () => Date.now();
 
