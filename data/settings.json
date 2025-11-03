@@ -1,6 +1,6 @@
 {
   "dev_mode": true,
-  "welcome_message": "ברוך הבא %firstname% ל-TeamBattle!",
+  "welcome_message": "ברוך הבא %firstname% ל TeamBattle!",
   "welcome_buttons": [
     [
       {
