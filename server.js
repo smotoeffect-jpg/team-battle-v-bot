@@ -670,7 +670,7 @@ async function sendPanel(chatId, lang="en") {
   const t = tFor(lang);
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: t.title(),
+    text: escapeMarkdown(t.title()),
     parse_mode: "Markdown",
     reply_markup: panelKeyboard(lang)
   });
@@ -680,7 +680,7 @@ async function editToMainPanel(msg, lang="en") {
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
-    text: t.title(),
+    text: escapeMarkdown(t.title()),
     parse_mode: "Markdown",
     reply_markup: panelKeyboard(lang)
   });
@@ -760,7 +760,7 @@ if (update.message?.successful_payment) {
   const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: msg,
+    text: escapeMarkdown(msg),
     parse_mode: "Markdown",
     reply_markup: { inline_keyboard: kb }
   });
@@ -1037,7 +1037,7 @@ else if (action === "bc_send_confirm") {
     try {
       await tgPost("sendMessage", {
         chat_id: id,
-        text: textToSend,
+        text: escapeMarkdown(textToSend),
         parse_mode: "Markdown",
         reply_markup: { inline_keyboard: draft.buttons || [] }
       });
