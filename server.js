@@ -897,35 +897,48 @@ if (text.startsWith("/start")) {
         writeJSON(USERS_FILE, users);
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Language saved" });
       }
-      // ====== REFERRAL MENU (EN ONLY) ======
+      // ====== REFERRAL MENU (EN ONLY, FIXED) ======
 if (data === "referral") {
   const refData = referrals[uid] || { invited: [], earnings: 0 };
   const inviteCount = refData.invited.length;
   const earnings = refData.earnings.toFixed(2);
-  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // replace with your bot username if different
+  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // change username if needed
 
-  const text = `💸 *Referral Program – $Battle*\nEarn $Battle for every player you invite!\n\n👥 *Players Invited:* ${inviteCount}\n💰 *Your Earnings:* ${earnings} $Battle\n\n🔗 *Your Personal Invite Link:*\n${link}\n\n📤 *Share your link:*\n(Use the share button below)`;
+  const text =
+    `💸 *Referral Program – $Battle*\n` +
+    `Earn $Battle for every player you invite!\n\n` +
+    `👥 *Players Invited:* ${inviteCount}\n` +
+    `💰 *Your Earnings:* ${earnings} $Battle\n\n` +
+    `🔗 *Your Personal Invite Link:*\n${link}\n\n` +
+    `📤 *Share your link:*\n(Use the share button below)`;
 
-  await tgPost("sendMessage", {
-    chat_id: uid,
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
     text,
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
-        [
-          {
-            text: "📤 Share Link",
-            switch_inline_query: link
-          }
-        ],
-        [
-          {
-            text: "⬅️ Back",
-            callback_data: "menu:start"
-          }
-        ]
+        [{ text: "📤 Share Link", switch_inline_query: link }],
+        [{ text: "⬅️ Back", callback_data: "menu:start" }]
       ]
     }
+  });
+}
+
+// ====== BACK TO START MENU ======
+if (data === "menu:start") {
+  const s = settings;
+  const u = ensureUser(uid);
+  const msg = renderPlaceholders(s.welcome_message || "Welcome!", u, uid);
+  const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
+
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text: escapeMarkdown(msg),
+    parse_mode: "Markdown",
+    reply_markup: { inline_keyboard: kb }
   });
 }
       if (data.startsWith("panel:")) {
