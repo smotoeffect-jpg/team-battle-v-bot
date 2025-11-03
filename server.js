@@ -271,10 +271,17 @@ function updateUserProfileFromTG(from) {
   u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
   u.active = true;
 
-  // ✅ Referral link detection (improved V2)
+  // ✅ Referral link detection (fixed V2)
 try {
-  // מזהה קישור הזמנה תקין
-  const ref = update.message?.text?.split("start=")[1] || from?.start_param || from?.referrer;
+  // נוודא ש־update קיים גם אם לא מוגדר בהקשר הנוכחי
+  const upd = typeof update !== "undefined" ? update : {};
+
+  // מזהה קישור הזמנה תקין (תומך גם בהודעות וגם ב־callback)
+  const ref =
+    upd.message?.text?.split("start=")[1] ||
+    upd.callback_query?.data?.split("start=")[1] ||
+    from?.start_param ||
+    from?.referrer;
 
   if (ref && users[ref] && !u.referrer) {
     u.referrer = ref;
@@ -288,7 +295,7 @@ try {
     }
   }
 } catch (err) {
-  console.warn("Referral tracking error:", err.message);
+  console.error("Referral tracking error:", err.message);
 }
 
   writeJSON(USERS_FILE, users);
