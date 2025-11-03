@@ -897,12 +897,12 @@ if (text.startsWith("/start")) {
         writeJSON(USERS_FILE, users);
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Language saved" });
       }
-      // ====== REFERRAL MENU (EN ONLY, FIXED) ======
+      // ====== REFERRAL MENU (EN ONLY, REAL SHARE + COPY LINK) ======
 if (data === "referral") {
   const refData = referrals[uid] || { invited: [], earnings: 0 };
   const inviteCount = refData.invited.length;
   const earnings = refData.earnings.toFixed(2);
-  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // change username if needed
+  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // change bot username if needed
 
   const text =
     `💸 *Referral Program – $Battle*\n` +
@@ -910,7 +910,7 @@ if (data === "referral") {
     `👥 *Players Invited:* ${inviteCount}\n` +
     `💰 *Your Earnings:* ${earnings} $Battle\n\n` +
     `🔗 *Your Personal Invite Link:*\n${link}\n\n` +
-    `📤 *Share your link:*\n(Use the share button below)`;
+    `📤 *Share or copy your link below:*`;
 
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -919,10 +919,36 @@ if (data === "referral") {
     parse_mode: "Markdown",
     reply_markup: {
       inline_keyboard: [
-        [{ text: "📤 Share Link", switch_inline_query: link }],
-        [{ text: "⬅️ Back", callback_data: "menu:start" }]
+        [
+          {
+            text: "📤 Share Link",
+            url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("🔥 Join me on TeamBattle - 🇮🇱Israel Vs Gaza🇵🇸 and earn $Battle!")}`
+          }
+        ],
+        [
+          {
+            text: "📋 Copy Link",
+            callback_data: `copy_link:${link}`
+          }
+        ],
+        [
+          {
+            text: "⬅️ Back",
+            callback_data: "menu:start"
+          }
+        ]
       ]
     }
+  });
+}
+
+// ====== HANDLE COPY LINK CALLBACK ======
+if (data.startsWith("copy_link:")) {
+  const link = data.replace("copy_link:", "");
+  await tgPost("answerCallbackQuery", {
+    callback_query_id: cq.id,
+    text: `✅ Link copied:\n${link}`,
+    show_alert: true
   });
 }
 
@@ -942,7 +968,6 @@ if (data === "menu:start") {
       reply_markup: { inline_keyboard: kb }
     });
   } else {
-    // fallback: if message doesn't exist, send a new one
     await tgPost("sendMessage", {
       chat_id: uid,
       text: escapeMarkdown(msgText),
