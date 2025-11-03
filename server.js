@@ -285,7 +285,10 @@ function updateUserProfileFromTG(from) {
   }
 
   writeJSON(USERS_FILE, users);
-  function addReferralEarning(referrerId, invitedId) {
+}
+
+// === REFERRAL EARNING HANDLER ===
+function addReferralEarning(referrerId, invitedId) {
   if (!referrerId || !invitedId) return;
 
   // Update referral file
