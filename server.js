@@ -619,6 +619,7 @@ function panelKeyboard(lang="en") {
   [{ text: t.menu_dxp, callback_data: "panel:dxp" }],
   [{ text: t.menu_welcome, callback_data: "panel:welcome" }],
   [{ text: t.menu_bc, callback_data: "panel:bc" }],
+  [{ text: t.menu_broadcast, callback_data: "panel:broadcast" }],
   [{ text: t.menu_admins, callback_data: "panel:admins" }],
   [{ text: t.menu_language, callback_data: "panel:lang" }]
 ]
@@ -781,7 +782,37 @@ if (update.message?.successful_payment) {
         writeJSON(USERS_FILE, users);
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Language saved" });
       }
+      // ====== REFERRAL MENU (EN ONLY) ======
+if (data === "referral") {
+  const refData = referrals[uid] || { invited: [], earnings: 0 };
+  const inviteCount = refData.invited.length;
+  const earnings = refData.earnings.toFixed(2);
+  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // replace with your bot username if different
 
+  const text = `💸 *Referral Program – $Battle*\nEarn $Battle for every player you invite!\n\n👥 *Players Invited:* ${inviteCount}\n💰 *Your Earnings:* ${earnings} $Battle\n\n🔗 *Your Personal Invite Link:*\n${link}\n\n📤 *Share your link:*\n(Use the share button below)`;
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text,
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "📤 Share Link",
+            switch_inline_query: link
+          }
+        ],
+        [
+          {
+            text: "⬅️ Back",
+            callback_data: "menu:start"
+          }
+        ]
+      ]
+    }
+  });
+}
       if (data.startsWith("panel:")) {
         if (!admins.includes(uid)) {
           await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.unauthorized, show_alert: true });
