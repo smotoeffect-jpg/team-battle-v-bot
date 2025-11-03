@@ -217,7 +217,7 @@ const PANEL_TEXTS_DEFAULT = {
     dxp_duration_minus:"➖ משך −15דק",
     dxp_started_all: "⚡ אקספי מוכפל יצא לדרך! קבלו 2× XP לשעה הקרובה!",
     dxp_ended_all: "🔕 האקספי המוכפל הסתיים. נתראה בפעם הבאה!",
-    csv_header: "Name,Username,ID,Language,Country"
+    csv_header: "Name,Username,ID,Language,Country",
     menu_dev_mode: "🧩 מצב פיתוח",
     menu_referral_settings: "💸 הגדרות שותפים",
     dev_mode_on: "🧩 מצב פיתוח: פעיל",
