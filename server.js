@@ -712,6 +712,7 @@ if (update.message?.successful_payment) {
 
       // /start
       if (text.startsWith("/start")) {
+        setAdminAwait(uid, null);
   const s = settings;
   const u = ensureUser(uid);
   const msg = renderPlaceholders(s.welcome_message || "ברוך הבא!", u, uid);
