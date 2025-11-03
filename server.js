@@ -48,7 +48,32 @@ const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
 const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // per-admin prefs (e.g. lang, awaiting)
 const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n texts
 const DXP_FILE    = path.join(DATA_DIR, "doublexp.json");   // double xp state
+// === NEW SETTINGS FILE ===
+const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 
+function readSettings() {
+  if (!fs.existsSync(SETTINGS_FILE)) {
+    fs.writeFileSync(
+      SETTINGS_FILE,
+      JSON.stringify({
+        dev_mode: true,
+        welcome_message: "ברוך הבא %firstname% ל-TeamBattle!",
+        welcome_buttons: [
+          [
+            { text: "🚀 פתח משחק (Mini App)", web_app: { url: MINI_APP_URL } }
+          ],
+          [
+            { text: "💸 תוכנית שותפים", callback_data: "referral" }
+          ]
+        ],
+        broadcast_draft: { text: "", buttons: [] }
+      }, null, 2)
+    );
+  }
+  return JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
+}
+
+let settings = readSettings();
 function readJSON(file, fallback) {
   try {
     if (!fs.existsSync(file)) fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
@@ -82,7 +107,8 @@ const PANEL_TEXTS_DEFAULT = {
     menu_summary: "📊 Global summary",
     menu_users: "👥 Users list",
     menu_bonuses: "🎁 Bonuses & resets",
-    menu_broadcast: "📢 Broadcast message",
+    menu_welcome: "💬 Welcome Message",
+    menu_bc: "📢 Send Message",
     menu_admins: "👑 Manage admins",
     menu_language: "🌐 Language / שפה",
     menu_dxp: "⚡ Double XP",
@@ -127,7 +153,8 @@ const PANEL_TEXTS_DEFAULT = {
     menu_summary: "📊 סיכום כללי",
     menu_users: "👥 רשימת משתמשים",
     menu_bonuses: "🎁 בונוסים ואיפוסים",
-    menu_broadcast: "📢 שליחת הודעה",
+    menu_welcome: "💬 הודעת פתיחה",
+    menu_bc: "📢 שליחת הודעה",
     menu_admins: "👑 ניהול מנהלים",
     menu_language: "🌐 שפה / Language",
     menu_dxp: "⚡ ניהול Double XP",
@@ -282,6 +309,51 @@ function getUserIdFromReq(req) {
 function getAdminLang(uid) {
   const meta = adminMeta[uid] || {};
   return meta.lang === "he" ? "he" : "en";
+}
+// === PLACEHOLDERS & BUTTON PARSER ===
+function renderPlaceholders(text, u, uid) {
+  if (!text) return "";
+  const fn = u.first_name || "";
+  const ln = u.last_name || "";
+  const un = u.username || "";
+  const mention = `[${fn || un || uid}](tg://user?id=${uid})`;
+  return text
+    .replace(/%firstname%/g, fn)
+    .replace(/%lastname%/g, ln)
+    .replace(/%username%/g, un)
+    .replace(/%mention%/g, mention);
+}
+
+function parseButtonsFromAdminText(block) {
+  const rows = [];
+  if (!block) return rows;
+  const lines = block.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  for (const line of lines) {
+    const parts = line.split("&&").map(p=>p.trim());
+    const row = [];
+    for (let part of parts) {
+      let [btnText, payload] = part.split(/\s*-\s*/);
+      if (!payload) continue;
+      if (/^https?:/i.test(payload) || /^t\.me\//i.test(payload)) {
+        let url = payload.startsWith("http") ? payload : "https://" + payload;
+        row.push({ text: btnText, url });
+      } else if (/^popup:/i.test(payload)) {
+        row.push({ text: btnText, callback_data: "popup:" + payload.replace(/^popup:/i,"").trim() });
+      } else if (/^alert:/i.test(payload)) {
+        row.push({ text: btnText, callback_data: "alert:" + payload.replace(/^alert:/i,"").trim() });
+      } else if (/^share:/i.test(payload)) {
+        row.push({ text: btnText, switch_inline_query: payload.replace(/^share:/i,"").trim() });
+      } else if (/^menu:/i.test(payload)) {
+        row.push({ text: btnText, callback_data: "menu:" + payload.replace(/^menu:/i,"").trim() });
+      } else if (/^ref:/i.test(payload)) {
+        row.push({ text: btnText, callback_data: "referral" });
+      } else {
+        row.push({ text: btnText, callback_data: payload });
+      }
+    }
+    if (row.length) rows.push(row);
+  }
+  return rows;
 }
 function setAdminLang(uid, lang) {
   if (!adminMeta[uid]) adminMeta[uid] = {};
@@ -541,14 +613,16 @@ function panelKeyboard(lang="en") {
   const t = tFor(lang);
   return {
     inline_keyboard: [
-      [{ text: t.menu_summary,   callback_data: "panel:summary" }],
-      [{ text: t.menu_users,     callback_data: "panel:users" }],
-      [{ text: t.menu_bonuses,   callback_data: "panel:bonuses" }],
-      [{ text: t.menu_dxp,       callback_data: "panel:dxp" }],
-      [{ text: t.menu_broadcast, callback_data: "panel:broadcast" }],
-      [{ text: t.menu_admins,    callback_data: "panel:admins" }],
-      [{ text: t.menu_language,  callback_data: "panel:lang" }]
-    ]
+  [{ text: t.menu_summary, callback_data: "panel:summary" }],
+  [{ text: t.menu_users, callback_data: "panel:users" }],
+  [{ text: t.menu_bonuses, callback_data: "panel:bonuses" }],
+  [{ text: t.menu_dxp, callback_data: "panel:dxp" }],
+  [{ text: t.menu_welcome, callback_data: "panel:welcome" }],
+  [{ text: t.menu_bc, callback_data: "panel:bc" }],
+  [{ text: t.menu_broadcast, callback_data: "panel:broadcast" }],
+  [{ text: t.menu_admins, callback_data: "panel:admins" }],
+  [{ text: t.menu_language, callback_data: "panel:lang" }]
+]
   };
 }
 async function sendPanel(chatId, lang="en") {
@@ -638,21 +712,17 @@ if (update.message?.successful_payment) {
 
       // /start
       if (text.startsWith("/start")) {
-        await tgPost("sendMessage", {
-          chat_id: chatId,
-          text: "Welcome to *TeamBattle – Israel vs Gaza* 🇮🇱⚔️🇵🇸\n\n*Choose your language:*",
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [[
-              { text: "🇬🇧 EN", callback_data: "lang_en" },
-              { text: "🇮🇱 HE", callback_data: "lang_he" },
-              { text: "🇵🇸 AR", callback_data: "lang_ar" },
-            ],[
-              { text: "🚀 Open Game (Mini App)", web_app: { url: MINI_APP_URL } }
-            ]],
-          },
-        });
-      }
+  const s = settings;
+  const u = ensureUser(uid);
+  const msg = renderPlaceholders(s.welcome_message || "ברוך הבא!", u, uid);
+  const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
+  await tgPost("sendMessage", {
+    chat_id: chatId,
+    text: msg,
+    parse_mode: "Markdown",
+    reply_markup: { inline_keyboard: kb }
+  });
+}
 
       // /panel
       if (text === "/panel") {
