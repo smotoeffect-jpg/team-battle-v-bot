@@ -271,18 +271,25 @@ function updateUserProfileFromTG(from) {
   u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
   u.active = true;
 
-  // ✅ Referral link detection (V1.5)
-  try {
-    const ref = from.start_param || from.ref || from.referrerId;
-    if (ref && users[ref] && !u.referrer) {
-      u.referrer = ref;
-      users[ref].referrals = (users[ref].referrals || 0) + 1;
+  // ✅ Referral link detection (improved V2)
+try {
+  // מזהה קישור הזמנה תקין
+  const ref = update.message?.text?.split("start=")[1] || from?.start_param || from?.referrer;
+
+  if (ref && users[ref] && !u.referrer) {
+    u.referrer = ref;
+
+    // מוסיף לרשימת ההפניות של המשתמש המזמין
+    if (!users[ref].referrals) users[ref].referrals = [];
+    if (!users[ref].referrals.includes(uid)) {
+      users[ref].referrals.push(uid);
       console.log(`👥 Referral registered: ${ref} invited ${uid}`);
       addReferralEarning(ref, uid);
     }
-  } catch (err) {
-    console.warn("Referral tracking error:", err);
   }
+} catch (err) {
+  console.warn("Referral tracking error:", err.message);
+}
 
   writeJSON(USERS_FILE, users);
 }
@@ -291,7 +298,10 @@ function updateUserProfileFromTG(from) {
 function addReferralEarning(referrerId, invitedId) {
   if (!referrerId || !invitedId) return;
 
-  // Update referral file
+  // 🧾 לוג בזמן אמת - כדי לראות ברנדר מי הזמין את מי
+  console.log(`👥 addReferralEarning: ${referrerId} invited ${invitedId}`);
+
+  // 📂 Update referral file
   if (!referrals[referrerId]) referrals[referrerId] = { invited: [], earnings: 0 };
   if (!referrals[referrerId].invited.includes(invitedId)) {
     referrals[referrerId].invited.push(invitedId);
@@ -299,7 +309,7 @@ function addReferralEarning(referrerId, invitedId) {
     writeJSON(REFERRALS_FILE, referrals);
   }
 
-  // 🔄 Sync with user's $Battle balance in users.json
+  // 💰 Sync with user's $Battle balance in users.json
   if (users[referrerId]) {
     users[referrerId].battleBalance = (users[referrerId].battleBalance || 0) + 2;
     writeJSON(USERS_FILE, users);
