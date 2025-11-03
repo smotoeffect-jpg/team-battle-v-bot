@@ -897,7 +897,7 @@ if (text.startsWith("/start")) {
         writeJSON(USERS_FILE, users);
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Language saved" });
       }
-      // ====== REFERRAL MENU (EN ONLY, REAL SHARE + COPY LINK) ======
+      // ====== REFERRAL MENU (EN ONLY, REAL SHARE LINK) ======
 if (data === "referral") {
   const refData = referrals[uid] || { invited: [], earnings: 0 };
   const inviteCount = refData.invited.length;
@@ -910,7 +910,7 @@ if (data === "referral") {
     `👥 *Players Invited:* ${inviteCount}\n` +
     `💰 *Your Earnings:* ${earnings} $Battle\n\n` +
     `🔗 *Your Personal Invite Link:*\n${link}\n\n` +
-    `📤 *Share or copy your link below:*`;
+    `📤 *Share your link below:*`;
 
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -927,28 +927,12 @@ if (data === "referral") {
         ],
         [
           {
-            text: "📋 Copy Link",
-            callback_data: `copy_link:${link}`
-          }
-        ],
-        [
-          {
             text: "⬅️ Back",
             callback_data: "menu:start"
           }
         ]
       ]
     }
-  });
-}
-
-// ====== HANDLE COPY LINK CALLBACK ======
-if (data.startsWith("copy_link:")) {
-  const link = data.replace("copy_link:", "");
-  await tgPost("answerCallbackQuery", {
-    callback_query_id: cq.id,
-    text: `✅ Link copied:\n${link}`,
-    show_alert: true
   });
 }
 
