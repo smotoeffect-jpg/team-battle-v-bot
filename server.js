@@ -987,21 +987,22 @@ if (data === "menu:start") {
         if (!admins.includes(uid)) {
           await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.unauthorized, show_alert: true });
         } else {
-          const [, action, extra] = data.split(":");
-        }
-          // ====== TOGGLE DEV MODE ======
-else if (action === "toggle_dev") {
-  settings.dev_mode = !settings.dev_mode;
-  writeJSON(SETTINGS_FILE, settings);
+  const [, action, extra] = data.split(":");
 
-  await tgPost("answerCallbackQuery", {
-    callback_query_id: cq.id,
-    text: settings.dev_mode
-      ? (lang === "he" ? "🧩 מצב פיתוח הופעל" : "🧩 Dev Mode Enabled")
-      : (lang === "he" ? "🌍 מצב פיתוח כובה" : "🌍 Dev Mode Disabled")
-  });
+  // ====== TOGGLE DEV MODE ======
+  if (action === "toggle_dev") {
+    settings.dev_mode = !settings.dev_mode;
+    writeJSON(SETTINGS_FILE, settings);
 
-  await editToMainPanel(msg, lang);
+    await tgPost("answerCallbackQuery", {
+      callback_query_id: cq.id,
+      text: settings.dev_mode
+        ? (lang === "he" ? "🧩 מצב פיתוח הופעל" : "🧩 Dev Mode Enabled")
+        : (lang === "he" ? "🌍 מצב פיתוח כובה" : "🌍 Dev Mode Disabled")
+    });
+
+    await editToMainPanel(msg, lang);
+  }
 }
 // ====== Welcome & Broadcast Manager (HE + EN) ======
 if (action === "welcome") {
