@@ -662,7 +662,15 @@ app.get("/api/me", (req, res) => {
   // ✅ שמירה אחידה
   users[userId] = u;
   writeJSON(USERS_FILE, users);
-
+// ✅ עדכון כמות מוזמנים בזמן אמת
+if (u.referrer) {
+  const inviter = ensureUser(u.referrer);
+  inviter.referralsList = Array.isArray(inviter.referralsList) ? inviter.referralsList : [];
+  inviter.referrals = inviter.referralsList.length;
+  users[u.referrer] = inviter;
+  writeJSON(USERS_FILE, users);
+}
+  
   const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
   // ✅ שליחה חזרה למיני-אפליקציה
   res.json({
