@@ -344,19 +344,35 @@ function addXpAndMaybeLevelUp(u, addXp) {
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
 // === Telegram Post Wrapper with Markdown Auto-Escape ===
-const tgPost = async (m, d) => {
+// === Telegram POST helper (default: MarkdownV2) ===
+const tgPost = async (method, data = {}) => {
   try {
-    // אם יש טקסט — מנקה תווים שיכולים לשבור את Markdown
-    if (d && typeof d.text === "string") {
-      d.text = escapeMarkdown(d.text);
+    const payload = { ...data };
+
+    // אם לא ציינת parse_mode מפורשות – נשתמש ב-MarkdownV2
+    if (!payload.parse_mode) payload.parse_mode = "MarkdownV2";
+
+    // מנקה טקסטים רק כאשר אנו עובדים במרקדאון
+    if (
+      typeof payload.parse_mode === "string" &&
+      payload.parse_mode.toLowerCase().startsWith("markdown")
+    ) {
+      if (typeof payload.text === "string") {
+        payload.text = escapeMarkdown(payload.text);
+      }
+      if (typeof payload.caption === "string") {
+        payload.caption = escapeMarkdown(payload.caption);
+      }
     }
 
-    // ברירת מחדל: parse_mode = Markdown
-    if (!d.parse_mode) d.parse_mode = "Markdown";
-
-    return await axios.post(`${TG_API}/${m}`, d);
-
+    // שים לב: אצלך TG_API כבר כולל את /bot<TOKEN>
+    // ולכן השארתי את התבנית כפי שעבדה לך קודם: `${TG_API}/${method}`
+    return await axios.post(`${TG_API}/${method}`, payload);
   } catch (e) {
+    console.error("tgPost error:", e?.response?.data || e.message);
+    throw e;
+  }
+};
     // טיפול במקרה שמשתמש חסם את הבוט
     if (d?.chat_id && e?.response?.status === 403) {
       const uid = String(d.chat_id);
@@ -413,21 +429,34 @@ function renderPlaceholders(text, u, uid) {
     .replace(/%username%/g, un)
     .replace(/%mention%/g, mention);
 }
-// === Markdown Safe Formatter ===
+// === MarkdownV2 Safe Formatter (keeps *bold* and _italic_ working) ===
 function escapeMarkdown(text) {
   if (!text || typeof text !== "string") return text;
-  // מנקה תווים שיכולים לשבור את ההודעה במצב Markdown
-  return text
-    .replace(/_/g, "\\_")
-    .replace(/\*/g, "\\*")
-    .replace(/\[/g, "\\[")
-    .replace(/`/g, "\\`")
-    .replace(/>/g, "\\>")
-    .replace(/#/g, "\\#")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/\|/g, "\\|")
-    .replace(/%/g, "\\%"); // גם אחוזים
+
+  // קודם כל בורחים backslash כדי שלא "יכפיל" בריחות
+  let t = text.replace(/\\/g, "\\\\");
+  // לא בורחים * או _ כדי לאפשר עיצוב מודגש/נטוי שהכנסת במכוון
+  const pairs = [
+    [/\[/g, "\\["],
+    [/\]/g, "\\]"],
+    [/\(/g, "\\("],
+    [/\)/g, "\\)"],
+    [/`/g, "\\`"],
+    [/>/g, "\\>"],
+    [/#/g, "\\#"],
+    [/\+/g, "\\+"],
+    [/-/g, "\\-"],
+    [/=/g, "\\="],
+    [/\|/g, "\\|"],
+    [/\{/g, "\\{"],
+    [/\}/g, "\\}"],
+    [/!/g, "\\!"],
+    [/\./g, "\\."],
+    // אופציונלי: אם אינך משתמש ב-strikethrough, אפשר גם לברוח ~
+    // [/~/g, "\\~"],
+  ];
+  for (const [re, rep] of pairs) t = t.replace(re, rep);
+  return t;
 }
 
 function parseButtonsFromAdminText(block) {
