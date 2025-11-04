@@ -880,8 +880,32 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
         }
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
+// ===== ADMIN: HANDLE WELCOME MESSAGE EDIT =====
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_edit") {
+  const s = settings;
+  s.welcome_message = update.message.text;
+  writeJSON(SETTINGS_FILE, s);
+  setAdminAwait(uid, null);
 
-     // /start
+  const lang = getAdminLang(uid);
+
+  const successText =
+    lang === "he"
+      ? "✅ הודעת הפתיחה עודכנה בהצלחה!"
+      : "✅ The welcome message has been updated successfully!";
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: successText,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+      ]
+    }
+  });
+}
+      // /start
 if (text.startsWith("/start")) {
   setAdminAwait(uid, null);
 
@@ -1253,6 +1277,30 @@ if (data === "menu:start") {
         }
       });
     }
+      // ===== WELCOME MESSAGE EDIT (Multi-language) =====
+else if (action === "welcome_edit") {
+  setAdminAwait(uid, "welcome_edit");
+  const lang = getAdminLang(uid);
+
+  const text =
+    lang === "he"
+      ? "שלח את הודעת הפתיחה החדשה שלך.\n\nניתן להשתמש במשתנים הבאים:\n• %firstname%\n• %lastname%\n• %username%\n• %mention%"
+      : "Please send the new welcome message.\n\nYou can use the following placeholders:\n• %firstname%\n• %lastname%\n• %username%\n• %mention%";
+
+  const backButton =
+    lang === "he" ? "⬅️ חזרה" : "⬅️ Back";
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: backButton, callback_data: "panel:main" }]
+      ]
+    }
+  });
+}
 
     else if (action === "lang") {
       const newLang = lang === "he" ? "en" : "he";
