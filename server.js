@@ -27,7 +27,7 @@ const BOT_TOKEN      = process.env.BOT_TOKEN      || "REPLACE_ME_BOT_TOKEN";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
-const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 
 // משחק
 const STAR_TO_POINTS  = 2;
