@@ -348,7 +348,7 @@ const tgPost = async (method, data = {}) => {
   try {
     const payload = { ...data };
 
-    // אם לא ציינת parse_mode מפורשות – נשתמש ב-MarkdownV2
+    // אם לא צוין parse_mode מפורשות – נשתמש ב-MarkdownV2
     if (!payload.parse_mode) payload.parse_mode = "MarkdownV2";
 
     // מנקה טקסטים רק כאשר אנו עובדים במרקדאון
@@ -356,13 +356,34 @@ const tgPost = async (method, data = {}) => {
       typeof payload.parse_mode === "string" &&
       payload.parse_mode.toLowerCase().startsWith("markdown")
     ) {
-      if (typeof payload.text === "string") {
+
+      // ⚠️ לא בורחים טקסטים שכוללים לינקים, כדי לא לשבור כפתורים או קישורים
+      if (typeof payload.text === "string" && !payload.text.includes("http") && !payload.text.includes("t.me")) {
         payload.text = escapeMarkdown(payload.text);
       }
-      if (typeof payload.caption === "string") {
+
+      if (typeof payload.caption === "string" && !payload.caption.includes("http") && !payload.caption.includes("t.me")) {
         payload.caption = escapeMarkdown(payload.caption);
       }
     }
+
+    // ביצוע הבקשה ל-Telegram API
+    return await axios.post(`${TG_API}/${method}`, payload);
+
+  } catch (e) {
+    // טיפול במקרה שמשתמש חסם את הבוט
+    if (data?.chat_id && e?.response?.status === 403) {
+      const uid = String(data.chat_id);
+      if (users[uid]) {
+        users[uid].active = false;
+        writeJSON(USERS_FILE, users);
+      }
+    }
+
+    console.error("TG error:", e?.response?.data || e.message);
+    throw e;
+  }
+};
 
     // שליחת הבקשה ל־Telegram API
     return await axios.post(`${TG_API}/${method}`, payload);
