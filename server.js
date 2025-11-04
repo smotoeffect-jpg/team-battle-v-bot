@@ -867,7 +867,25 @@ if (text.startsWith("/start")) {
       if (ref && users[ref] && !users[uid]?.referrer) {
         const u = ensureUser(uid);
         u.referrer = ref;
+        
+// 💸 Add referral bonus to referrer dynamically
+if (!referrals[ref]) referrals[ref] = { invited: [], earnings: 0 };
+if (!referrals[ref].invited.includes(uid)) {
+  referrals[ref].invited.push(uid);
 
+  const bonus = settings.referral_settings?.bonus_per_invite || 2;
+  referrals[ref].earnings += bonus;
+
+  writeJSON(DATA_DIR + "/referrals.json", referrals);
+
+  await tgPost("sendMessage", {
+    chat_id: ref,
+    text:
+      lang === "he"
+        ? `🎉 קיבלת ${bonus} ${settings.referral_settings?.currency || "$Battle"} על הזמנה חדשה!`
+        : `🎉 You earned ${bonus} ${settings.referral_settings?.currency || "$Battle"} for a new invite!`
+  });
+}
         // מוסיף את המוזמן לרשימת ההזמנות של המזמין
         if (!users[ref].referrals) users[ref].referrals = [];
         if (!users[ref].referrals.includes(uid)) {
