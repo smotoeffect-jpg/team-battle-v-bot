@@ -685,6 +685,7 @@ app.get("/api/me", (req, res) => {
       referrals: u.referrals || 0,
       referrer: u.referrer || null,
       referralsList: u.referralsList,
+      refLink, // 👈 נשלח למיני-אפליקציה
     },
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs },
