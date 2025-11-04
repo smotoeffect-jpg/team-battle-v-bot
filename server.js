@@ -13,7 +13,15 @@ const app = express();
 app.use(cors());
 app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
-
+// ====== Global Dev Mode Middleware ======
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    if (settings.dev_mode && !admins.includes(String(req.body.userId || req.query.userId))) {
+      return res.status(403).json({ ok: false, error: "🧩 Mini-App under maintenance" });
+    }
+  }
+  next();
+});
 // ====== CONFIG ======
 const BOT_TOKEN      = process.env.BOT_TOKEN      || "REPLACE_ME_BOT_TOKEN";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
