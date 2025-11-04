@@ -600,19 +600,54 @@ app.post("/api/create-invoice", async (req, res) => {
 
 // ====== Me (referrals + stats) ======
 app.get("/api/me", (req, res) => {
-  const { userId: hdrUser, startParam } = parseInitDataHeader(req);
+  const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
-  if (!userId) return res.json({ ok:false });
+  if (!userId) return res.json({ ok: false });
 
   const u = ensureUser(userId);
 
-  // ✅ Referral tracking (real-time)
-  if (startParam && !u.referrer && String(startParam) !== userId) {
-    u.referrer = String(startParam);
-    if (!users[startParam]) ensureUser(startParam);
-    users[startParam].referrals = (users[startParam].referrals || 0) + 1;
-    console.log(`👥 Referral registered: ${startParam} invited ${userId}`);
+  // ✅ Referral tracking (real-time unified system)
+  const start = req.query.start || req.query.ref || null;
+  if (start && String(start) !== userId) {
+    const inviter = ensureUser(String(start));
+
+    // הוספה רק אם לא קיים כבר
+    if (!u.referrer) {
+      u.referrer = String(start);
+      inviter.referralsList = inviter.referralsList || [];
+      if (!inviter.referralsList.includes(userId)) {
+        inviter.referralsList.push(userId);
+      }
+      inviter.refCount = inviter.referralsList.length;
+
+      console.log(`👥 Referral registered: ${start} invited ${userId}`);
+    }
   }
+
+  // עדכון ערכים אחידים
+  const refList = u.referralsList || [];
+  u.referrals = refList.length;
+
+  // שמירה
+  users[userId] = u;
+  writeJSON("users.json", users);
+
+  // ✅ שליחה חזרה לקליינט
+  res.json({
+    ok: true,
+    me: {
+      id: userId,
+      team: u.team || null,
+      level: u.level || 1,
+      stars: u.stars || 0,
+      battleBalance: u.battleBalance || 0,
+      xp: u.xp || 0,
+      referrals: u.referrals || 0,
+      referralsList: refList,
+      username: u.username || null,
+    },
+  });
+});
 
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
