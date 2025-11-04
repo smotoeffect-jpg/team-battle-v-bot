@@ -735,8 +735,8 @@ async function sendPanel(chatId, lang="en") {
   const t = tFor(lang);
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: escapeMarkdown(t.title()),
-    parse_mode: "Markdown",
+    text: msgText(t.title()),
+    parse_mode: "HTML",
     reply_markup: panelKeyboard(lang)
   });
 }
@@ -745,8 +745,8 @@ async function editToMainPanel(msg, lang="en") {
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
-    text: escapeMarkdown(t.title()),
-    parse_mode: "Markdown",
+    text: msgText(t.title()),
+    parse_mode: "HTML",
     reply_markup: panelKeyboard(lang)
   });
 }
@@ -903,8 +903,8 @@ try {
   const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: escapeMarkdown(msg),
-    parse_mode: "Markdown",
+    text: msgText(msg),
+    parse_mode: "HTML",
     reply_markup: { inline_keyboard: kb }
   });
 }
@@ -985,7 +985,7 @@ if (data === "referral") {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
     text,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
         [
@@ -1016,15 +1016,15 @@ if (data === "menu:start") {
     await tgPost("editMessageText", {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
-      text: escapeMarkdown(msgText),
-      parse_mode: "Markdown",
+      text: msgText(msgText),
+      parse_mode: "HTML",
       reply_markup: { inline_keyboard: kb }
     });
   } else {
     await tgPost("sendMessage", {
       chat_id: uid,
-      text: escapeMarkdown(msgText),
-      parse_mode: "Markdown",
+      text: msgText(msgText),
+      parse_mode: "HTML",
       reply_markup: { inline_keyboard: kb }
     });
   }
@@ -1173,7 +1173,7 @@ if (data === "menu:start") {
           (lang === "he"
             ? "📝 תצוגה מקדימה של ההודעה שתישלח:\n\n"
             : "📝 Preview of the message to be sent:\n\n") + preview,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: (draft.buttons || []).concat([
             [{ text: lang === "he" ? "✅ אשר ושלח" : "✅ Confirm & Send", callback_data: "panel:bc_send_confirm" }],
@@ -1192,8 +1192,8 @@ if (data === "menu:start") {
         try {
           await tgPost("sendMessage", {
             chat_id: id,
-            text: escapeMarkdown(textToSend),
-            parse_mode: "Markdown",
+            text: msgText(textToSend),
+            parse_mode: "HTML",
             reply_markup: { inline_keyboard: draft.buttons || [] }
           });
           ok++;
@@ -1228,7 +1228,7 @@ if (data === "menu:start") {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.section("Summary")}\n${tt.summary_line(scores, usersCount)}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
       });
     }
@@ -1242,7 +1242,7 @@ if (data === "menu:start") {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.users_title(active,inactive,total)}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [{ text: tt.users_export, callback_data: "panel:users_export" }],
@@ -1283,7 +1283,7 @@ if (data === "menu:start") {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.section(tt.bonuses_title)}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
@@ -1334,7 +1334,7 @@ if (data === "menu:start") {
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: {
           inline_keyboard: [
             [
@@ -1408,7 +1408,7 @@ else if (action === "referral_settings") {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
     text,
-    parse_mode: "Markdown",
+    parse_mode: "HTML",
     reply_markup: {
       inline_keyboard: [
         [
@@ -1496,7 +1496,7 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.ask_broadcast}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
       });
     }
@@ -1507,7 +1507,7 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
         chat_id: msg.chat.id,
         message_id: msg.message_id,
         text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
-        parse_mode: "Markdown",
+        parse_mode: "HTML",
         reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
       });
     }
