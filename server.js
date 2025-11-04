@@ -598,25 +598,28 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
-// ===== Me (referrals + stats) =====
-// ====== Me (referrals + stats) ======
+// ====== Me (referrals + stats + daily bonus) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
   if (!userId) return res.json({ ok: false });
 
-  // ודא שמשתמש קיים בזיכרון
+  // ✅ ודא שמשתמש קיים בזיכרון
   const u = ensureUser(userId);
 
-  // ✅ Referral tracking (unified, no start_param)
+  // ✅ אפס טאפ יומי אם עבר יום
+  const today = todayStr();
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
+
+  // ✅ Referral tracking (real-time unified)
   const start = req.query.start || req.query.ref || null;
   if (start && String(start) !== userId && !u.referrer) {
     u.referrer = String(start);
-
-    // מוודאים שקיים מזמין ומעדכנים מונים/רשימה
     const inviter = ensureUser(String(start));
     inviter.referrals = (inviter.referrals || 0) + 1;
-
     inviter.referralsList = Array.isArray(inviter.referralsList)
       ? inviter.referralsList
       : [];
@@ -625,54 +628,42 @@ app.get("/api/me", (req, res) => {
     }
   }
 
-  // ✅ נרמול שדות ההפניות של המשתמש עצמו
+  // ✅ נרמול רשימת הזמנות
   u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
   u.referrals = u.referralsList.length;
 
-  // ✅ שמירה לדיסק
-  users[userId] = u;
-  writeJSON("users.json", users);
-
-  // ✅ תשובה לקליינט
-  res.json({
-    ok: true,
-    me: {
-      id: userId,
-      team: u.team || null,
-      level: u.level || 1,
-      stars: u.stars || 0,
-      battleBalance: u.battleBalance || 0,
-      xp: u.xp || 0,
-      referrals: u.referrals || 0,
-      referralsList: u.referralsList,
-      username: u.username || null,
-    },
-  });
-});
-
-  const today = todayStr();
-  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
-
-  // ✅ Daily bonus logic (unchanged)
+  // ✅ בונוס יומי
   let justGotDailyBonus = false;
   const now = nowTs();
-  if (u.team && (!u.lastDailyBonus || (now - u.lastDailyBonus) >= DAILY_BONUS_INTERVAL_MS)) {
-  scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
+  if (
+    u.team &&
+    (!u.lastDailyBonus ||
+      now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)
+  ) {
+    scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
 
-  // 💰 מוסיף בונוס יומי של מטבע $BATTLE
-  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
+    // 💰 מוסיף בונוס יומי של מטבע $BATTLE
+    u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
 
-  addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
-  u.lastDailyBonus = now;
-  u.history.push({ ts: now, type:"daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
-  if (u.history.length > 200) u.history.shift();
-  justGotDailyBonus = true;
-  writeJSON(SCORES_FILE, scores);
-}
+    addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
+    u.lastDailyBonus = now;
+    u.history.push({
+      ts: now,
+      type: "daily_bonus",
+      points: DAILY_BONUS_POINTS,
+      team: u.team,
+      xp: DAILY_BONUS_XP,
+    });
+    if (u.history.length > 200) u.history.shift();
+    justGotDailyBonus = true;
+    writeJSON(SCORES_FILE, scores);
+  }
 
+  // ✅ שמירה אחידה
+  users[userId] = u;
   writeJSON(USERS_FILE, users);
 
-  // ✅ Return extended user info (referrals + referrer)
+  // ✅ שליחה חזרה למיני-אפליקציה
   res.json({
     ok: true,
     me: {
@@ -682,7 +673,7 @@ app.get("/api/me", (req, res) => {
       superUsed: u.superUsed || 0,
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
-      battleBalance: u.battleBalance || 0,   // 💰 יתרת $BATTLE
+      battleBalance: u.battleBalance || 0, // 💰 יתרת $BATTLE
       displayName: u.displayName || null,
       username: u.username || null,
       xp: u.xp || 0,
@@ -692,12 +683,15 @@ app.get("/api/me", (req, res) => {
       preferredLang: u.preferredLang || "he",
       history: (u.history || []).slice(-50),
       referrals: u.referrals || 0,
-      referrer: u.referrer || null
+      referrer: u.referrer || null,
+      referralsList: u.referralsList,
     },
     limit: DAILY_TAPS,
-    doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs }
+    doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs },
   });
+});
 
+// ====== Leaderboard ======
 app.get("/api/leaderboard", (req, res) => {
   const arr = Object.entries(users).map(([id, u]) => ({
     userId: id,
