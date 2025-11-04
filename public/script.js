@@ -208,77 +208,57 @@ if (telegramUserId) {
     ul.appendChild(li);
   });
 }
-  // ===== Refresh Game Data =====
-async function refreshAll(){
-  try {
-    const state = await getJSON('/api/state');
-    if (state.scores) GAME.scores = state.scores;
-    paintScores();
-  } catch (err) {
-    console.error("Error loading /api/state:", err);
-  }
-
-  try {
-    const meResp = await getJSON('/api/me?userId=' + telegramUserId);
-    const M = meResp?.me || meResp || {};
-    if (!GAME.me) GAME.me = {};
-
-    GAME.me.id = M.userId ?? M.id ?? telegramUserId;
-    GAME.me.team = M.team ?? GAME.me.team ?? null;
-    GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
-    GAME.me.tapsLimit = meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? GAME.me.tapsLimit ?? 300;
-    GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
-    GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
-    GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
-    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
-    GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // ✅ שומר XP בין רענונים
-    GAME.me.username = M.username ?? GAME.me.username ?? null;
-
-    paintMe();
-  } catch (err) {
-    console.error("Error loading /api/me:", err);
-  }
-}
-
-// 💰 עדכון $BATTLE בזמן אמת אם השתנה מהשרת
-if (typeof GAME.me.battle === "undefined") GAME.me.battle = 0;
-if (meResp?.me?.battleBalance !== undefined) {
-  GAME.me.battle = meResp.me.battleBalance;
-  paintMe();
-}
-
-// ===== Affiliate / Referral Section =====
+ // ===== Affiliate / Referral Section =====
 try {
-        const bot="TeamBattle_vBot"; 
-        const uid = GAME.me.id;
-        const refLink = uid ? `https://t.me/${bot}/app?start_param=${uid}` : "";
-        const inp=document.getElementById("ref-link");
-        const cpy=document.getElementById("copy-ref");
-        const shr=document.getElementById("share-ref");
-        if(inp) inp.value = refLink;
-        if(cpy) cpy.addEventListener("click", async ()=>{
-          try{ await navigator.clipboard.writeText(refLink); }catch(_){}
-          const l=getLang(); const old=cpy.textContent; cpy.textContent=i18n[l]?.copied||"Copied!"; setTimeout(()=>cpy.textContent=old,1100);
-        });
-        if(shr) shr.addEventListener("click", ()=>{
-          const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
-          window.open(url,"_blank");
-        });
-      }catch(_){}
+  const bot = "TeamBattle_vBot";
+  const uid = GAME.me.id;
+  const refLink = uid ? `https://t.me/${bot}/app?start_param=${uid}` : "";
 
-    }catch(_){}
-    try{
-      const lb = await getJSON('/api/leaderboard');
-if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
-else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
-else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
-paintTop20();
-    }catch(_){}
+  const inp = document.getElementById("ref-link");
+  const cpy = document.getElementById("copy-ref");
+  const shr = document.getElementById("share-ref");
+
+  if (inp) inp.value = refLink;
+
+  if (cpy) {
+    cpy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(refLink);
+      } catch (_) {
+        console.error("❌ Copy failed");
+      }
+      const l = getLang();
+      const old = cpy.textContent;
+      cpy.textContent = i18n[l]?.copied || "Copied!";
+      setTimeout(() => (cpy.textContent = old), 1100);
+    });
   }
 
-  setInterval(refreshAll, 5000);
-  refreshAll();
+  if (shr) {
+    shr.addEventListener("click", () => {
+      const url =ntent = i18n[l]?.copied || "Copied!";
+      setTimeout(() => 
+      window.open(url, "_blank");
+    });
+  }
 
+} catch (err) {
+  console.error("Referral block error:", err);
+}
+
+try {
+  const lb = await getJSON('/api/leaderboard');
+  if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
+  else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
+  else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
+  paintTop20();
+} catch (err) {
+  console.error("Leaderboard fetch error:", err);
+}
+
+setInterval(refreshAll, 5000);
+refreshAll();
+  
   // ===== Status Bar =====
   const statusLine=document.getElementById('status-line');
   function flashStatus(m){ if(!statusLine) return; statusLine.textContent=m; statusLine.style.opacity='1'; setTimeout(()=>statusLine.style.opacity='0.7',1600); }
