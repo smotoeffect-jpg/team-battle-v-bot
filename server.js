@@ -599,37 +599,41 @@ app.post("/api/create-invoice", async (req, res) => {
 });
 
 // ===== Me (referrals + stats) =====
+// ====== Me (referrals + stats) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
-  if (!userId) return res.json({ ok:false });
+  if (!userId) return res.json({ ok: false });
 
-  // ✅ תיקון: לוודא שהמשתמש נטען לפני שימוש
+  // ודא שמשתמש קיים בזיכרון
   const u = ensureUser(userId);
 
-  // ✅ Referral tracking (real-time unified system)
+  // ✅ Referral tracking (unified, no start_param)
   const start = req.query.start || req.query.ref || null;
-  if (start && String(start) !== userId) {
-    if (!u.referrer) {
-      u.referrer = String(start);
-      const inviter = ensureUser(String(start));
-      inviter.referrals = (inviter.referrals || 0) + 1;
-      console.log(`👥 Referral registered: ${start} invited ${userId}`);
+  if (start && String(start) !== userId && !u.referrer) {
+    u.referrer = String(start);
+
+    // מוודאים שקיים מזמין ומעדכנים מונים/רשימה
+    const inviter = ensureUser(String(start));
+    inviter.referrals = (inviter.referrals || 0) + 1;
+
+    inviter.referralsList = Array.isArray(inviter.referralsList)
+      ? inviter.referralsList
+      : [];
+    if (!inviter.referralsList.includes(userId)) {
+      inviter.referralsList.push(userId);
     }
   }
 
-  // המשך הלוגיקה הרגילה שלך כאן...
-});
+  // ✅ נרמול שדות ההפניות של המשתמש עצמו
+  u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
+  u.referrals = u.referralsList.length;
 
-  // עדכון ערכים אחידים
-  const refList = u.referralsList || [];
-  u.referrals = refList.length;
-
-  // שמירה
+  // ✅ שמירה לדיסק
   users[userId] = u;
   writeJSON("users.json", users);
 
-  // ✅ שליחה חזרה לקליינט
+  // ✅ תשובה לקליינט
   res.json({
     ok: true,
     me: {
@@ -640,10 +644,11 @@ app.get("/api/me", (req, res) => {
       battleBalance: u.battleBalance || 0,
       xp: u.xp || 0,
       referrals: u.referrals || 0,
-      referralsList: refList,
+      referralsList: u.referralsList,
       username: u.username || null,
     },
   });
+});
 
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
