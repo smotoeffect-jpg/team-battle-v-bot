@@ -879,31 +879,31 @@ if (!referrals[ref].invited.includes(uid)) {
   writeJSON(DATA_DIR + "/referrals.json", referrals);
 
   // 📨 Notify referrer about the bonus
-try {
-  const refLang = getAdminLang ? getAdminLang(ref) : "en";
-  const message =
-    refLang === "he"
-      ? `🎉 קיבלת ${bonus} ${settings.referral_settings?.currency || "$Battle"} על הזמנה חדשה!`
-      : `🎉 You earned ${bonus} ${settings.referral_settings?.currency || "$Battle"} for a new invite!`;
+  try {
+    const refLang = getAdminLang ? getAdminLang(ref) : "en";
+    const message =
+      refLang === "he"
+        ? `🎉 קיבלת ${bonus} ${settings.referral_settings?.currency || "$Battle"} על הזמנה חדשה!`
+        : `🎉 You earned ${bonus} ${settings.referral_settings?.currency || "$Battle"} for a new invite!`;
 
-  await tgPost("sendMessage", {
-    chat_id: ref,
-    text: message
-  });
-} catch (err) {
-  console.error("Failed to send referral bonus message:", err.message);
+    await tgPost("sendMessage", {
+      chat_id: ref,
+      text: message
+    });
+  } catch (err) {
+    console.error("Failed to send referral bonus message:", err.message);
+  }
+
+  // מוסיף את המוזמן לרשימת ההזמנות של המזמין
+  if (!users[ref].referrals) users[ref].referrals = [];
+  if (!users[ref].referrals.includes(uid)) {
+    users[ref].referrals.push(uid);
+    console.log(`👥 Referral registered via /start: ${ref} invited ${uid}`);
+    addReferralEarning(ref, uid);
+  }
+
+  writeJSON(USERS_FILE, users);
 }
-
-        // מוסיף את המוזמן לרשימת ההזמנות של המזמין
-        if (!users[ref].referrals) users[ref].referrals = [];
-        if (!users[ref].referrals.includes(uid)) {
-          users[ref].referrals.push(uid);
-          console.log(`👥 Referral registered via /start: ${ref} invited ${uid}`);
-          addReferralEarning(ref, uid);
-        }
-
-        writeJSON(USERS_FILE, users);
-      }
     }
   } catch (err) {
     console.error("Referral tracking (via /start) error:", err.message);
