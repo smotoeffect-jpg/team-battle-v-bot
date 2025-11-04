@@ -132,8 +132,8 @@ const SUPER_ADMINS = new Set(["7366892099","6081158942","7586749848"]);
 // ====== Panel texts DEFAULT (with functions) ======
 const PANEL_TEXTS_DEFAULT = {
   en: {
-    title:      () => "*🛠️ TeamBattle – Admin Panel*",
-    section:    (label) => `*${label}*`,
+    title:      () => "<b>🛠️ TeamBattle – Admin Panel<b>",
+    section:    (label) => `<b>${label}<b>`,
     menu_summary: "📊 Global summary",
     menu_users: "👥 Users list",
     menu_bonuses: "🎁 Bonuses & resets",
@@ -182,8 +182,8 @@ const PANEL_TEXTS_DEFAULT = {
     dev_mode_off: "🧩 Dev Mode: OFF",
   },
   he: {
-    title:      () => "*🛠️ פאנל ניהול – TeamBattle*",
-    section:    (label) => `*${label}*`,
+    title:      () => "<b>🛠️ פאנל ניהול – TeamBattle<b>",
+    section:    (label) => `<b>${label}<b>`,
     menu_summary: "📊 סיכום כללי",
     menu_users: "👥 רשימת משתמשים",
     menu_bonuses: "🎁 בונוסים ואיפוסים",
@@ -974,12 +974,12 @@ if (data === "referral") {
   const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // change bot username if needed
 
   const text =
-    `💸 *Referral Program – $Battle*\n` +
+    `💸 <b>Referral Program – $Battle<b>\n` +
     `Earn $Battle for every player you invite!\n\n` +
-    `👥 *Players Invited:* ${inviteCount}\n` +
-    `💰 *Your Earnings:* ${earnings} $Battle\n\n` +
-    `🔗 *Your Personal Invite Link:*\n${link}\n\n` +
-    `📤 *Share your link below:*`;
+    `👥 <b>Players Invited:<b> ${inviteCount}\n` +
+    `💰 <b>Your Earnings:<b> ${earnings} $Battle\n\n` +
+    `🔗 <b>Your Personal Invite Link:<b>\n${link}\n\n` +
+    `📤 <b>Share your link below:<b>`;
 
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -1401,8 +1401,8 @@ else if (action === "referral_settings") {
 
   const text =
     lang === "he"
-      ? `💸 *הגדרות שותפים*\n\nמצב נוכחי: ${ref.enabled ? "✅ פעיל" : "⛔ כבוי"}\nתגמול להזמנה: ${ref.bonus_per_invite} ${ref.currency}\n\nבחר פעולה:`
-      : `💸 *Referral Settings*\n\nCurrent status: ${ref.enabled ? "✅ Enabled" : "⛔ Disabled"}\nBonus per invite: ${ref.bonus_per_invite} ${ref.currency}\n\nChoose an action:`;
+      ? `💸 <b>הגדרות שותפים<b>\n\nמצב נוכחי: ${ref.enabled ? "✅ פעיל" : "⛔ כבוי"}\nתגמול להזמנה: ${ref.bonus_per_invite} ${ref.currency}\n\nבחר פעולה:`
+      : `💸 <b>Referral Settings<b>\n\nCurrent status: ${ref.enabled ? "✅ Enabled" : "⛔ Disabled"}\nBonus per invite: ${ref.bonus_per_invite} ${ref.currency}\n\nChoose an action:`;
 
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
