@@ -208,42 +208,53 @@ if (telegramUserId) {
     ul.appendChild(li);
   });
 }
- // ===== Affiliate / Referral Section =====
+// ===== Affiliate / Referral Section (3 languages + unified link) =====
 try {
+  // מושך מידע על המשתמש כולל כמות המוזמנים
+  const meResp = await getJSON(`/api/me?userId=${telegramUserId}`);
+  const M = meResp?.me || meResp || {};
+  const uid = M.id || M.userId || telegramUserId;
+  const refCount = M.referrals ?? 0;
+
+  // יוצר קישור שותפים רגיל
   const bot = "TeamBattle_vBot";
-  const uid = GAME.me.id;
-  const refLink = uid ? `https://t.me/${bot}/app?start_param=${uid}` : "";
+  const refLink = uid ? `https://t.me/${bot}?start=${uid}` : "";
 
-  const inp = document.getElementById("ref-link");
-  const cpy = document.getElementById("copy-ref");
-  const shr = document.getElementById("share-ref");
+  // תופס אלמנטים מה־HTML
+  const inp = document.getElementById("refLink");
+  const cpy = document.getElementById("copyRef");
+  const shr = document.getElementById("shareRef");
 
+  // מציג את הקישור
   if (inp) inp.value = refLink;
 
-if (cpy) {
-  cpy.addEventListener("click", async () => {
-    try {
-      await navigator.clipboard.writeText(refLink);
-    } catch (_) {
-      console.error("❌ Copy failed");
-    }
+  // תרגום לפי השפה הנוכחית
+  const lang = getLang();
+  const shareText = {
+    he: "💥 הצטרפו אליי ל־TeamBattle 🇮🇱⚔️🇵🇸!",
+    en: "💥 Join me in TeamBattle 🇮🇱⚔️🇵🇸!",
+    ar: "💥 انضم إليّ في TeamBattle 🇮🇱⚔️🇵🇸!"
+  }[lang] || "Join me in TeamBattle!";
 
-    const l = getLang();
+  // כפתור העתקה
+  if (cpy) cpy.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(refLink); } catch (_) {}
     const old = cpy.textContent;
-    cpy.textContent = i18n[l]?.copied || "Copied!";
+    cpy.textContent = i18n[lang]?.copied || "Copied!";
     setTimeout(() => (cpy.textContent = old), 1100);
   });
-}
 
-if (shr) {
-  shr.addEventListener("click", () => {
-    const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
+  // כפתור שיתוף
+  if (shr) shr.addEventListener("click", () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent(shareText)}`;
     window.open(url, "_blank");
   });
-}
+
+  // עדכון המספר של המוזמנים בלוח האישי
+  setText("me-referrals", refCount);
 
 } catch (err) {
-  console.error("Referral block error:", err);
+  console.error("Referral section error:", err);
 }
 
 try {
