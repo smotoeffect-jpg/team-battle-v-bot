@@ -988,6 +988,7 @@ if (data === "menu:start") {
           await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.unauthorized, show_alert: true });
         } else {
           const [, action, extra] = data.split(":");
+        }
           // ====== TOGGLE DEV MODE ======
 else if (action === "toggle_dev") {
   settings.dev_mode = !settings.dev_mode;
