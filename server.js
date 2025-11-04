@@ -385,7 +385,7 @@ function parseInitDataHeader(req) {
       const userObj = JSON.parse(sp.get("user"));
       if (userObj?.id) userId = String(userObj.id);
     }
-    const startParam = sp.get("start_param") || null;
+    const startParam = sp.get("start") || sp.get("start_param") || null;
     return { userId, startParam };
   } catch {
     return {};
