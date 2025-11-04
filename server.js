@@ -598,31 +598,28 @@ app.post("/api/create-invoice", async (req, res) => {
   }
 });
 
-// ====== Me (referrals + stats) ======
+// ===== Me (referrals + stats) =====
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
-  if (!userId) return res.json({ ok: false });
+  if (!userId) return res.json({ ok:false });
 
+  // ✅ תיקון: לוודא שהמשתמש נטען לפני שימוש
   const u = ensureUser(userId);
 
   // ✅ Referral tracking (real-time unified system)
   const start = req.query.start || req.query.ref || null;
   if (start && String(start) !== userId) {
-    const inviter = ensureUser(String(start));
-
-    // הוספה רק אם לא קיים כבר
     if (!u.referrer) {
       u.referrer = String(start);
-      inviter.referralsList = inviter.referralsList || [];
-      if (!inviter.referralsList.includes(userId)) {
-        inviter.referralsList.push(userId);
-      }
-      inviter.refCount = inviter.referralsList.length;
-
+      const inviter = ensureUser(String(start));
+      inviter.referrals = (inviter.referrals || 0) + 1;
       console.log(`👥 Referral registered: ${start} invited ${userId}`);
     }
   }
+
+  // המשך הלוגיקה הרגילה שלך כאן...
+});
 
   // עדכון ערכים אחידים
   const refList = u.referralsList || [];
