@@ -1380,6 +1380,7 @@ if (data === "menu:start") {
   await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
 } // <== סוף if (data.startsWith("panel:"))
 
+        } // <== סוף ה־if הראשי
     res.status(200).send("OK");
   } catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message);
