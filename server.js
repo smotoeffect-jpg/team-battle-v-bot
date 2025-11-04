@@ -385,24 +385,6 @@ const tgPost = async (method, data = {}) => {
   }
 };
 
-    // שליחת הבקשה ל־Telegram API
-    return await axios.post(`${TG_API}/${method}`, payload);
-
-  } catch (e) {
-    // טיפול במקרה שמשתמש חסם את הבוט
-    if (data?.chat_id && e?.response?.status === 403) {
-      const uid = String(data.chat_id);
-      if (users[uid]) {
-        users[uid].active = false;
-        writeJSON(USERS_FILE, users);
-      }
-    }
-
-    console.error("TG error:", e?.response?.data || e.message);
-    throw e;
-  }
-};
-
 // ---- Parse Telegram init data from header (Mini App) ----
 function parseInitDataHeader(req) {
   // Telegram Mini App passes a URL-encoded string in WebApp.initData.
