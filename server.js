@@ -983,439 +983,402 @@ if (data === "menu:start") {
     });
   }
 }
-      if (data.startsWith("panel:")) {
-        if (!admins.includes(uid)) {
-          await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.unauthorized, show_alert: true });
-        } else {
-  const [, action, extra] = data.split(":");
-
-  // ====== TOGGLE DEV MODE ======
-  if (action === "toggle_dev") {
-    settings.dev_mode = !settings.dev_mode;
-    writeJSON(SETTINGS_FILE, settings);
-
+     if (data.startsWith("panel:")) {
+  if (!admins.includes(uid)) {
     await tgPost("answerCallbackQuery", {
       callback_query_id: cq.id,
-      text: settings.dev_mode
-        ? (lang === "he" ? "🧩 מצב פיתוח הופעל" : "🧩 Dev Mode Enabled")
-        : (lang === "he" ? "🌍 מצב פיתוח כובה" : "🌍 Dev Mode Disabled")
+      text: tt.unauthorized,
+      show_alert: true
     });
+  } else {
+    const [, action, extra] = data.split(":");
 
-    await editToMainPanel(msg, lang);
-  }
-}
-// ====== Welcome & Broadcast Manager (HE + EN) ======
-if (action === "welcome") {
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
-        : "💬 Edit Welcome Message\nChoose what to edit:",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: lang === "he" ? "✏️ טקסט" : "✏️ Text",
-            callback_data: "panel:welcome_text"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons",
-            callback_data: "panel:welcome_buttons"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:main"
-          }
-        ]
-      ]
-    }
-  });
-}
+    // ====== TOGGLE DEV MODE ======
+    if (action === "toggle_dev") {
+      settings.dev_mode = !settings.dev_mode;
+      writeJSON(SETTINGS_FILE, settings);
 
-else if (action === "welcome_text") {
-  setAdminAwait(uid, "welcome_text");
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "שלח את הודעת הפוסט.\n\nניתן להשתמש במילות מפתח שיוחלפו בנתוני המשתמש:\n• %firstname% • %lastname% • %username% • %mention%"
-        : "Send the post text.\n\nYou can use these placeholders:\n• %firstname% • %lastname% • %username% • %mention%",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
-      ]
-    }
-  });
-}
-
-else if (action === "welcome_buttons") {
-  setAdminAwait(uid, "welcome_buttons");
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "הגדר את הכפתורים להוספה במקלדת מתחת לפוסט.\n\n• שורות מרובות:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• מספר לחצנים בשורה אחת:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• חלון קופץ:\nButton text - popup: Text\nButton text - alert: Text\n\n• לחצן שיתוף:\nButton text - share: Text\n\n• תפריט / שותפים:\nButton text - menu: שם תפריט\nButton text - ref: מוסיף לחצן תוכנית שותפים\n\nלהחזרת המשתמש לתפריט ההתחלה: menu:start"
-        : "Define buttons to add below the post.\n\n• Multiple rows:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• Multiple buttons in one row:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• Popup or Alert:\nButton text - popup: Text\nButton text - alert: Text\n\n• Share button:\nButton text - share: Text\n\n• Menu / Referral:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nTo return user to start: menu:start",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
-      ]
-    }
-  });
-}
-
-// ====== Broadcast ======
-else if (action === "bc") {
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "📢 ניהול הודעת שידור\nבחר מה ברצונך לערוך:"
-        : "📢 Broadcast Message\nChoose what to edit:",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: lang === "he" ? "✏️ טקסט" : "✏️ Text", callback_data: "panel:bc_text" }
-        ],
-        [
-          {
-            text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons",
-            callback_data: "panel:bc_buttons"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "✅ אשר ושלח" : "✅ Confirm & Send",
-            callback_data: "panel:bc_send"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:main"
-          }
-        ]
-      ]
-    }
-  });
-}
-
-else if (action === "bc_text") {
-  setAdminAwait(uid, "broadcast_text");
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "שלח את הודעת השידור.\n\nניתן להשתמש במילות מפתח שיוחלפו בנתוני המשתמש:\n• %firstname% • %lastname% • %username% • %mention%"
-        : "Send the broadcast message.\n\nYou can use these placeholders:\n• %firstname% • %lastname% • %username% • %mention%",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:bc" }]
-      ]
-    }
-  });
-}
-
-else if (action === "bc_buttons") {
-  setAdminAwait(uid, "broadcast_buttons");
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "הגדר את הכפתורים להוספה במקלדת מתחת לפוסט.\n\n• שורות מרובות:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• מספר לחצנים בשורה אחת:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• חלון קופץ:\nButton text - popup: Text\nButton text - alert: Text\n\n• לחצן שיתוף:\nButton text - share: Text\n\n• תפריט / שותפים:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nלהחזרת המשתמש לתפריט ההתחלה: menu:start"
-        : "Define buttons below the message.\n\n• Multiple rows:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• Multiple buttons in one row:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• Popup / Alert:\nButton text - popup: Text\nButton text - alert: Text\n\n• Share button:\nButton text - share: Text\n\n• Menu / Referral:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nTo return user to start: menu:start",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:bc" }]
-      ]
-    }
-  });
-}
-
-else if (action === "bc_send") {
-  const draft = settings.broadcast_draft || { text: "", buttons: [] };
-  const preview = renderPlaceholders(draft.text || "", u, uid);
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      (lang === "he"
-        ? "📝 תצוגה מקדימה של ההודעה שתישלח:\n\n"
-        : "📝 Preview of the message to be sent:\n\n") + preview,
-    parse_mode: "Markdown",
-    reply_markup: {
-      inline_keyboard: (draft.buttons || []).concat([
-        [
-          {
-            text: lang === "he" ? "✅ אשר ושלח" : "✅ Confirm & Send",
-            callback_data: "panel:bc_send_confirm"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:bc"
-          }
-        ]
-      ])
-    }
-  });
-}
-
-else if (action === "bc_send_confirm") {
-  const draft = settings.broadcast_draft || { text: "", buttons: [] };
-  let ok = 0, fail = 0;
-  for (const [id, uuser] of Object.entries(users)) {
-    if (!uuser.active) continue;
-    const textToSend = renderPlaceholders(draft.text || "", uuser, id);
-    try {
-      await tgPost("sendMessage", {
-        chat_id: id,
-        text: escapeMarkdown(textToSend),
-        parse_mode: "Markdown",
-        reply_markup: { inline_keyboard: draft.buttons || [] }
+      await tgPost("answerCallbackQuery", {
+        callback_query_id: cq.id,
+        text: settings.dev_mode
+          ? (lang === "he" ? "🧩 מצב פיתוח הופעל" : "🧩 Dev Mode Enabled")
+          : (lang === "he" ? "🌍 מצב פיתוח כובה" : "🌍 Dev Mode Disabled")
       });
-      ok++;
-    } catch { fail++; }
-  }
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? `📢 שידור הושלם!\n✅ נשלחו: ${ok}\n❌ נכשלו: ${fail}`
-        : `📢 Broadcast completed!\n✅ Sent: ${ok}\n❌ Failed: ${fail}`,
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-      ]
+
+      await editToMainPanel(msg, lang);
     }
-  });
-}
-          if (action === "lang") {
-            const newLang = lang === "he" ? "en" : "he";
-            setAdminLang(uid, newLang);
-            const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tx });
-            await editToMainPanel(msg, newLang);
-          }
 
-          else if (action === "summary") {
-            const usersCount = Object.keys(users).length;
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.section("Summary")}\n${tt.summary_line(scores, usersCount)}`,
-              parse_mode: "Markdown",
-              reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-            });
-          }
-
-          else if (action === "users") {
-            const ids = Object.keys(users);
-            const active = ids.filter(id=>users[id].active).length;
-            const inactive = ids.length - active;
-            const total = ids.length;
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.users_title(active,inactive,total)}`,
-              parse_mode: "Markdown",
-              reply_markup: { inline_keyboard: [
-                [{ text: tt.users_export, callback_data: "panel:users_export" }],
-                [{ text: tt.back, callback_data: "panel:main" }]
-              ] }
-            });
-          }
-
-          else if (action === "users_export") {
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.users_export_sending });
-            // Build CSV in-memory
-            const header = tt.csv_header;
-            const rows = [header];
-            for (const [id,u] of Object.entries(users)) {
-              const name = (u.displayName||"").replace(/,/g," ");
-              const un = (u.username?("@"+u.username):"").replace(/,/g," ");
-              const langUser = u.preferredLang || "";
-              const country = u.country || "";
-              rows.push(`${name},${un},${id},${langUser},${country}`);
-            }
-            const csv = rows.join("\n");
-            const buf = Buffer.from(csv, "utf8");
-
-            // sendDocument multipart
-            const form = new FormData();
-            form.append("chat_id", uid);
-            form.append("document", buf, { filename: "users_export.csv", contentType: "text/csv" });
-
-            try {
-              await axios.post(`${TG_API}/sendDocument`, form, { headers: form.getHeaders() });
-              await tgPost("sendMessage", { chat_id: uid, text: tt.users_export_done });
-            } catch (e) {
-              console.error("CSV send error:", e?.response?.data || e.message);
-            }
-          }
-
-          else if (action === "bonuses") {
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.section(tt.bonuses_title)}`,
-              parse_mode: "Markdown",
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
-                  [{ text: tt.reset_super, callback_data: "panel:reset_super" }],
-                  [
-                    { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
-                    { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
-                  ],
-                  [{ text: tt.back, callback_data: "panel:main" }]
-                ]
-              }
-            });
-          }
-
-          else if (action === "reset_daily") {
-            const today = todayStr();
-            for (const k of Object.keys(users)) {
-              const u = users[k];
-              u.tapsDate = today;
-              u.tapsToday = 0;
-            }
-            writeJSON(USERS_FILE, users);
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-          }
-
-          else if (action === "reset_super") {
-            const today = todayStr();
-            for (const k of Object.keys(users)) {
-              const u = users[k];
-              u.superDate = today;
-              u.superUsed = 0;
-            }
-            writeJSON(USERS_FILE, users);
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-          }
-
-          else if (action === "bonus") {
-            const team = extra;
-            if (team === "israel" || team === "gaza") {
-              scores[team] = (scores[team] || 0) + SUPER_POINTS;
-              writeJSON(SCORES_FILE, scores);
-              await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-            }
-          }
-
-          else if (action === "dxp") {
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
-              parse_mode: "Markdown",
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    { text: tt.dxp_start, callback_data: "panel:dxp_start" },
-                    { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
-                  ],
-                  [
-                    { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
-                    { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
-                  ],
-                  [
-                    { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
-                    { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
-                  ],
-                  [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
-                  [{ text: tt.back, callback_data: "panel:main" }]
-                ]
-              }
-            });
-          }
-
-          else if (action === "dxp_start") {
-            await setDoubleXP(true);
-            // broadcast
-            await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_started_all, en: PANEL_TEXTS.en.dxp_started_all });
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⚡ ON" });
-            await editToMainPanel(msg, lang);
-          }
-
-          else if (action === "dxp_stop") {
-            await setDoubleXP(false);
-            await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_ended_all, en: PANEL_TEXTS.en.dxp_ended_all });
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⏹ OFF" });
-            await editToMainPanel(msg, lang);
-          }
-
-          else if (action === "dxp_hour") {
-            const delta = Number(extra);
-            let h = (Number(doubleXP.dailyHourUTC) + delta) % 24;
-            if (h < 0) h += 24;
-            doubleXP.dailyHourUTC = h;
-            writeJSON(DXP_FILE, doubleXP);
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `UTC ${h}:00` });
-            await editToMainPanel(msg, lang);
-          }
-
-          else if (action === "dxp_dur") {
-            const delta = Number(extra);
-            let m = Math.max(15, (Number(doubleXP.durationMin) + delta));
-            doubleXP.durationMin = m;
-            writeJSON(DXP_FILE, doubleXP);
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `${m}m` });
-            await editToMainPanel(msg, lang);
-          }
-
-          else if (action === "dxp_toggle_daily") {
-            doubleXP.dailyEnabled = !doubleXP.dailyEnabled;
-            writeJSON(DXP_FILE, doubleXP);
-            await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: doubleXP.dailyEnabled?"🕒 on":"🕒 off" });
-            await editToMainPanel(msg, lang);
-          }
-
-          else if (action === "broadcast") {
-            setAdminAwait(uid, "broadcast");
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.ask_broadcast}`,
-              parse_mode: "Markdown",
-              reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-            });
-          }
-
-          else if (action === "admins") {
-            const list = tt.admins_list(admins);
-            await tgPost("editMessageText", {
-              chat_id: msg.chat.id,
-              message_id: msg.message_id,
-              text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
-              parse_mode: "Markdown",
-              reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-            });
-          }
-
-          else if (action === "main") {
-            await editToMainPanel(msg, lang);
-          }
+    // ====== Welcome & Broadcast Manager (HE + EN) ======
+    else if (action === "welcome") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
+            : "💬 Edit Welcome Message\nChoose what to edit:",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "✏️ טקסט" : "✏️ Text", callback_data: "panel:welcome_text" }],
+            [{ text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons", callback_data: "panel:welcome_buttons" }],
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+          ]
         }
-      }
-
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
+      });
     }
+
+    else if (action === "welcome_text") {
+      setAdminAwait(uid, "welcome_text");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "שלח את הודעת הפוסט.\n\nניתן להשתמש במילות מפתח שיוחלפו בנתוני המשתמש:\n• %firstname% • %lastname% • %username% • %mention%"
+            : "Send the post text.\n\nYou can use these placeholders:\n• %firstname% • %lastname% • %username% • %mention%",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "welcome_buttons") {
+      setAdminAwait(uid, "welcome_buttons");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "הגדר את הכפתורים להוספה במקלדת מתחת לפוסט.\n\n• שורות מרובות:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• מספר לחצנים בשורה אחת:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• חלון קופץ:\nButton text - popup: Text\nButton text - alert: Text\n\n• לחצן שיתוף:\nButton text - share: Text\n\n• תפריט / שותפים:\nButton text - menu: שם תפריט\nButton text - ref: מוסיף לחצן תוכנית שותפים\n\nלהחזרת המשתמש לתפריט ההתחלה: menu:start"
+            : "Define buttons to add below the post.\n\n• Multiple rows:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• Multiple buttons in one row:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• Popup or Alert:\nButton text - popup: Text\nButton text - alert: Text\n\n• Share button:\nButton text - share: Text\n\n• Menu / Referral:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nTo return user to start: menu:start",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
+          ]
+        }
+      });
+    }
+
+    // ====== Broadcast ======
+    else if (action === "bc") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "📢 ניהול הודעת שידור\nבחר מה ברצונך לערוך:"
+            : "📢 Broadcast Message\nChoose what to edit:",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "✏️ טקסט" : "✏️ Text", callback_data: "panel:bc_text" }],
+            [{ text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons", callback_data: "panel:bc_buttons" }],
+            [{ text: lang === "he" ? "✅ אשר ושלח" : "✅ Confirm & Send", callback_data: "panel:bc_send" }],
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "bc_text") {
+      setAdminAwait(uid, "broadcast_text");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "שלח את הודעת השידור.\n\nניתן להשתמש במילות מפתח שיוחלפו בנתוני המשתמש:\n• %firstname% • %lastname% • %username% • %mention%"
+            : "Send the broadcast message.\n\nYou can use these placeholders:\n• %firstname% • %lastname% • %username% • %mention%",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:bc" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "bc_buttons") {
+      setAdminAwait(uid, "broadcast_buttons");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "הגדר את הכפתורים להוספה במקלדת מתחת לפוסט.\n\n• שורות מרובות:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• מספר לחצנים בשורה אחת:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• חלון קופץ:\nButton text - popup: Text\nButton text - alert: Text\n\n• לחצן שיתוף:\nButton text - share: Text\n\n• תפריט / שותפים:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nלהחזרת המשתמש לתפריט ההתחלה: menu:start"
+            : "Define buttons below the message.\n\n• Multiple rows:\nButton text - t.me/LinkExample\nButton text - t.me/LinkExample\n\n• Multiple buttons in one row:\nButton text - t.me/LinkExample && Button text - t.me/LinkExample\n\n• Popup / Alert:\nButton text - popup: Text\nButton text - alert: Text\n\n• Share button:\nButton text - share: Text\n\n• Menu / Referral:\nButton text - menu: menuName\nButton text - ref: adds referral button\n\nTo return user to start: menu:start",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:bc" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "bc_send") {
+      const draft = settings.broadcast_draft || { text: "", buttons: [] };
+      const uSelf = ensureUser(uid);
+      const preview = renderPlaceholders(draft.text || "", uSelf, uid);
+
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          (lang === "he"
+            ? "📝 תצוגה מקדימה של ההודעה שתישלח:\n\n"
+            : "📝 Preview of the message to be sent:\n\n") + preview,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: (draft.buttons || []).concat([
+            [{ text: lang === "he" ? "✅ אשר ושלח" : "✅ Confirm & Send", callback_data: "panel:bc_send_confirm" }],
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:bc" }]
+          ])
+        }
+      });
+    }
+
+    else if (action === "bc_send_confirm") {
+      const draft = settings.broadcast_draft || { text: "", buttons: [] };
+      let ok = 0, fail = 0;
+      for (const [id, uuser] of Object.entries(users)) {
+        if (!uuser.active) continue;
+        const textToSend = renderPlaceholders(draft.text || "", uuser, id);
+        try {
+          await tgPost("sendMessage", {
+            chat_id: id,
+            text: escapeMarkdown(textToSend),
+            parse_mode: "Markdown",
+            reply_markup: { inline_keyboard: draft.buttons || [] }
+          });
+          ok++;
+        } catch { fail++; }
+      }
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? `📢 שידור הושלם!\n✅ נשלחו: ${ok}\n❌ נכשלו: ${fail}`
+            : `📢 Broadcast completed!\n✅ Sent: ${ok}\n❌ Failed: ${fail}`,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "lang") {
+      const newLang = lang === "he" ? "en" : "he";
+      setAdminLang(uid, newLang);
+      const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tx });
+      await editToMainPanel(msg, newLang);
+    }
+
+    else if (action === "summary") {
+      const usersCount = Object.keys(users).length;
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section("Summary")}\n${tt.summary_line(scores, usersCount)}`,
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "users") {
+      const ids = Object.keys(users);
+      const active = ids.filter(id=>users[id].active).length;
+      const inactive = ids.length - active;
+      const total = ids.length;
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.users_title(active,inactive,total)}`,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: tt.users_export, callback_data: "panel:users_export" }],
+            [{ text: tt.back, callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "users_export") {
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.users_export_sending });
+      const header = tt.csv_header;
+      const rows = [header];
+      for (const [id,u] of Object.entries(users)) {
+        const name = (u.displayName||"").replace(/,/g," ");
+        const un = (u.username?("@"+u.username):"").replace(/,/g," ");
+        const langUser = u.preferredLang || "";
+        const country = u.country || "";
+        rows.push(`${name},${un},${id},${langUser},${country}`);
+      }
+      const csv = rows.join("\n");
+      const buf = Buffer.from(csv, "utf8");
+
+      const form = new FormData();
+      form.append("chat_id", uid);
+      form.append("document", buf, { filename: "users_export.csv", contentType: "text/csv" });
+
+      try {
+        await axios.post(`${TG_API}/sendDocument`, form, { headers: form.getHeaders() });
+        await tgPost("sendMessage", { chat_id: uid, text: tt.users_export_done });
+      } catch (e) {
+        console.error("CSV send error:", e?.response?.data || e.message);
+      }
+    }
+
+    else if (action === "bonuses") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section(tt.bonuses_title)}`,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
+            [{ text: tt.reset_super, callback_data: "panel:reset_super" }],
+            [
+              { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
+              { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
+            ],
+            [{ text: tt.back, callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "reset_daily") {
+      const today = todayStr();
+      for (const k of Object.keys(users)) {
+        const u = users[k];
+        u.tapsDate = today;
+        u.tapsToday = 0;
+      }
+      writeJSON(USERS_FILE, users);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+    }
+
+    else if (action === "reset_super") {
+      const today = todayStr();
+      for (const k of Object.keys(users)) {
+        const u = users[k];
+        u.superDate = today;
+        u.superUsed = 0;
+      }
+      writeJSON(USERS_FILE, users);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+    }
+
+    else if (action === "bonus") {
+      const team = extra;
+      if (team === "israel" || team === "gaza") {
+        scores[team] = (scores[team] || 0) + SUPER_POINTS;
+        writeJSON(SCORES_FILE, scores);
+        await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+      }
+    }
+
+    else if (action === "dxp") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: tt.dxp_start, callback_data: "panel:dxp_start" },
+              { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
+            ],
+            [
+              { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
+              { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
+            ],
+            [
+              { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
+              { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
+            ],
+            [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
+            [{ text: tt.back, callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "dxp_start") {
+      await setDoubleXP(true);
+      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_started_all, en: PANEL_TEXTS.en.dxp_started_all });
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⚡ ON" });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_stop") {
+      await setDoubleXP(false);
+      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_ended_all, en: PANEL_TEXTS.en.dxp_ended_all });
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⏹ OFF" });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_hour") {
+      const delta = Number(extra);
+      let h = (Number(doubleXP.dailyHourUTC) + delta) % 24;
+      if (h < 0) h += 24;
+      doubleXP.dailyHourUTC = h;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `UTC ${h}:00` });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_dur") {
+      const delta = Number(extra);
+      let m = Math.max(15, (Number(doubleXP.durationMin) + delta));
+      doubleXP.durationMin = m;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `${m}m` });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_toggle_daily") {
+      doubleXP.dailyEnabled = !doubleXP.dailyEnabled;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: doubleXP.dailyEnabled ? "🕒 on" : "🕒 off" });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "broadcast") {
+      setAdminAwait(uid, "broadcast");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.ask_broadcast}`,
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "admins") {
+      const list = tt.admins_list(admins);
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "main") {
+      await editToMainPanel(msg, lang);
+    }
+
+  } // <== סוף else (admins.includes)
+  await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
+} // <== סוף if (data.startsWith("panel:"))
 
     res.status(200).send("OK");
   } catch (err) {
