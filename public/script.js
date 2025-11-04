@@ -220,27 +220,27 @@ try {
 
   if (inp) inp.value = refLink;
 
-  if (cpy) {
-    cpy.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(refLink);
-      } catch (_) {
-        console.error("❌ Copy failed");
-      }
-      const l = getLang();
-      const old = cpy.textContent;
-      cpy.textContent = i18n[l]?.copied || "Copied!";
-      setTimeout(() => (cpy.textContent = old), 1100);
-    });
-  }
+if (cpy) {
+  cpy.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(refLink);
+    } catch (_) {
+      console.error("❌ Copy failed");
+    }
 
-  if (shr) {
-    shr.addEventListener("click", () => {
-      const url =ntent = i18n[l]?.copied || "Copied!";
-      setTimeout(() => 
-      window.open(url, "_blank");
-    });
-  }
+    const l = getLang();
+    const old = cpy.textContent;
+    cpy.textContent = i18n[l]?.copied || "Copied!";
+    setTimeout(() => (cpy.textContent = old), 1100);
+  });
+}
+
+if (shr) {
+  shr.addEventListener("click", () => {
+    const url = `https://t.me/share/url?url=${encodeURIComponent(refLink)}`;
+    window.open(url, "_blank");
+  });
+}
 
 } catch (err) {
   console.error("Referral block error:", err);
