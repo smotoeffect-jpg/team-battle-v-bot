@@ -735,7 +735,7 @@ async function sendPanel(chatId, lang="en") {
   const t = tFor(lang);
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: msgText(t.title()),
+    text: t.title(),
     parse_mode: "HTML",
     reply_markup: panelKeyboard(lang)
   });
@@ -745,7 +745,7 @@ async function editToMainPanel(msg, lang="en") {
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
     message_id: msg.message_id,
-    text: msgText(t.title()),
+    text: t.title(),
     parse_mode: "HTML",
     reply_markup: panelKeyboard(lang)
   });
@@ -903,7 +903,7 @@ try {
   const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
   await tgPost("sendMessage", {
     chat_id: chatId,
-    text: msgText(msg),
+    text: msg,
     parse_mode: "HTML",
     reply_markup: { inline_keyboard: kb }
   });
@@ -1009,21 +1009,21 @@ if (data === "referral") {
 if (data === "menu:start") {
   const s = settings;
   const u = ensureUser(uid);
-  const msgText = renderPlaceholders(s.welcome_message || "Welcome!", u, uid);
+  const msg = renderPlaceholders(s.welcome_message || "Welcome!", u, uid);
   const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
 
   if (msg?.chat?.id && msg?.message_id) {
     await tgPost("editMessageText", {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
-      text: msgText(msgText),
+      text: msg,
       parse_mode: "HTML",
       reply_markup: { inline_keyboard: kb }
     });
   } else {
     await tgPost("sendMessage", {
       chat_id: uid,
-      text: msgText(msgText),
+      text: msg,
       parse_mode: "HTML",
       reply_markup: { inline_keyboard: kb }
     });
@@ -1192,7 +1192,7 @@ if (data === "menu:start") {
         try {
           await tgPost("sendMessage", {
             chat_id: id,
-            text: msgText(textToSend),
+            text: textToSend,
             parse_mode: "HTML",
             reply_markup: { inline_keyboard: draft.buttons || [] }
           });
