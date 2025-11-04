@@ -644,7 +644,6 @@ app.get("/api/me", (req, res) => {
       username: u.username || null,
     },
   });
-});
 
   const today = todayStr();
   if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
