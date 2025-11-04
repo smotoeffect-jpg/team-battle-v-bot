@@ -431,9 +431,8 @@ function renderPlaceholders(text, u, uid) {
 function escapeMarkdown(text) {
   if (!text || typeof text !== "string") return text;
 
-  // קודם כל בורחים backslash כדי שלא "יכפיל" בריחות
+  // קודם כל בורחים backslash כדי שלא יוכפל
   let t = text.replace(/\\/g, "\\\\");
-  // לא בורחים * או _ כדי לאפשר עיצוב מודגש/נטוי שהכנסת במכוון
   const pairs = [
     [/\[/g, "\\["],
     [/\]/g, "\\]"],
@@ -450,8 +449,8 @@ function escapeMarkdown(text) {
     [/\}/g, "\\}"],
     [/!/g, "\\!"],
     [/\./g, "\\."],
-    // אופציונלי: אם אינך משתמש ב-strikethrough, אפשר גם לברוח ~
-    // [/~/g, "\\~"],
+    [/\$/g, "\\$"],   // ✅ נוספה בריחה ל-$
+    [/%/g, "\\%"]     // ✅ נוספה בריחה ל-%
   ];
   for (const [re, rep] of pairs) t = t.replace(re, rep);
   return t;
