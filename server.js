@@ -343,7 +343,6 @@ function addXpAndMaybeLevelUp(u, addXp) {
   u.xp += addXp;
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
-// === Telegram Post Wrapper with Markdown Auto-Escape ===
 // === Telegram POST helper (default: MarkdownV2) ===
 const tgPost = async (method, data = {}) => {
   try {
@@ -365,17 +364,13 @@ const tgPost = async (method, data = {}) => {
       }
     }
 
-    // שים לב: אצלך TG_API כבר כולל את /bot<TOKEN>
-    // ולכן השארתי את התבנית כפי שעבדה לך קודם: `${TG_API}/${method}`
+    // שליחת הבקשה ל־Telegram API
     return await axios.post(`${TG_API}/${method}`, payload);
+
   } catch (e) {
-    console.error("tgPost error:", e?.response?.data || e.message);
-    throw e;
-  }
-};
     // טיפול במקרה שמשתמש חסם את הבוט
-    if (d?.chat_id && e?.response?.status === 403) {
-      const uid = String(d.chat_id);
+    if (data?.chat_id && e?.response?.status === 403) {
+      const uid = String(data.chat_id);
       if (users[uid]) {
         users[uid].active = false;
         writeJSON(USERS_FILE, users);
