@@ -209,30 +209,36 @@ if (telegramUserId) {
   });
 }
   // ===== Refresh Game Data =====
-  async function refreshAll(){
-    try{
-      const state=await getJSON('/api/state');
-      if(state.scores) GAME.scores=state.scores;
-      paintScores();
-    }catch(_){}
-    try{
-      const meResp = await getJSON('/api/me?userId=' + telegramUserId);
-const M = meResp?.me || meResp || {};
-if (!GAME.me) GAME.me = {};
+async function refreshAll(){
+  try {
+    const state = await getJSON('/api/state');
+    if (state.scores) GAME.scores = state.scores;
+    paintScores();
+  } catch (err) {
+    console.error("Error loading /api/state:", err);
+  }
 
-GAME.me.id = M.userId ?? M.id ?? telegramUserId;
-GAME.me.team = M.team ?? GAME.me.team ?? null;
-GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
-GAME.me.tapsLimit = meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? GAME.me.tapsLimit ?? 300;
-GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
-GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
-GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
-GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
-GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // ✅ שומר XP בין רענונים
-GAME.me.username = M.username ?? GAME.me.username ?? null;
+  try {
+    const meResp = await getJSON('/api/me?userId=' + telegramUserId);
+    const M = meResp?.me || meResp || {};
+    if (!GAME.me) GAME.me = {};
+
+    GAME.me.id = M.userId ?? M.id ?? telegramUserId;
+    GAME.me.team = M.team ?? GAME.me.team ?? null;
+    GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
+    GAME.me.tapsLimit = meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? GAME.me.tapsLimit ?? 300;
+    GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
+    GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
+    GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
+    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
+    GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // ✅ שומר XP בין רענונים
+    GAME.me.username = M.username ?? GAME.me.username ?? null;
+
+    paintMe();
+  } catch (err) {
+    console.error("Error loading /api/me:", err);
+  }
 }
-paintMe();
-} catch (_) {}
 
 // 💰 עדכון $BATTLE בזמן אמת אם השתנה מהשרת
 if (typeof GAME.me.battle === "undefined") GAME.me.battle = 0;
