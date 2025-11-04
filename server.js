@@ -663,6 +663,7 @@ app.get("/api/me", (req, res) => {
   users[userId] = u;
   writeJSON(USERS_FILE, users);
 
+  const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
   // ✅ שליחה חזרה למיני-אפליקציה
   res.json({
     ok: true,
