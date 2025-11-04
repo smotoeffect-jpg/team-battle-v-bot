@@ -343,35 +343,22 @@ function addXpAndMaybeLevelUp(u, addXp) {
   u.xp += addXp;
   while (u.xp >= u.level * LEVEL_STEP) u.level++;
 }
-// === Telegram POST helper (default: MarkdownV2) ===
+// === Telegram POST helper (default: HTML) ===
 const tgPost = async (method, data = {}) => {
   try {
     const payload = { ...data };
 
-    // אם לא צוין parse_mode מפורשות – נשתמש ב-MarkdownV2
-    if (!payload.parse_mode) payload.parse_mode = "MarkdownV2";
+    // 🧩 אם לא צוין מצב עיבוד — נשתמש ב־HTML כברירת מחדל
+    if (!payload.parse_mode) payload.parse_mode = "HTML";
 
-    // מנקה טקסטים רק כאשר אנו עובדים במרקדאון
-    if (
-      typeof payload.parse_mode === "string" &&
-      payload.parse_mode.toLowerCase().startsWith("markdown")
-    ) {
-
-      // ⚠️ לא בורחים טקסטים שכוללים לינקים, כדי לא לשבור כפתורים או קישורים
-      if (typeof payload.text === "string" && !payload.text.includes("http") && !payload.text.includes("t.me")) {
-        payload.text = escapeMarkdown(payload.text);
-      }
-
-      if (typeof payload.caption === "string" && !payload.caption.includes("http") && !payload.caption.includes("t.me")) {
-        payload.caption = escapeMarkdown(payload.caption);
-      }
-    }
+    // ⚙️ אין צורך ב־escapeMarkdown יותר — HTML בטוח לשימוש רגיל
+    // (השארנו מקום לפילטרים עתידיים אם תרצה להגן על תוכן)
 
     // ביצוע הבקשה ל-Telegram API
     return await axios.post(`${TG_API}/${method}`, payload);
 
   } catch (e) {
-    // טיפול במקרה שמשתמש חסם את הבוט
+    // 🧱 טיפול במצב שבו המשתמש חסם את הבוט
     if (data?.chat_id && e?.response?.status === 403) {
       const uid = String(data.chat_id);
       if (users[uid]) {
@@ -426,34 +413,7 @@ function renderPlaceholders(text, u, uid) {
     .replace(/%lastname%/g, ln)
     .replace(/%username%/g, un)
     .replace(/%mention%/g, mention);
-}
-// === MarkdownV2 Safe Formatter (keeps *bold* and _italic_ working) ===
-function escapeMarkdown(text) {
-  if (!text || typeof text !== "string") return text;
 
-  // קודם כל בורחים backslash כדי שלא יוכפל
-  let t = text.replace(/\\/g, "\\\\");
-  const pairs = [
-    [/\[/g, "\\["],
-    [/\]/g, "\\]"],
-    [/\(/g, "\\("],
-    [/\)/g, "\\)"],
-    [/`/g, "\\`"],
-    [/>/g, "\\>"],
-    [/#/g, "\\#"],
-    [/\+/g, "\\+"],
-    [/-/g, "\\-"],
-    [/=/g, "\\="],
-    [/\|/g, "\\|"],
-    [/\{/g, "\\{"],
-    [/\}/g, "\\}"],
-    [/!/g, "\\!"],
-    [/\./g, "\\."],
-    [/\$/g, "\\$"],   // ✅ נוספה בריחה ל-$
-    [/%/g, "\\%"]     // ✅ נוספה בריחה ל-%
-  ];
-  for (const [re, rep] of pairs) t = t.replace(re, rep);
-  return t;
 }
 
 function parseButtonsFromAdminText(block) {
