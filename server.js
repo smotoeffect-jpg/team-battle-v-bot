@@ -1357,7 +1357,101 @@ if (data === "menu:start") {
       await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: doubleXP.dailyEnabled ? "🕒 on" : "🕒 off" });
       await editToMainPanel(msg, lang);
     }
+// ====== REFERRAL SETTINGS PANEL (Stylish Version) ======
+else if (action === "referral_settings") {
+  const ref = settings.referral_settings || { enabled: true, bonus_per_invite: 2, currency: "$Battle" };
 
+  const text =
+    lang === "he"
+      ? `💸 *הגדרות שותפים*\n\nמצב נוכחי: ${ref.enabled ? "✅ פעיל" : "⛔ כבוי"}\nתגמול להזמנה: ${ref.bonus_per_invite} ${ref.currency}\n\nבחר פעולה:`
+      : `💸 *Referral Settings*\n\nCurrent status: ${ref.enabled ? "✅ Enabled" : "⛔ Disabled"}\nBonus per invite: ${ref.bonus_per_invite} ${ref.currency}\n\nChoose an action:`;
+
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text,
+    parse_mode: "Markdown",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: ref.enabled
+              ? (lang === "he" ? "⛔ כבה תוכנית שותפים" : "⛔ Disable Referrals")
+              : (lang === "he" ? "✅ הפעל תוכנית שותפים" : "✅ Enable Referrals"),
+            callback_data: "panel:referral_toggle"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "✏️ שנה תגמול להזמנה" : "✏️ Change Bonus per Invite",
+            callback_data: "panel:referral_edit_bonus"
+          }
+        ],
+        [
+          { text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }
+        ]
+      ]
+    }
+  });
+}
+
+// ====== REFERRAL SETTINGS: TOGGLE ENABLED ======
+else if (action === "referral_toggle") {
+  settings.referral_settings.enabled = !settings.referral_settings.enabled;
+  writeJSON(SETTINGS_FILE, settings);
+
+  await tgPost("answerCallbackQuery", {
+    callback_query_id: cq.id,
+    text: settings.referral_settings.enabled
+      ? (lang === "he" ? "✅ תוכנית שותפים הופעלה" : "✅ Referral Program Enabled")
+      : (lang === "he" ? "⛔ תוכנית שותפים כובתה" : "⛔ Referral Program Disabled")
+  });
+
+  await editToMainPanel(msg, lang);
+}
+
+// ====== REFERRAL SETTINGS: EDIT BONUS ======
+else if (action === "referral_edit_bonus") {
+  setAdminAwait(uid, "referral_bonus");
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text:
+      lang === "he"
+        ? "💰 שלח את גובה התגמול להזמנה החדשה (מספר בלבד, לדוגמה: 5)"
+        : "💰 Send the new bonus amount per invite (number only, e.g. 5)",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:referral_settings" }]
+      ]
+    }
+  });
+}
+
+// ====== HANDLE BONUS INPUT ======
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && update.message?.text) {
+  const newBonus = parseFloat(update.message.text.trim());
+  if (!isNaN(newBonus) && newBonus >= 0) {
+    settings.referral_settings.bonus_per_invite = newBonus;
+    writeJSON(SETTINGS_FILE, settings);
+    setAdminAwait(uid, null);
+    await tgPost("sendMessage", {
+      chat_id: uid,
+      text:
+        lang === "he"
+          ? `✅ תגמול להזמנה עודכן ל־${newBonus} ${settings.referral_settings.currency}`
+          : `✅ Bonus per invite updated to ${newBonus} ${settings.referral_settings.currency}`
+    });
+  } else {
+    await tgPost("sendMessage", {
+      chat_id: uid,
+      text:
+        lang === "he"
+          ? "⚠️ ערך שגוי. נא להזין מספר בלבד (לדוגמה: 2)"
+          : "⚠️ Invalid value. Please send a number only (e.g. 2)"
+    });
+  }
+}
     else if (action === "broadcast") {
       setAdminAwait(uid, "broadcast");
       await tgPost("editMessageText", {
