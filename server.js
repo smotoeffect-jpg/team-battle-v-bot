@@ -815,6 +815,31 @@ if (update.message?.successful_payment) {
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
 
+      // ✅ Handle referral bonus edit
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
+  const lang = getAdminLang(uid);
+  const newBonus = parseFloat(text);
+  setAdminAwait(uid, null);
+
+  if (!isNaN(newBonus) && newBonus >= 0) {
+    if (!settings.referral_settings) settings.referral_settings = { enabled: true, bonus_per_invite: 2, currency: "$Battle" };
+    settings.referral_settings.bonus_per_invite = newBonus;
+    writeJSON(SETTINGS_FILE, settings);
+    await tgPost("sendMessage", {
+      chat_id: uid,
+      text: lang === "he"
+        ? `✅ תגמול להזמנה עודכן ל־${newBonus} ${settings.referral_settings.currency}`
+        : `✅ Bonus per invite updated to ${newBonus} ${settings.referral_settings.currency}`
+    });
+  } else {
+    await tgPost("sendMessage", {
+      chat_id: uid,
+      text: lang === "he"
+        ? "⚠️ ערך שגוי. נא להזין מספר בלבד (לדוגמה: 2)"
+        : "⚠️ Invalid value. Please send a number only (e.g. 2)"
+    });
+  }
+}
       // Awaiting broadcast text?
       if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
         const lang = getAdminLang(uid);
