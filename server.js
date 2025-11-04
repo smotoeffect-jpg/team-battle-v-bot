@@ -630,7 +630,7 @@ app.get("/api/me", (req, res) => {
 
   // ✅ נרמול רשימת הזמנות
   u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
-  u.referrals = u.referralsList.length;
+  u.referrals = (u.referralsList?.length || u.referrals || 0);
 
   // ✅ בונוס יומי
   let justGotDailyBonus = false;
