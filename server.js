@@ -846,7 +846,42 @@ if (update.message?.successful_payment) {
       const chatId= msg.chat.id;
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
-      
+
+      // ===== ADMIN: HANDLE WELCOME TEXT EDIT =====
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_text" && update.message?.text) {
+  const rawText = update.message.text.trim();
+  const s = settings;
+  s.welcome_message = rawText;
+  writeJSON(SETTINGS_FILE, s);
+  setAdminAwait(uid, null);
+
+  const u = ensureUser(uid);
+  const preview = renderPlaceholders(rawText, u, uid);
+  const lang = getAdminLang(uid);
+
+  const success =
+    lang === "he"
+      ? `✅ הודעת הפתיחה נשמרה בהצלחה!\n\nתצוגה מקדימה:\n${preview}`
+      : `✅ Welcome message saved successfully!\n\nPreview:\n${preview}`;
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: success,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
+            callback_data: "panel:main"
+          }
+        ]
+      ]
+    }
+  });
+
+  return res.status(200).send("OK");
+}
   // ====== HANDLE WELCOME BUTTONS INPUT (HE + EN) ======
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_buttons" && update.message?.text) {
   const rawButtons = update.message.text.trim();
@@ -1227,41 +1262,7 @@ if (data === "menu:start") {
         }
       });
     }
-// ===== ADMIN: HANDLE WELCOME TEXT EDIT =====
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_text" && update.message?.text) {
-  const rawText = update.message.text.trim();
-  const s = settings;
-  s.welcome_message = rawText;
-  writeJSON(SETTINGS_FILE, s);
-  setAdminAwait(uid, null);
 
-  const u = ensureUser(uid);
-  const preview = renderPlaceholders(rawText, u, uid);
-  const lang = getAdminLang(uid);
-
-  const success =
-    lang === "he"
-      ? `✅ הודעת הפתיחה נשמרה בהצלחה!\n\nתצוגה מקדימה:\n${preview}`
-      : `✅ Welcome message saved successfully!\n\nPreview:\n${preview}`;
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: success,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:main"
-          }
-        ]
-      ]
-    }
-  });
-
-  return res.status(200).send("OK");
-}
     // ====== Broadcast ======
     else if (action === "bc") {
       await tgPost("editMessageText", {
