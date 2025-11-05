@@ -1701,14 +1701,14 @@ else if (action === "main") {
 // סוף else (admins.includes)
 await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
 
-    } // <== סוגר את if (data.startsWith("panel:"))
-  } // <== סוגר את if (update.callback_query)
+   } // <== סוגר את if (data.startsWith("panel:"))
+} // <== סוגר את if (update.callback_query)
 
-  // ====== Webhook end ======
-  } catch (err) {
-    console.error("Webhook error:", err?.response?.data || err.message);
-    res.status(200).send("OK");
-  }
+// ===== Webhook end =====
+catch (err) {
+  console.error("Webhook error:", err?.response?.data || err.message);
+  res.status(200).send("OK");
+}
 }); // <== סוגר את app.post("/webhook")
 
 // ====== Health & Webhook setup ======
