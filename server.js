@@ -1705,7 +1705,7 @@ await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {}
   } // <== סוגר את if (update.callback_query)
 
   // ====== Webhook end ======
-  } catch (err) {
+   catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message);
     res.status(200).send("OK");
   }
