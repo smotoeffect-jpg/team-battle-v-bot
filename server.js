@@ -1122,20 +1122,22 @@ try {
         writeJSON(USERS_FILE, users);
         await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "✅ Language saved" });
       }
-      // ====== REFERRAL MENU (EN ONLY, REAL SHARE LINK) ======
-if (data === "referral") {
+     // ===== REFERRAL PANEL (User-side menu, synced + share text) =====
+else if (data === "menu:referral") {
+  const u = ensureUser(uid);
   const refData = referrals[uid] || { invited: [], earnings: 0 };
   const inviteCount = refData.invited.length;
   const earnings = refData.earnings.toFixed(2);
-  const link = `https://t.me/TeamBattle_vBot?start=${uid}`; // change bot username if needed
+  const botUsername = process.env.BOT_USERNAME || "TeamBattle_vBot";
+
+  const inviteLink = `https://t.me/${botUsername}?start=${uid}`;
+  const shareText = "🔥 Join me on TeamBattle - 🇮🇱Israel Vs Gaza🇵🇸 and earn $Battle!";
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent(shareText)}`;
 
   const text =
-    `💸 <b>Referral Program – $Battle</b>\n` +
-    `Earn $Battle for every player you invite!\n\n` +
-    `👥 <b>Players Invited:</b> ${inviteCount}\n` +
-    `💰 <b>Your Earnings:</b> ${earnings} $Battle\n\n` +
-    `🔗 <b>Your Personal Invite Link:</b>\n${link}\n\n` +
-    `📤 <b>Share your link below:</b>`;
+    lang === "he"
+      ? `💸 <b>תוכנית שותפים – $Battle</b>\n\nהזמן חברים וקבל $Battle על כל שחקן שמצטרף!\n\n👥 <b>שחקנים שהוזמנו:</b> ${inviteCount}\n💰 <b>סך הרווחים שלך:</b> ${earnings} $Battle\n\n🔗 <b>הקישור האישי שלך:</b>\n${inviteLink}\n\n📤 שתף את הקישור שלך:`
+      : `💸 <b>Referral Program – $Battle</b>\n\nEarn $Battle for every player you invite!\n\n👥 <b>Players Invited:</b> ${inviteCount}\n💰 <b>Your Earnings:</b> ${earnings} $Battle\n\n🔗 <b>Your Personal Invite Link:</b>\n${inviteLink}\n\n📤 Share your link below:`;
 
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -1145,16 +1147,10 @@ if (data === "referral") {
     reply_markup: {
       inline_keyboard: [
         [
-          {
-            text: "📤 Share Link",
-            url: `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("🔥 Join me on TeamBattle - 🇮🇱Israel Vs Gaza🇵🇸 and earn $Battle!")}`
-          }
+          { text: lang === "he" ? "📨 שתף קישור" : "📨 Share Link", url: shareUrl }
         ],
         [
-          {
-            text: "⬅️ Back",
-            callback_data: "menu:start"
-          }
+          { text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "menu:start" }
         ]
       ]
     }
