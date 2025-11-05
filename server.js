@@ -1741,3 +1741,4 @@ app.get("*", (_, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
+);
