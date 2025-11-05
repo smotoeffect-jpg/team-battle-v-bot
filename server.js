@@ -1706,7 +1706,6 @@ await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {}
 
     } // <== סוגר את if (data.startsWith("panel:"))
   } // <== סוגר את if (update.callback_query)
-}); // <== סוגר את app.post("/webhook")
 
 // ====== Health & Webhook setup ======
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
