@@ -1705,17 +1705,6 @@ await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {}
     } // <== סוגר את if (data.startsWith("panel:"))
   } // <== סוגר את if (update.callback_query)
 
-// ===== Webhook handler =====
-app.post("/webhook", async (req, res) => {
-  try {
-    // כאן כל הקוד שמטפל בעדכוני Telegram (update, message, callback וכו')
-    res.status(200).send("OK");
-  } catch (err) {
-    console.error("Webhook error:", err?.response?.data || err.message);
-    res.status(200).send("OK");
-  }
-});
-
 // ===== Health & Webhook setup =====
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
 app.get("/healthz", (_, res) => res.json({ ok: true }));
