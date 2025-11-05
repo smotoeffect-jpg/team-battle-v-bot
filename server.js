@@ -1666,53 +1666,64 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
   }
 }
     else if (action === "broadcast") {
-      setAdminAwait(uid, "broadcast");
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.ask_broadcast}`,
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-      });
+  setAdminAwait(uid, "broadcast");
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text: `${tt.title()}\n\n${tt.ask_broadcast}`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: tt.back, callback_data: "panel:main" }]
+      ]
     }
+  });
+}
 
-    else if (action === "admins") {
-      const list = tt.admins_list(admins);
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-      });
+else if (action === "admins") {
+  const list = tt.admins_list(admins);
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: tt.back, callback_data: "panel:main" }]
+      ]
     }
+  });
+}
 
-    else if (action === "main") {
-      await editToMainPanel(msg, lang);
-    }
+else if (action === "main") {
+  await editToMainPanel(msg, lang);
+}
 
-  } // <== סוף else (admins.includes)
-  await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
+// <== סוף else (admins.includes)
+await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
+
 } // <== סוף if (data.startsWith("panel:"))
 
-        } // <== סוף ה־if הראשי
-    res.status(200).send("OK");
-  } catch (err) {
-    console.error("Webhook error:", err?.response?.data || err.message);
-    res.status(200).send("OK");
-  }
+} // <== סוף ה־if הראשי
+
+res.status(200).send("OK");
+
+} catch (err) {
+  console.error("Webhook error:", err?.response?.data || err.message);
+  res.status(200).send("OK");
+}
 });
 
 // ====== Health & Webhook setup ======
-app.get("/webhook", (_, res) => res.status(405).json({ ok:true }));
-app.get("/healthz", (_, res) => res.json({ ok:true }));
+app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
+app.get("/healthz", (_, res) => res.json({ ok: true }));
 
 app.get("/setup-webhook", async (_, res) => {
   try {
     const url = `${WEBHOOK_DOMAIN}/webhook`;
     const r = await axios.post(`${TG_API}/setWebhook`, {
       url,
-      allowed_updates: ["message","callback_query","pre_checkout_query","successful_payment"],
+      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"],
     });
     res.send(r.data);
   } catch (e) {
