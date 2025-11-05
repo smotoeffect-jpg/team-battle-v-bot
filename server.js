@@ -1536,7 +1536,34 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
     });
   }
 }
-  // ====== HANDLE WELCOME BUTTONS INPUT (HE + EN) ======
+
+
+    else if (action === "broadcast") {
+      setAdminAwait(uid, "broadcast");
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.ask_broadcast}`,
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "admins") {
+      const list = tt.admins_list(admins);
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "main") {
+      await editToMainPanel(msg, lang);
+    }
+      // ====== HANDLE WELCOME BUTTONS INPUT (HE + EN) ======
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_buttons" && update.message?.text) {
   const rawButtons = update.message.text.trim();
   const parsedButtons = parseButtonsFromAdminText(rawButtons);
@@ -1573,7 +1600,7 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_buttons" && up
     }
   });
 }
-
+  
 // ====== HANDLE BROADCAST BUTTONS INPUT (HE + EN) ======
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast_buttons" && update.message?.text) {
   const rawButtons = update.message.text.trim();
@@ -1611,31 +1638,6 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast_buttons" && 
     }
   });
 }
-    else if (action === "broadcast") {
-      setAdminAwait(uid, "broadcast");
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.ask_broadcast}`,
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-      });
-    }
-
-    else if (action === "admins") {
-      const list = tt.admins_list(admins);
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.section(tt.admins_title)}\n\n${list}\n\n${tt.admins_help}`,
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-      });
-    }
-
-    else if (action === "main") {
-      await editToMainPanel(msg, lang);
-    }
 
   } // <== סוף else (admins.includes)
   await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
