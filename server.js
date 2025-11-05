@@ -780,7 +780,7 @@ async function sendPanel(chatId, lang="en") {
     reply_markup: panelKeyboard(lang)
   });
 }
-async function editToMainPanel(msg, lang = "en") {
+async function editToMainPanel(msg, lang="en") {
   const t = tFor(lang);
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -798,32 +798,34 @@ app.post("/webhook", async (req, res) => {
 
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
+// ✅ Handle successful payments (Extra Tap purchases)
+if (update.message?.successful_payment) {
+  try {
+    const sp = update.message.successful_payment;
+    const payload = JSON.parse(sp.invoice_payload || "{}");
+    const { userId, team, stars } = payload;
 
-    // ✅ Handle successful payments (Extra Tap purchases)
-    if (update.message?.successful_payment) {
-      try {
-        const sp = update.message.successful_payment;
-        const payload = JSON.parse(sp.invoice_payload || "{}");
-        const { userId, team, stars } = payload;
+    if (userId && team && stars && users[userId]) {
+      const u = ensureUser(userId);
+      u.starsDonated = (u.starsDonated || 0) + stars;
+      scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
+      addXpAndMaybeLevelUp(u, stars);
 
-        if (userId && team && stars && users[userId]) {
-          const u = ensureUser(userId);
-          u.starsDonated = (u.starsDonated || 0) + stars;
-          scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
-          addXpAndMaybeLevelUp(u, stars);
+      // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
+      u.battleBalance = (u.battleBalance || 0) + stars;
 
-          // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
-          u.battleBalance = (u.battleBalance || 0) + stars;
+      // שמירה
+      writeJSON(USERS_FILE, users);
+      writeJSON(SCORES_FILE, scores);
 
-          // שומר את הנתונים המעודכנים
-          writeJSON(SCORES_FILE, scores);
-          writeJSON(USERS_FILE, users);
-        }
-      } catch (e) {
-        console.error("Error handling successful payment:", e);
-      }
+      console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
+    } else {
+      console.warn("⚠️ Missing fields in successful_payment:", payload);
     }
-
+  } catch (err) {
+    console.error("❌ Error handling successful_payment:", err);
+  }
+}
     // ----- Payments confirmations (NO extra thank-you message here) -----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
@@ -838,30 +840,7 @@ app.post("/webhook", async (req, res) => {
       const chatId= msg.chat.id;
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
-      
-        // === Handle saving Welcome Message text ===
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_text") {
-  const s = settings;
-  s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
-  writeJSON(SETTINGS_FILE, s);
 
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: lang === "he"
-      ? "✅ ההודעה נשמרה בהצלחה!\n\nלחץ על 'תצוגה מקדימה' כדי לראות איך זה נראה למשתמשים."
-      : "✅ Message saved successfully!\n\nClick 'Preview' to see how it looks to users.",
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "👁 תצוגה מקדימה" : "👁 Preview", callback_data: "welcome_preview" }],
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-      ]
-    }
-  });
-setAdminAwait(uid, null);
-  return;
-  }
-      
       // ✅ Handle referral bonus edit
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
   const lang = getAdminLang(uid);
@@ -887,28 +866,40 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
     });
   }
 }
-     // Awaiting broadcast text?
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
-  const lang = getAdminLang(uid);
-  const tt = tFor(lang);
-  setAdminAwait(uid, null);
-  
-  await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
+      // Awaiting broadcast text?
+      if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
+        const lang = getAdminLang(uid);
+        const tt = tFor(lang);
+        setAdminAwait(uid, null);
+        await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
 
-  let ok = 0, fail = 0;
+        let ok=0, fail=0;
+        for (const [id, u] of Object.entries(users)) {
+          if (!u.active) continue;
+          try { await tgPost("sendMessage", { chat_id: id, text }); ok++; } catch { fail++; }
+        }
+        await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
+      }
+      // === Handle saving Welcome Message text ===
+if (adminMeta[uid]?.awaiting === "welcome_text") {
+  const s = settings;
+  s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
+  writeJSON(SETTINGS_FILE, s);
 
-  for (const [id, u] of Object.entries(users)) {
-    if (!u.active) continue;
-    try {
-      await tgPost("sendMessage", { chat_id: id, text });
-      ok++;
-    } catch (err) {
-      fail++;
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: lang === "he"
+      ? "✅ ההודעה נשמרה בהצלחה!\n\nלחץ על 'תצוגה מקדימה' כדי לראות איך זה נראה למשתמשים."
+      : "✅ Message saved successfully!\n\nClick 'Preview' to see how it looks to users.",
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: lang === "he" ? "👁 תצוגה מקדימה" : "👁 Preview", callback_data: "welcome_preview" }],
+        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+      ]
     }
-  }
+  });
 
-  await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok, fail) });
-  
   setAdminAwait(uid, null);
   return;
 }
@@ -1050,7 +1041,7 @@ try {
           await tgPost("sendMessage", { chat_id: chatId, text: `❌ Super Admins only.` });
         }
       }
-  
+    }
 
     // ----- Callbacks -----
     if (update.callback_query) {
