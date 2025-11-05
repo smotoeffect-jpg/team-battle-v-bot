@@ -1227,7 +1227,41 @@ if (data === "menu:start") {
         }
       });
     }
+// ===== ADMIN: HANDLE WELCOME TEXT EDIT =====
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_text" && update.message?.text) {
+  const rawText = update.message.text.trim();
+  const s = settings;
+  s.welcome_message = rawText;
+  writeJSON(SETTINGS_FILE, s);
+  setAdminAwait(uid, null);
 
+  const u = ensureUser(uid);
+  const preview = renderPlaceholders(rawText, u, uid);
+  const lang = getAdminLang(uid);
+
+  const success =
+    lang === "he"
+      ? `✅ הודעת הפתיחה נשמרה בהצלחה!\n\nתצוגה מקדימה:\n${preview}`
+      : `✅ Welcome message saved successfully!\n\nPreview:\n${preview}`;
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: success,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
+            callback_data: "panel:main"
+          }
+        ]
+      ]
+    }
+  });
+
+  return res.status(200).send("OK");
+}
     // ====== Broadcast ======
     else if (action === "bc") {
       await tgPost("editMessageText", {
