@@ -1709,7 +1709,7 @@ await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {}
 // ===== Webhook handler =====
 app.post("/webhook", async (req, res) => {
   try {
-    // כאן כל הקוד שמטפל בעדכוני Telegram (update, message, callback וכו’)
+    // כאן כל הקוד שמטפל בעדכוני Telegram (update, message, callback וכו')
     res.status(200).send("OK");
   } catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message);
@@ -1717,16 +1717,16 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
-// ====== Health & Webhook setup ======
+// ===== Health & Webhook setup =====
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
-app.get("/healthz", (_, res) => res.json({ ok: true }));
+app.get("/healthz",  (_, res) => res.json({ ok: true }));
 
 app.get("/setup-webhook", async (_, res) => {
   try {
-    const url = `${WEBHOOK_DOMAIN}/webhook`;
+    const url = ${WEBHOOK_DOMAIN}/webhook;
     const r = await axios.post(`${TG_API}/setWebhook`, {
       url,
-      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"],
+      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"]
     });
     res.send(r.data);
   } catch (e) {
@@ -1734,11 +1734,12 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ====== Static fallback ======
+// ===== Static fallback =====
 app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
+app.listen(PORT, () =>
+  console.log(`Server running on :${PORT} | DATA_DIR=${DATA_DIR}`)
 );
