@@ -1702,8 +1702,9 @@ else if (action === "main") {
 
 // סוף else (admins.includes)
 await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
-} // <== סוגר חסר שסוגר את הפונקציה שמכילה את זה 
-    
+    } // <== סוגר את if (data.startsWith("panel:"))
+  } // <== סוגר את if (update.callback_query)
+
 // ===== Webhook handler =====
 app.post("/webhook", async (req, res) => {
   try {
