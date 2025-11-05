@@ -796,36 +796,41 @@ app.post("/webhook", async (req, res) => {
   try {
     const update = req.body;
 
+    // 🩵 תיקון: הגדרת uid ו־lang כבר בהתחלה
+    const uid = String(update.message?.from?.id || update.callback_query?.from?.id || "");
+    const lang = getAdminLang ? getAdminLang(uid) : "he"; // ברירת מחדל לעברית
+
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
-// ✅ Handle successful payments (Extra Tap purchases)
-if (update.message?.successful_payment) {
-  try {
-    const sp = update.message.successful_payment;
-    const payload = JSON.parse(sp.invoice_payload || "{}");
-    const { userId, team, stars } = payload;
 
-    if (userId && team && stars && users[userId]) {
-      const u = ensureUser(userId);
-      u.starsDonated = (u.starsDonated || 0) + stars;
-      scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
-      addXpAndMaybeLevelUp(u, stars);
+    // ✅ Handle successful payments (Extra Tap purchases)
+    if (update.message?.successful_payment) {
+      try {
+        const sp = update.message.successful_payment;
+        const payload = JSON.parse(sp.invoice_payload || "{}");
+        const { userId, team, stars } = payload;
 
-      // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
-      u.battleBalance = (u.battleBalance || 0) + stars;
+        if (userId && team && stars && users[userId]) {
+          const u = ensureUser(userId);
+          u.starsDonated = (u.starsDonated || 0) + stars;
+          scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
+          addXpAndMaybeLevelUp(u, stars);
 
-      // שמירה
-      writeJSON(USERS_FILE, users);
-      writeJSON(SCORES_FILE, scores);
+          // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
+          u.battleBalance = (u.battleBalance || 0) + stars;
 
-      console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
-    } else {
-      console.warn("⚠️ Missing fields in successful_payment:", payload);
+          // שמירה
+          writeJSON(USERS_FILE, users);
+          writeJSON(SCORES_FILE, scores);
+
+          console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
+        } else {
+          console.warn("⚠️ Missing fields in successful_payment:", payload);
+        }
+      } catch (err) {
+        console.error("❌ Error handling successful_payment:", err);
+      }
     }
-  } catch (err) {
-    console.error("❌ Error handling successful_payment:", err);
-  }
-}
     // ----- Payments confirmations (NO extra thank-you message here) -----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
