@@ -887,22 +887,28 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
     });
   }
 }
-      // Awaiting broadcast text?
-      if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
-        const lang = getAdminLang(uid);
-        const tt = tFor(lang);
-        setAdminAwait(uid, null);
-        await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
+     // Awaiting broadcast text?
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast") {
+  const lang = getAdminLang(uid);
+  const tt = tFor(lang);
+  setAdminAwait(uid, null);
+  
+  await tgPost("sendMessage", { chat_id: uid, text: tt.bc_started });
 
-        let ok=0, fail=0;
-        for (const [id, u] of Object.entries(users)) {
-          if (!u.active) continue;
-          try { await tgPost("sendMessage", { chat_id: id, text }); ok++; } catch { fail++; }
-        }
-        await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
-      }
-     
+  let ok = 0, fail = 0;
 
+  for (const [id, u] of Object.entries(users)) {
+    if (!u.active) continue;
+    try {
+      await tgPost("sendMessage", { chat_id: id, text });
+      ok++;
+    } catch (err) {
+      fail++;
+    }
+  }
+
+  await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok, fail) });
+  
   setAdminAwait(uid, null);
   return;
 }
