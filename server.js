@@ -1705,13 +1705,14 @@ await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {}
   } // <== סוגר את if (update.callback_query)
 
   } // <== סוגר את try הראשי של ה־Webhook
-  catch (err) {
+  // ====== Webhook end ======
+  } catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message);
     res.status(200).send("OK");
   }
 }); // <== סוגר את app.post("/webhook")
 
-// ===== Health & Webhook setup =====
+// ====== Health & Webhook setup ======
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
 app.get("/healthz", (_, res) => res.json({ ok: true }));
 
@@ -1728,11 +1729,12 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ===== Static fallback =====
+// ====== Static fallback ======
 app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ====== Server start ======
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`);
