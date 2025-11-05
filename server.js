@@ -842,7 +842,7 @@ if (update.message?.successful_payment) {
       const uid   = String(msg.from.id);
       
         // === Handle saving Welcome Message text ===
-if (admins.includes(uid) && adminMeta[uid]?.awaiting ==== "welcome_text") {
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_text") {
   const s = settings;
   s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
   writeJSON(SETTINGS_FILE, s);
