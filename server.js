@@ -1046,7 +1046,10 @@ try {
           await tgPost("sendMessage", { chat_id: chatId, text: `❌ Super Admins only.` });
         }
       }
-    }
+    } catch (err) {
+  console.error("Error in admin command:", err.message);
+}
+  
 
     // ----- Callbacks -----
     if (update.callback_query) {
