@@ -1723,7 +1723,7 @@ app.get("/healthz",  (_, res) => res.json({ ok: true }));
 
 app.get("/setup-webhook", async (_, res) => {
   try {
-    const url = ${WEBHOOK_DOMAIN}/webhook;
+    const url = `${WEBHOOK_DOMAIN}/webhook`;
     const r = await axios.post(`${TG_API}/setWebhook`, {
       url,
       allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"]
@@ -1740,6 +1740,6 @@ app.get("*", (_, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`Server running on :${PORT} | DATA_DIR=${DATA_DIR}`)
-);
+app.listen(PORT, () => {
+  console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`);
+});
