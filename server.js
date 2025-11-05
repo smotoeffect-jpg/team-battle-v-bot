@@ -883,16 +883,22 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
 // ===== ADMIN: HANDLE WELCOME MESSAGE EDIT =====
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_edit") {
   const s = settings;
-  s.welcome_message = update.message.text;
+  const rawText = update.message.text || "";
+  const u = ensureUser(uid);
+
+  // שמירת ההודעה החדשה
+  s.welcome_message = rawText;
   writeJSON(SETTINGS_FILE, s);
   setAdminAwait(uid, null);
 
-  const lang = getAdminLang(uid);
+  // יצירת טקסט לדוגמה עם המשתנים
+  const previewText = renderPlaceholders(rawText, u, uid);
 
+  const lang = getAdminLang(uid);
   const successText =
     lang === "he"
-      ? "✅ הודעת הפתיחה עודכנה בהצלחה!"
-      : "✅ The welcome message has been updated successfully!";
+      ? `✅ הודעת הפתיחה עודכנה בהצלחה!\n\nתצוגה מקדימה:\n${previewText}`
+      : `✅ The welcome message has been updated successfully!\n\nPreview:\n${previewText}`;
 
   await tgPost("sendMessage", {
     chat_id: uid,
