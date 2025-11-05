@@ -1110,7 +1110,7 @@ try {
     if (update.callback_query) {
       const cq   = update.callback_query;
       const uid  = String(cq.from.id);
-      const data = cq.data || "";
+      let data = cq.data || "";
       const lang = getAdminLang(uid);
       const tt   = tFor(lang);
       const msg  = cq.message;
