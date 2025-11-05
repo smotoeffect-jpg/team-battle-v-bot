@@ -1665,7 +1665,8 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
     });
   }
 }
-    else if (action === "broadcast") {
+
+else if (action === "broadcast") {
   setAdminAwait(uid, "broadcast");
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -1699,13 +1700,10 @@ else if (action === "main") {
   await editToMainPanel(msg, lang);
 }
 
-// <== סוף else (admins.includes)
+// סוף else (admins.includes)
 await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
 
-} // <== סוף if (data.startsWith("panel:"))
-
-} // <== סוף ה־if הראשי
-
+    
 // ===== Webhook handler =====
 app.post("/webhook", async (req, res) => {
   try {
