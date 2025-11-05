@@ -780,7 +780,7 @@ async function sendPanel(chatId, lang="en") {
     reply_markup: panelKeyboard(lang)
   });
 }
-async function editToMainPanel(msg, lang="en") {
+async function editToMainPanel(msg, lang = "en") {
   const t = tFor(lang);
   await tgPost("editMessageText", {
     chat_id: msg.chat.id,
@@ -798,34 +798,32 @@ app.post("/webhook", async (req, res) => {
 
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
-// ✅ Handle successful payments (Extra Tap purchases)
-if (update.message?.successful_payment) {
-  try {
-    const sp = update.message.successful_payment;
-    const payload = JSON.parse(sp.invoice_payload || "{}");
-    const { userId, team, stars } = payload;
 
-    if (userId && team && stars && users[userId]) {
-      const u = ensureUser(userId);
-      u.starsDonated = (u.starsDonated || 0) + stars;
-      scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
-      addXpAndMaybeLevelUp(u, stars);
+    // ✅ Handle successful payments (Extra Tap purchases)
+    if (update.message?.successful_payment) {
+      try {
+        const sp = update.message.successful_payment;
+        const payload = JSON.parse(sp.invoice_payload || "{}");
+        const { userId, team, stars } = payload;
 
-      // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
-      u.battleBalance = (u.battleBalance || 0) + stars;
+        if (userId && team && stars && users[userId]) {
+          const u = ensureUser(userId);
+          u.starsDonated = (u.starsDonated || 0) + stars;
+          scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
+          addXpAndMaybeLevelUp(u, stars);
 
-      // שמירה
-      writeJSON(USERS_FILE, users);
-      writeJSON(SCORES_FILE, scores);
+          // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
+          u.battleBalance = (u.battleBalance || 0) + stars;
 
-      console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
-    } else {
-      console.warn("⚠️ Missing fields in successful_payment:", payload);
+          // שומר את הנתונים המעודכנים
+          writeJSON(SCORES_FILE, scores);
+          writeJSON(USERS_FILE, users);
+        }
+      } catch (e) {
+        console.error("Error handling successful payment:", e);
+      }
     }
-  } catch (err) {
-    console.error("❌ Error handling successful_payment:", err);
-  }
-}
+
     // ----- Payments confirmations (NO extra thank-you message here) -----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
@@ -1702,8 +1700,16 @@ else if (action === "main") {
 
 // סוף else (admins.includes)
 await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
+
     } // <== סוגר את if (data.startsWith("panel:"))
   } // <== סוגר את if (update.callback_query)
+
+  } // <== סוגר את try הראשי של ה־Webhook
+  catch (err) {
+    console.error("Webhook error:", err?.response?.data || err.message);
+    res.status(200).send("OK");
+  }
+}); // <== סוגר את app.post("/webhook")
 
 // ===== Health & Webhook setup =====
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
