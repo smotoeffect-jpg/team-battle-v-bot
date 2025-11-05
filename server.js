@@ -1717,13 +1717,13 @@ app.get("/setup-webhook", async (_, res) => {
     const url = `${WEBHOOK_DOMAIN}/webhook`;
     const r = await axios.post(`${TG_API}/setWebhook`, {
       url,
-      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"]
+      allowed_updates: ["message", "callback_query", "pre_checkout_query", "successful_payment"],
     });
     res.send(r.data);
   } catch (e) {
     res.status(500).send(e?.response?.data || e.message);
   }
-});
+}); // 👈 זה הסוגר שהיה חסר!
 
 // ====== Static fallback ======
 app.get("*", (_, res) => {
