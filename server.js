@@ -846,7 +846,82 @@ if (update.message?.successful_payment) {
       const chatId= msg.chat.id;
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
+      
+  // ====== HANDLE WELCOME BUTTONS INPUT (HE + EN) ======
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_buttons" && update.message?.text) {
+  const rawButtons = update.message.text.trim();
+  const parsedButtons = parseButtonsFromAdminText(rawButtons);
 
+  const s = settings;
+  s.welcome_buttons = parsedButtons;
+  writeJSON(SETTINGS_FILE, s);
+  setAdminAwait(uid, null);
+
+  const lang = getAdminLang(uid);
+  const successMsg =
+    lang === "he"
+      ? `✅ כפתורי ההודעה נשמרו בהצלחה!\n\n${parsedButtons.length ? `נוצרו ${parsedButtons.length} שורות כפתורים.` : "לא נמצאו כפתורים."}`
+      : `✅ Message buttons saved successfully!\n\n${parsedButtons.length ? `${parsedButtons.length} button rows created.` : "No buttons found."}`;
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: successMsg,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview",
+            callback_data: "panel:welcome_preview"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
+            callback_data: "panel:welcome"
+          }
+        ]
+      ]
+    }
+  });
+}
+  
+// ====== HANDLE BROADCAST BUTTONS INPUT (HE + EN) ======
+if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast_buttons" && update.message?.text) {
+  const rawButtons = update.message.text.trim();
+  const parsedButtons = parseButtonsFromAdminText(rawButtons);
+
+  settings.broadcast_draft = settings.broadcast_draft || {};
+  settings.broadcast_draft.buttons = parsedButtons;
+  writeJSON(SETTINGS_FILE, settings);
+  setAdminAwait(uid, null);
+
+  const lang = getAdminLang(uid);
+  const successMsg =
+    lang === "he"
+      ? `✅ כפתורי הודעת השידור נשמרו בהצלחה!\n\n${parsedButtons.length ? `נוצרו ${parsedButtons.length} שורות כפתורים.` : "לא נמצאו כפתורים."}`
+      : `✅ Broadcast buttons saved successfully!\n\n${parsedButtons.length ? `${parsedButtons.length} button rows created.` : "No buttons found."}`;
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: successMsg,
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview",
+            callback_data: "panel:bc_send"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
+            callback_data: "panel:bc"
+          }
+        ]
+      ]
+    }
+  });
+}
       // ✅ Handle referral bonus edit
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
   const lang = getAdminLang(uid);
@@ -1563,81 +1638,6 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus" && upd
     else if (action === "main") {
       await editToMainPanel(msg, lang);
     }
-      // ====== HANDLE WELCOME BUTTONS INPUT (HE + EN) ======
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_buttons" && update.message?.text) {
-  const rawButtons = update.message.text.trim();
-  const parsedButtons = parseButtonsFromAdminText(rawButtons);
-
-  const s = settings;
-  s.welcome_buttons = parsedButtons;
-  writeJSON(SETTINGS_FILE, s);
-  setAdminAwait(uid, null);
-
-  const lang = getAdminLang(uid);
-  const successMsg =
-    lang === "he"
-      ? `✅ כפתורי ההודעה נשמרו בהצלחה!\n\n${parsedButtons.length ? `נוצרו ${parsedButtons.length} שורות כפתורים.` : "לא נמצאו כפתורים."}`
-      : `✅ Message buttons saved successfully!\n\n${parsedButtons.length ? `${parsedButtons.length} button rows created.` : "No buttons found."}`;
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: successMsg,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview",
-            callback_data: "panel:welcome_preview"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:welcome"
-          }
-        ]
-      ]
-    }
-  });
-}
-  
-// ====== HANDLE BROADCAST BUTTONS INPUT (HE + EN) ======
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "broadcast_buttons" && update.message?.text) {
-  const rawButtons = update.message.text.trim();
-  const parsedButtons = parseButtonsFromAdminText(rawButtons);
-
-  settings.broadcast_draft = settings.broadcast_draft || {};
-  settings.broadcast_draft.buttons = parsedButtons;
-  writeJSON(SETTINGS_FILE, settings);
-  setAdminAwait(uid, null);
-
-  const lang = getAdminLang(uid);
-  const successMsg =
-    lang === "he"
-      ? `✅ כפתורי הודעת השידור נשמרו בהצלחה!\n\n${parsedButtons.length ? `נוצרו ${parsedButtons.length} שורות כפתורים.` : "לא נמצאו כפתורים."}`
-      : `✅ Broadcast buttons saved successfully!\n\n${parsedButtons.length ? `${parsedButtons.length} button rows created.` : "No buttons found."}`;
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: successMsg,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview",
-            callback_data: "panel:bc_send"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:bc"
-          }
-        ]
-      ]
-    }
-  });
-}
 
   } // <== סוף else (admins.includes)
   await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
