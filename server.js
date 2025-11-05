@@ -461,6 +461,16 @@ function parseButtonsFromAdminText(block) {
 
   return rows;
 }
+function setAdminLang(uid, lang) {
+  if (!adminMeta[uid]) adminMeta[uid] = {};
+  adminMeta[uid].lang = lang;
+  writeJSON(AMETA_FILE, adminMeta);
+}
+function setAdminAwait(uid, what) {
+  if (!adminMeta[uid]) adminMeta[uid] = {};
+  adminMeta[uid].awaiting = what;
+  writeJSON(AMETA_FILE, adminMeta);
+}
 // ====== Double XP helpers ======
 function isDoubleXPOn() {
   return doubleXP.on && doubleXP.endTs > Date.now();
