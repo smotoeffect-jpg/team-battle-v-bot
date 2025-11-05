@@ -1185,6 +1185,18 @@ if (data === "menu:start") {
     });
   }
 }
+  // ===== Handle "menu:" shortcuts (e.g. menu:referral_settings) =====
+else if (data.startsWith("menu:")) {
+  const menuTarget = data.replace("menu:", "");
+  await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(()=>{});
+
+  // הפניה ישירה לתפריטים לפי שם
+  if (menuTarget === "referral_settings") {
+    data = "panel:referral_settings";
+  } else {
+    data = "panel:" + menuTarget;
+  }
+}
      if (data.startsWith("panel:")) {
   if (!admins.includes(uid)) {
     await tgPost("answerCallbackQuery", {
