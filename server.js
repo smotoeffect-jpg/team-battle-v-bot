@@ -1702,10 +1702,11 @@ else if (action === "main") {
 }
 
 // סוף else (admins.includes)
-await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
+  await tgPost("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
 
     } // <== סוגר את if (data.startsWith("panel:"))
   } // <== סוגר את if (update.callback_query)
+} // <== סוגר את try הראשי של app.post("/webhook")
 
 // ====== Health & Webhook setup ======
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
