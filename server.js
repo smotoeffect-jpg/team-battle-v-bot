@@ -27,7 +27,7 @@ const BOT_TOKEN      = process.env.BOT_TOKEN      || "REPLACE_ME_BOT_TOKEN";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
 
 // משחק
 const STAR_TO_POINTS  = 2;
@@ -385,7 +385,7 @@ function parseInitDataHeader(req) {
       const userObj = JSON.parse(sp.get("user"));
       if (userObj?.id) userId = String(userObj.id);
     }
-    const startParam = sp.get("start") || sp.get("start_param") || null;
+    const startParam = sp.get("start_param") || null;
     return { userId, startParam };
   } catch {
     return {};
@@ -630,7 +630,7 @@ app.get("/api/me", (req, res) => {
 
   // ✅ נרמול רשימת הזמנות
   u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
-  u.referrals = (u.referralsList?.length || u.referrals || 0);
+  u.referrals = u.referralsList.length;
 
   // ✅ בונוס יומי
   let justGotDailyBonus = false;
@@ -662,15 +662,7 @@ app.get("/api/me", (req, res) => {
   // ✅ שמירה אחידה
   users[userId] = u;
   writeJSON(USERS_FILE, users);
-// ✅ עדכון כמות מוזמנים בזמן אמת
-if (u.referrer) {
-  const inviter = ensureUser(u.referrer);
-  inviter.referralsList = Array.isArray(inviter.referralsList) ? inviter.referralsList : [];
-  inviter.referrals = inviter.referralsList.length;
-  users[u.referrer] = inviter;
-  writeJSON(USERS_FILE, users);
-}
-  
+
   const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
   // ✅ שליחה חזרה למיני-אפליקציה
   res.json({
@@ -796,41 +788,36 @@ app.post("/webhook", async (req, res) => {
   try {
     const update = req.body;
 
-    // 🩵 תיקון: הגדרת uid ו־lang כבר בהתחלה
-    const uid = String(update.message?.from?.id || update.callback_query?.from?.id || "");
-    const lang = getAdminLang ? getAdminLang(uid) : "he"; // ברירת מחדל לעברית
-
     if (update.message?.from) updateUserProfileFromTG(update.message.from);
     if (update.callback_query?.from) updateUserProfileFromTG(update.callback_query.from);
+// ✅ Handle successful payments (Extra Tap purchases)
+if (update.message?.successful_payment) {
+  try {
+    const sp = update.message.successful_payment;
+    const payload = JSON.parse(sp.invoice_payload || "{}");
+    const { userId, team, stars } = payload;
 
-    // ✅ Handle successful payments (Extra Tap purchases)
-    if (update.message?.successful_payment) {
-      try {
-        const sp = update.message.successful_payment;
-        const payload = JSON.parse(sp.invoice_payload || "{}");
-        const { userId, team, stars } = payload;
+    if (userId && team && stars && users[userId]) {
+      const u = ensureUser(userId);
+      u.starsDonated = (u.starsDonated || 0) + stars;
+      scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
+      addXpAndMaybeLevelUp(u, stars);
 
-        if (userId && team && stars && users[userId]) {
-          const u = ensureUser(userId);
-          u.starsDonated = (u.starsDonated || 0) + stars;
-          scores[team] = (scores[team] || 0) + stars * STAR_TO_POINTS;
-          addXpAndMaybeLevelUp(u, stars);
+      // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
+      u.battleBalance = (u.battleBalance || 0) + stars;
 
-          // 💰 מוסיף למשתמש $BATTLE אחד על כל Star ששולם
-          u.battleBalance = (u.battleBalance || 0) + stars;
+      // שמירה
+      writeJSON(USERS_FILE, users);
+      writeJSON(SCORES_FILE, scores);
 
-          // שמירה
-          writeJSON(USERS_FILE, users);
-          writeJSON(SCORES_FILE, scores);
-
-          console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
-        } else {
-          console.warn("⚠️ Missing fields in successful_payment:", payload);
-        }
-      } catch (err) {
-        console.error("❌ Error handling successful_payment:", err);
-      }
+      console.log(`💎 successful_payment: ${userId} paid ${stars}⭐ → +${stars} Battle to ${team}`);
+    } else {
+      console.warn("⚠️ Missing fields in successful_payment:", payload);
     }
+  } catch (err) {
+    console.error("❌ Error handling successful_payment:", err);
+  }
+}
     // ----- Payments confirmations (NO extra thank-you message here) -----
     if (update.pre_checkout_query) {
       await tgPost("answerPreCheckoutQuery", {
@@ -885,61 +872,8 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
         }
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
-      // === Handle saving Welcome Message text ===
-if (adminMeta[uid]?.awaiting === "welcome_text") {
-  const s = settings;
-  s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
-  writeJSON(SETTINGS_FILE, s);
 
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: lang === "he"
-      ? "✅ ההודעה נשמרה בהצלחה!\n\nלחץ על 'תצוגה מקדימה' כדי לראות איך זה נראה למשתמשים."
-      : "✅ Message saved successfully!\n\nClick 'Preview' to see how it looks to users.",
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "👁 תצוגה מקדימה" : "👁 Preview", callback_data: "welcome_preview" }],
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-      ]
-    }
-  });
-
-  setAdminAwait(uid, null);
-  return;
-}
-// ===== ADMIN: HANDLE WELCOME MESSAGE EDIT =====
-if (admins.includes(uid) && adminMeta[uid]?.awaiting === "welcome_edit") {
-  const s = settings;
-  const rawText = update.message.text || "";
-  const u = ensureUser(uid);
-
-  // שמירת ההודעה החדשה
-  s.welcome_message = rawText;
-  writeJSON(SETTINGS_FILE, s);
-  setAdminAwait(uid, null);
-
-  // יצירת טקסט לדוגמה עם המשתנים
-  const previewText = renderPlaceholders(rawText, u, uid);
-
-  const lang = getAdminLang(uid);
-  const successText =
-    lang === "he"
-      ? `✅ הודעת הפתיחה עודכנה בהצלחה!\n\nתצוגה מקדימה:\n${previewText}`
-      : `✅ The welcome message has been updated successfully!\n\nPreview:\n${previewText}`;
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: successText,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-      ]
-    }
-  });
-}
-      // /start
+     // /start
 if (text.startsWith("/start")) {
   setAdminAwait(uid, null);
 
@@ -1153,74 +1087,24 @@ if (data === "menu:start") {
     }
 
     // ====== Welcome & Broadcast Manager (HE + EN) ======
-    if (action === "welcome") {
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text:
-      lang === "he"
-        ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
-        : "💬 Edit Welcome Message\nChoose what to edit:",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: lang === "he" ? "✏️ טקסט" : "✏️ Text",
-            callback_data: "panel:welcome_text"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons",
-            callback_data: "panel:welcome_buttons"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview Message",
-            callback_data: "panel:welcome_preview"
-          }
-        ],
-        [
-          {
-            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
-            callback_data: "panel:main"
-          }
-        ]
-      ]
+    else if (action === "welcome") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text:
+          lang === "he"
+            ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
+            : "💬 Edit Welcome Message\nChoose what to edit:",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: lang === "he" ? "✏️ טקסט" : "✏️ Text", callback_data: "panel:welcome_text" }],
+            [{ text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons", callback_data: "panel:welcome_buttons" }],
+            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+          ]
+        }
+      });
     }
-  });
-}
 
-      else if (action === "welcome_preview") {
-  const s = settings;
-  const u = ensureUser(uid);
-  const lang = getAdminLang(uid);
-
-  // יצירת טקסט עם המשתנים האישיים של המשתמש
-  const previewText = renderPlaceholders(
-    s.welcome_message || "Welcome %firstname% to TeamBattle!",
-    u,
-    uid
-  );
-
-  // כפתורים אמיתיים מההגדרה
-  const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text:
-      lang === "he"
-        ? `👁️ <b>תצוגה מקדימה של הודעת הפתיחה:</b>\n\n${previewText}`
-        : `👁️ <b>Preview of the current welcome message:</b>\n\n${previewText}`,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: kb.concat([
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
-      ])
-    }
-  });
-}
     else if (action === "welcome_text") {
       setAdminAwait(uid, "welcome_text");
       await tgPost("editMessageText", {
@@ -1361,30 +1245,6 @@ if (data === "menu:start") {
         }
       });
     }
-      // ===== WELCOME MESSAGE EDIT (Multi-language) =====
-else if (action === "welcome_edit") {
-  setAdminAwait(uid, "welcome_edit");
-  const lang = getAdminLang(uid);
-
-  const text =
-    lang === "he"
-      ? "שלח את הודעת הפתיחה החדשה שלך.\n\nניתן להשתמש במשתנים הבאים:\n• %firstname%\n• %lastname%\n• %username%\n• %mention%"
-      : "Please send the new welcome message.\n\nYou can use the following placeholders:\n• %firstname%\n• %lastname%\n• %username%\n• %mention%";
-
-  const backButton =
-    lang === "he" ? "⬅️ חזרה" : "⬅️ Back";
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: backButton, callback_data: "panel:main" }]
-      ]
-    }
-  });
-}
 
     else if (action === "lang") {
       const newLang = lang === "he" ? "en" : "he";
