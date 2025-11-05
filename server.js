@@ -1719,7 +1719,7 @@ app.post("/webhook", async (req, res) => {
 
 // ===== Health & Webhook setup =====
 app.get("/webhook", (_, res) => res.status(405).json({ ok: true }));
-app.get("/healthz",  (_, res) => res.json({ ok: true }));
+app.get("/healthz", (_, res) => res.json({ ok: true }));
 
 app.get("/setup-webhook", async (_, res) => {
   try {
