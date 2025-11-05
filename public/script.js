@@ -383,7 +383,7 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
 
-// === TON Wallet Connect (persistent) ===
+// === TON Wallet Connect (persistent + reliable) ===
 console.log("💎 Initializing TON Connect (persistent mode)...");
 try {
   const TonConnectClass =
@@ -394,7 +394,7 @@ try {
   if (!TonConnectClass) {
     console.error("❌ TON SDK not found in window!");
   } else {
-    // ✅ שמירה קבועה של session ב-localStorage
+    // ✅ יצירת אובייקט TON Connect עם שמירה קבועה ב־localStorage
     const tonConnect = new TonConnectClass({
       manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
       walletsList: [
@@ -412,37 +412,35 @@ try {
         removeItem: (key) => localStorage.removeItem(key)
       }
     });
-// ✅ שומר session של הארנק ב-localStorage כדי שישמר גם אחרי רענון
-tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
-  const wallet = tonConnect.wallet;
-  if (wallet?.account?.address) {
-    const addr = wallet.account.address;
-    document.getElementById("ton-address").textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-    document.getElementById("connect-ton").style.display = "none";
-    console.log("🔁 Restored TON wallet from localStorage:", addr);
-  }
-}).catch(e => console.warn("⚠️ Restore failed:", e));
+
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
-    // ✅ בדיקה אם כבר קיים session שמור
-    const restored = tonConnect.wallet;
-    if (restored?.account?.address) {
-      const addr = restored.account.address;
-      addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
-      connectBtn.style.display = "none";
-      console.log("🔁 Auto-restored TON connection:", addr);
+    // ✅ נוודא שהכפתור קיים ופעיל
+    if (!connectBtn) {
+      console.error("❌ Connect button not found in DOM!");
+    } else {
+      connectBtn.style.display = "inline-block";
     }
 
+    // ✅ פונקציה לחיבור ארנק TON
     async function connectTonWallet() {
       try {
         console.log("💎 Connecting TON wallet...");
-        const wallet = await tonConnect.connect();
-        if (wallet?.account?.address) {
-          const addr = wallet.account.address;
+        const connectedWallet = await tonConnect.connect({
+          universalLink: "https://app.tonkeeper.com/ton-connect"
+        });
+
+        if (connectedWallet?.account?.address) {
+          const addr = connectedWallet.account.address;
           addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
           connectBtn.style.display = "none";
           console.log("✅ Wallet connected:", addr);
+
+          // 💾 שמירה ב־localStorage לשחזור עתידי
+          localStorage.setItem("ton_wallet_address", addr);
+        } else {
+          console.warn("⚠️ Wallet connect returned no address");
         }
       } catch (err) {
         console.error("❌ TON connect error:", err);
@@ -450,7 +448,30 @@ tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
       }
     }
 
-    // מאזין לשינויים במצב חיבור
+    // ✅ שחזור session קיים (כולל גיבוי ל־localStorage)
+    tonConnect.restoreConnection &&
+      tonConnect.restoreConnection()
+        .then(() => {
+          console.log("🔁 Restoring TON wallet from session...");
+          const wallet = tonConnect.wallet;
+          if (wallet?.account?.address) {
+            const addr = wallet.account.address;
+            addressDiv.textContent = `Connected: ${addr.slice(0, 6)}...${addr.slice(-4)}`;
+            connectBtn.style.display = "none";
+            console.log("✅ Restored TON wallet from session:", addr);
+          } else {
+            // 🔍 fallback: נבדוק אם יש שמור ב־localStorage
+            const savedAddr = localStorage.getItem("ton_wallet_address");
+            if (savedAddr) {
+              addressDiv.textContent = `Connected: ${savedAddr.slice(0, 6)}...${savedAddr.slice(-4)}`;
+              connectBtn.style.display = "none";
+              console.log("✅ Restored TON wallet from localStorage:", savedAddr);
+            }
+          }
+        })
+        .catch((e) => console.warn("⚠️ Restore failed:", e));
+
+    // ✅ מאזין לשינויים במצב חיבור
     tonConnect.onStatusChange((wallet) => {
       if (wallet?.account?.address) {
         const addr = wallet.account.address;
@@ -463,7 +484,10 @@ tonConnect.restoreConnection && tonConnect.restoreConnection().then(() => {
       }
     });
 
-    connectBtn.addEventListener("click", connectTonWallet);
+    // ✅ מאזין ללחיצה על הכפתור בפועל
+    if (connectBtn) {
+      connectBtn.addEventListener("click", connectTonWallet);
+    }
   }
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
