@@ -416,46 +416,50 @@ function renderPlaceholders(text, u, uid) {
 
 }
 
+// ✅ Parse admin-defined buttons (multi-line, && per row, popup/alert/share/ref/menu/http)
 function parseButtonsFromAdminText(block) {
   const rows = [];
   if (!block) return rows;
-  const lines = block.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+
+  // מפרק לפי שורות, מדלג על ריקות
+  const lines = block.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
   for (const line of lines) {
-    const parts = line.split("&&").map(p=>p.trim());
+    // מפרק כמה כפתורים באותה שורה (עם &&)
+    const parts = line.split("&&").map(p => p.trim()).filter(Boolean);
     const row = [];
+
     for (let part of parts) {
-      let [btnText, payload] = part.split(/\s*-\s*/);
-      if (!payload) continue;
+      const [btnText, payloadRaw] = part.split(/\s*-\s*/);
+      if (!btnText || !payloadRaw) continue;
+      const payload = payloadRaw.trim();
+
+      // === ניתוח סוג הכפתור ===
       if (/^https?:/i.test(payload) || /^t\.me\//i.test(payload)) {
-        let url = payload.startsWith("http") ? payload : "https://" + payload;
+        // קישור ישיר
+        const url = payload.startsWith("http") ? payload : "https://" + payload;
         row.push({ text: btnText, url });
       } else if (/^popup:/i.test(payload)) {
-        row.push({ text: btnText, callback_data: "popup:" + payload.replace(/^popup:/i,"").trim() });
+        row.push({ text: btnText, callback_data: "popup:" + payload.replace(/^popup:/i, "").trim() });
       } else if (/^alert:/i.test(payload)) {
-        row.push({ text: btnText, callback_data: "alert:" + payload.replace(/^alert:/i,"").trim() });
+        row.push({ text: btnText, callback_data: "alert:" + payload.replace(/^alert:/i, "").trim() });
       } else if (/^share:/i.test(payload)) {
-        row.push({ text: btnText, switch_inline_query: payload.replace(/^share:/i,"").trim() });
+        row.push({ text: btnText, switch_inline_query: payload.replace(/^share:/i, "").trim() });
       } else if (/^menu:/i.test(payload)) {
-        row.push({ text: btnText, callback_data: "menu:" + payload.replace(/^menu:/i,"").trim() });
-      } else if (/^ref:/i.test(payload)) {
-        row.push({ text: btnText, callback_data: "referral" });
+        row.push({ text: btnText, callback_data: "menu:" + payload.replace(/^menu:/i, "").trim() });
+      } else if (/^ref/i.test(payload)) {
+        // גם ref וגם ref: ייתפסו
+        row.push({ text: btnText, callback_data: "ref" });
       } else {
+        // כל דבר אחר – callback רגיל
         row.push({ text: btnText, callback_data: payload });
       }
     }
+
     if (row.length) rows.push(row);
   }
+
   return rows;
-}
-function setAdminLang(uid, lang) {
-  if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].lang = lang;
-  writeJSON(AMETA_FILE, adminMeta);
-}
-function setAdminAwait(uid, what) {
-  if (!adminMeta[uid]) adminMeta[uid] = {};
-  adminMeta[uid].awaiting = what;
-  writeJSON(AMETA_FILE, adminMeta);
 }
 // ====== Double XP helpers ======
 function isDoubleXPOn() {
