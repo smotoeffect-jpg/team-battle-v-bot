@@ -1125,24 +1125,74 @@ if (data === "menu:start") {
     }
 
     // ====== Welcome & Broadcast Manager (HE + EN) ======
-    else if (action === "welcome") {
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text:
-          lang === "he"
-            ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
-            : "💬 Edit Welcome Message\nChoose what to edit:",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: lang === "he" ? "✏️ טקסט" : "✏️ Text", callback_data: "panel:welcome_text" }],
-            [{ text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons", callback_data: "panel:welcome_buttons" }],
-            [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-          ]
-        }
-      });
+    if (action === "welcome") {
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text:
+      lang === "he"
+        ? "💬 עריכת הודעת פתיחה\nבחר מה ברצונך לערוך:"
+        : "💬 Edit Welcome Message\nChoose what to edit:",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: lang === "he" ? "✏️ טקסט" : "✏️ Text",
+            callback_data: "panel:welcome_text"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "🎛️ כפתורים" : "🎛️ Buttons",
+            callback_data: "panel:welcome_buttons"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "👁️ תצוגה מקדימה" : "👁️ Preview Message",
+            callback_data: "panel:welcome_preview"
+          }
+        ],
+        [
+          {
+            text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back",
+            callback_data: "panel:main"
+          }
+        ]
+      ]
     }
+  });
+}
 
+      else if (action === "welcome_preview") {
+  const s = settings;
+  const u = ensureUser(uid);
+  const lang = getAdminLang(uid);
+
+  // יצירת טקסט עם המשתנים האישיים של המשתמש
+  const previewText = renderPlaceholders(
+    s.welcome_message || "Welcome %firstname% to TeamBattle!",
+    u,
+    uid
+  );
+
+  // כפתורים אמיתיים מההגדרה
+  const kb = Array.isArray(s.welcome_buttons) ? s.welcome_buttons : [];
+
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text:
+      lang === "he"
+        ? `👁️ <b>תצוגה מקדימה של הודעת הפתיחה:</b>\n\n${previewText}`
+        : `👁️ <b>Preview of the current welcome message:</b>\n\n${previewText}`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: kb.concat([
+        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:welcome" }]
+      ])
+    }
+  });
+}
     else if (action === "welcome_text") {
       setAdminAwait(uid, "welcome_text");
       await tgPost("editMessageText", {
