@@ -840,7 +840,30 @@ if (update.message?.successful_payment) {
       const chatId= msg.chat.id;
       const text  = (msg.text || "").trim();
       const uid   = String(msg.from.id);
+      
+        // === Handle saving Welcome Message text ===
+if (admins.includes(uid) && adminMeta[uid]?.awaiting ==== "welcome_text") {
+  const s = settings;
+  s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
+  writeJSON(SETTINGS_FILE, s);
 
+  await tgPost("sendMessage", {
+    chat_id: uid,
+    text: lang === "he"
+      ? "✅ ההודעה נשמרה בהצלחה!\n\nלחץ על 'תצוגה מקדימה' כדי לראות איך זה נראה למשתמשים."
+      : "✅ Message saved successfully!\n\nClick 'Preview' to see how it looks to users.",
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: lang === "he" ? "👁 תצוגה מקדימה" : "👁 Preview", callback_data: "welcome_preview" }],
+        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
+      ]
+    }
+  });
+setAdminAwait(uid, null);
+  return;
+  }
+      
       // ✅ Handle referral bonus edit
 if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
   const lang = getAdminLang(uid);
@@ -880,25 +903,7 @@ if (admins.includes(uid) && adminMeta[uid]?.awaiting === "referral_bonus") {
         }
         await tgPost("sendMessage", { chat_id: uid, text: tt.bc_done(ok,fail) });
       }
-      // === Handle saving Welcome Message text ===
-if (adminMeta[uid]?.awaiting === "welcome_text") {
-  const s = settings;
-  s.welcome_message = text; // שומר את ההודעה שהמנהל שלח
-  writeJSON(SETTINGS_FILE, s);
-
-  await tgPost("sendMessage", {
-    chat_id: uid,
-    text: lang === "he"
-      ? "✅ ההודעה נשמרה בהצלחה!\n\nלחץ על 'תצוגה מקדימה' כדי לראות איך זה נראה למשתמשים."
-      : "✅ Message saved successfully!\n\nClick 'Preview' to see how it looks to users.",
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: lang === "he" ? "👁 תצוגה מקדימה" : "👁 Preview", callback_data: "welcome_preview" }],
-        [{ text: lang === "he" ? "⬅️ חזרה" : "⬅️ Back", callback_data: "panel:main" }]
-      ]
-    }
-  });
+     
 
   setAdminAwait(uid, null);
   return;
