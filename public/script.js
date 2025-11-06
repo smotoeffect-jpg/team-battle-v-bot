@@ -423,17 +423,17 @@ try {
       connectBtn.style.display = "inline-block";
     }
 
-    // ✅ פונקציה לחיבור ארנק TON
-    async function connectTonWallet() {
+    // ✅ פונקציה לחיבור ארנק TON (גרסה מתוקנת עם הפנייה מלאה)
+async function connectTonWallet() {
   try {
     console.log("💎 Connecting TON wallet...");
 
-    // ✳️ בקשה לחיבור
     const connectedWallet = await tonConnect.connect({
+      manifestUrl: "https://team-battle-v-bot.onrender.com/tonconnect-manifest.json",
+      bridgeUrl: "https://bridge.tonapi.io/bridge",
       universalLink: "https://app.tonkeeper.com/ton-connect/v2"
     });
 
-    // 🧩 בדיקה תקינה של כתובת
     const addr = connectedWallet?.account?.address;
     if (!addr) {
       console.warn("⚠️ Wallet connect returned no address");
