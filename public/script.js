@@ -482,3 +482,59 @@ try {
   console.error("❌ TON Connect initialization failed:", err);
 }
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
+
+
+// TB_BOOTSTRAP_V15 - non-invasive UI wiring
+(function(){
+  try{
+    const qs = (s)=>document.querySelector(s);
+    const scoreIL = qs('#score-israel'), scoreGA = qs('#score-gaza');
+    const balanceEl = qs('#battle-balance'), incomeEl = qs('#battle-income');
+    const tapBtn = qs('#tap-btn');
+    const upgradesToggle = qs('#upgrades-toggle'), upgradesSection = qs('#upgrades-section');
+    const myTeamToggle = qs('#myteam-toggle'), myTeamSection = qs('#myteam-section');
+    const urlParams = new URLSearchParams(location.search);
+    const userId = urlParams.get('uid') || localStorage.getItem('tb_userId') || String(Math.floor(Math.random()*1e9));
+    localStorage.setItem('tb_userId', userId);
+    window.TB_USER_ID = userId;
+
+    function setTxt(){
+      if (tapBtn) tapBtn.textContent = (window.I18N?I18N.t('tap'):'TAP');
+      if (upgradesToggle) upgradesToggle.textContent = (window.I18N?I18N.t('upgrades'):'Upgrades');
+      if (myTeamToggle) myTeamToggle.textContent = (window.I18N?I18N.t('myTeam'):'My Team');
+    }
+    setTxt();
+
+    upgradesToggle && upgradesToggle.addEventListener('click', ()=> upgradesSection && upgradesSection.toggleAttribute('hidden'));
+    myTeamToggle && myTeamToggle.addEventListener('click', ()=> myTeamSection && myTeamSection.toggleAttribute('hidden'));
+
+    async function snapshot(){
+      const r = await fetch(`/api/user/${userId}`);
+      const j = await r.json();
+      if (scoreIL) scoreIL.textContent = (j.scores && j.scores.israel)||0;
+      if (scoreGA) scoreGA.textContent = (j.scores && j.scores.gaza)||0;
+      if (balanceEl) balanceEl.textContent = `$Battle: ${Math.floor((j.user&&j.user.battle)||0)}`;
+      if (incomeEl) incomeEl.textContent = `| Income: ${(j.user&&j.user.incomePerSec)||0}/sec`;
+      if (window.TB_Upgrades && upgradesSection) window.TB_Upgrades.render(j.user, userId);
+      if (window.TB_MyTeam && myTeamSection) window.TB_MyTeam.render(j.user, userId);
+    }
+
+    scoreIL && scoreIL.closest('button') && scoreIL.closest('button').addEventListener('click', ()=> chooseTeam('israel'));
+    scoreGA && scoreGA.closest('button') && scoreGA.closest('button').addEventListener('click', ()=> chooseTeam('gaza'));
+    async function chooseTeam(team){
+      await fetch(`/api/user/${userId}/team`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ team })});
+      snapshot();
+    }
+
+    tapBtn && tapBtn.addEventListener('click', async ()=>{
+      tapBtn.disabled=true;
+      try{
+        await fetch(`/api/user/${userId}/tap`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ amount:1 })});
+        snapshot();
+      } finally { tapBtn.disabled=false; }
+    });
+
+    setInterval(snapshot, 1000);
+    snapshot();
+  }catch(e){ console.warn('TB_BOOTSTRAP_V15', e); }
+})();
