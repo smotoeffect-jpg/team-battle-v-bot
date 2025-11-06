@@ -5,7 +5,7 @@ window.TB_Upgrades=(function(){
   const el = { list: document.createElement('div') };
   host.appendChild(el.list);
 
-  const STARS = {}; // products from server with prices/durations
+  const STARS = {}; // prices/durations
   async function loadStars(){
     try{ const r = await fetch('/api/stars/products'); Object.assign(STARS, await r.json()); }catch(e){}
   }
