@@ -1721,7 +1721,6 @@ app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${
 
 
 // --- TB_V15 STORAGE ---
-const fs = require('fs');
 const path = require('path');
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const USERS_PATH = path.join(DATA_DIR, 'users.json');
