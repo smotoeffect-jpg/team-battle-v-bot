@@ -266,56 +266,39 @@ body{
   text-align: right;
 }
 
-/* === Team Selection Text === */
-.team-hint {
-  text-align: center;
-  color: #ff00aa; /* ניאון ורוד */
-  font-size: 22px;
-  margin: 15px 0 5px 0;
-  text-shadow: 0 0 10px #ff00aa, 0 0 20px #ff00aa;
-  font-weight: bold;
-}
-/* === Selected Team Highlight === */
-.flag-selected {
-  outline: 3px solid #ff007f;       /* ורוד ניאון */
-  box-shadow: 0 0 15px #ff007f, 0 0 30px rgba(255, 0, 127, 0.6);
-  border-radius: 12px;
-  transform: scale(1.05);
-  transition: all 0.25s ease;
-}
-
-.flag-selected:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 25px #ff33aa, 0 0 40px rgba(255, 51, 170, 0.8);
-}
 
 /* ============================================
    TB_V15 — Team Select minimal additions only
    (No changes to sizes, spacing, or layout)
    ============================================ */
 
-/* Hint text above the team cards */
-.team-hint{
+/* ============================================
+   TB_V15 — Team Select styles (final clean)
+   ============================================ */
+
+/* טקסט לבחירת קבוצה */
+.team-hint {
   text-align: center;
-  color: #fff;          /* white as requested */
-  font-size: 16px;      /* smaller than titles */
-  margin: 15px 0 6px 0; /* gentle spacing */
-  text-shadow: 0 0 4px rgba(255, 0, 170, 0.35); /* subtle neon */
+  color: #fff;             /* לבן */
+  font-size: 16px;         /* קטן יותר */
+  margin: 15px 0 6px 0;
+  text-shadow: 0 0 4px rgba(255, 0, 170, 0.35);
   font-weight: 500;
 }
 
-/* Make existing team cards clickable without changing their size */
-.team-card{
+/* מלבני קבוצה לחיצים */
+.team-card {
   cursor: pointer;
-  transition: box-shadow .20s ease, transform .20s ease;
+  transition: box-shadow .2s ease, transform .2s ease;
 }
 
-/* Selected team — soft pink glow (subtle) */
-.flag-selected{
-  box-shadow: 0 0 8px rgba(255, 0, 170, 0.40), 0 0 14px rgba(255, 0, 170, 0.20);
+/* קבוצה נבחרת — ניאון ורוד עדין */
+.flag-selected {
+  box-shadow: 0 0 8px rgba(255, 0, 170, 0.4),
+              0 0 14px rgba(255, 0, 170, 0.2);
   border: 1px solid rgba(255, 0, 170, 0.25);
   transform: translateY(-1px);
-  border-radius: 12px;  /* decorative only; does not affect layout */
+  border-radius: 12px;
 }
 
 /* Keep legacy clickable score cards working too (if used) */
