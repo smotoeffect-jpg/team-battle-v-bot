@@ -581,36 +581,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedFlag) savedFlag.classList.add("flag-selected");
   }
 
-  // ===== Team Selection Function =====
   async function selectTeam(team) {
-    try {
-      const res = await fetch(`/api/user/${telegramUserId}/team`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team })
-      });
+  try {
+    // שמירה מקומית מיידית
+    localStorage.setItem("tb_team", team);
 
-      const data = await res.json();
-      if (!data.ok) {
-        console.warn("❌ Team select failed:", data.error);
-        return;
-      }
+    // עיצוב מיידי
+    document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
+      el.classList.remove("flag-selected");
+    });
+    const selectedFlag = document.getElementById(`flag-${team}`);
+    if (selectedFlag) selectedFlag.classList.add("flag-selected");
 
+    // שליחת בקשה לשרת
+    const res = await fetch(`/api/user/${telegramUserId}/team`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ team })
+    });
+    const data = await res.json();
+    if (data.ok) {
       console.log(`✅ Team selected: ${data.team}`);
-      localStorage.setItem("tb_team", team);
-
-      // הסרת הדגשה קיימת מהדגלים
-      document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
-        el.classList.remove("flag-selected");
-      });
-
-      // הוספת הדגשה לדגל שנבחר
-      const selectedFlag = document.getElementById(`flag-${team}`);
-      if (selectedFlag) selectedFlag.classList.add("flag-selected");
-
       await refreshAll();
-    } catch (err) {
-      console.error("⚠️ Team select error:", err);
+    } else {
+      console.warn("❌ Team select failed:", data.error);
     }
+  } catch (err) {
+    console.error("⚠️ Team select error:", err);
   }
+}
 }); // ✅ ← סגירה יחידה וסופית של ה-DOMContentLoaded
