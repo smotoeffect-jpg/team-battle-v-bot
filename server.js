@@ -562,6 +562,23 @@ app.post("/api/super", (req, res) => {
   return res.json({ ok: false, message: "Super Boost disabled" });
 });
 
+// ===== Team Selection =====
+app.post("/api/user/:id/team", (req, res) => {
+  const userId = req.params.id;
+  const { team } = req.body;
+
+  if (!["israel", "gaza"].includes(team)) {
+    return res.status(400).json({ ok: false, error: "invalid team" });
+  }
+
+  const u = ensureUser(userId);
+  u.team = team;
+  writeJSON(USERS_FILE, users);
+
+  console.log(`✅ User ${userId} joined team ${team}`);
+  res.json({ ok: true, team });
+});
+
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
 app.post("/api/create-invoice", async (req, res) => {
