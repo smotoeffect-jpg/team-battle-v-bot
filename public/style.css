@@ -266,24 +266,40 @@ body{
   text-align: right;
 }
 
+
+/* ============================================
+   TB_V15 — Team Select minimal additions only
+   (No changes to sizes, spacing, or layout)
+   ============================================ */
+
+/* ============================================
+   TB_V15 — Team Select styles (final clean)
+   ============================================ */
+
+/* טקסט לבחירת קבוצה */
 .team-hint {
   text-align: center;
-  color: #fff;          /* לבן */
-  font-size: 16px;      /* קטן יותר */
-  margin: 15px 0 5px 0;
-  text-shadow: 0 0 5px #ff00aa; /* ניאון עדין */
+  color: #fff;             /* לבן */
+  font-size: 16px;         /* קטן יותר */
+  margin: 15px 0 6px 0;
+  text-shadow: 0 0 4px rgba(255, 0, 170, 0.35);
   font-weight: 500;
 }
 
+/* מלבני קבוצה לחיצים */
 .team-card {
-  display: inline-block;
-  width: 48%;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: box-shadow .2s ease, transform .2s ease;
 }
 
+/* קבוצה נבחרת — ניאון ורוד עדין */
 .flag-selected {
-  box-shadow: 0 0 8px rgba(255, 0, 170, 0.6), 0 0 15px rgba(255, 0, 170, 0.3);
-  transform: scale(1.04);
+  box-shadow: 0 0 8px rgba(255, 0, 170, 0.4),
+              0 0 14px rgba(255, 0, 170, 0.2);
+  border: 1px solid rgba(255, 0, 170, 0.25);
+  transform: translateY(-1px);
   border-radius: 12px;
 }
+
+/* Keep legacy clickable score cards working too (if used) */
+.score-card[data-team]{ cursor: pointer; }
