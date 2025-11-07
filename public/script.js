@@ -179,6 +179,12 @@ const i18n = {
     const s=localStorage.getItem('tb_lang');
     if(s) setLang(s); else { const t=(navigator.language||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); }
   })();
+// שמירת הדגשה מהבחירה הקודמת
+const savedTeam = localStorage.getItem("tb_team");
+if (savedTeam) {
+  const savedFlag = document.getElementById(`flag-${savedTeam}`);
+  if (savedFlag) savedFlag.classList.add("flag-selected");
+}
 
   // ===== API helpers =====
   if (window.Telegram?.WebApp?.initData) {
