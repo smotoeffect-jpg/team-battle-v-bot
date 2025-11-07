@@ -29,10 +29,25 @@ body{
 .btn-pink{background:linear-gradient(180deg,#ff4dc4,#e028a5); box-shadow: 0 0 16px rgba(255,77,196,.35)}
 .btn-gray{background:#2a2a3f}
 .btn-gold{background:linear-gradient(180deg,#ffd76b,#c9a23b); color:#000; font-weight:900; box-shadow: var(--gold-glow)}
-.scores-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px}
-.score-card{background:var(--panel);border-radius:12px;padding:14px 12px;text-align:center;border:1px solid rgba(255,255,255,.06)}
-.score-label{font-size:14px;color:var(--muted)}
-.score-value{font-size:28px;font-weight:900;margin-top:6px}
+.scores-row {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+
+.score-card {
+  flex: 1;
+  text-align: center;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 16px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.25s ease;
+}
+.score-label{ font-size:14px;color:var(--muted)}
+.score-value{ font-size:28px;font-weight:900;margin-top:6px}
 .row{display:flex;gap:10px;justify-content:center;align-items:center;margin:10px 0}
 .extra-tap .stars-input{width:110px;border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.14);background:#0f0f1a;color:#fff}
 .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
@@ -289,9 +304,8 @@ body{
 /* מלבני קבוצה לחיצים */
 .team-card {
   cursor: pointer;
-  transition: box-shadow .2s ease, transform .2s ease;
+  transition: transform .25s ease, box-shadow .25s ease;
 }
-
 /* קבוצה נבחרת — ניאון ורוד עדין */
 .flag-selected {
   box-shadow: 0 0 8px rgba(255, 0, 170, 0.4),
