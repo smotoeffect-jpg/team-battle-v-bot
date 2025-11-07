@@ -491,7 +491,7 @@ try {
             console.log("✅ Wallet connected via injected provider:", addr);
             return;
           }
-        }
+} // 👈 תוסיף את הסוגר הזה כאן
 
         // ✅ אחרת — פתיחת Tonkeeper עם redirect חזרה לאפליקציה
         const link = tonConnect.connect({
