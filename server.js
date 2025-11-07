@@ -1430,11 +1430,11 @@ else if (data.startsWith("menu:")) {
               { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
               { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
             ],
-            [{ text: tt.back, callback_data: "panel:main" }]
-          ]
-        }
-      });
-    }
+               [{ text: tt.back, callback_data: "panel:main" }]
+  ]
+});
+}
+
 
     else if (action === "reset_daily") {
       const today = todayStr();
@@ -1445,7 +1445,6 @@ else if (data.startsWith("menu:")) {
       }
       writeJSON(USERS_FILE, users);
       await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-    
       }
     }
 
