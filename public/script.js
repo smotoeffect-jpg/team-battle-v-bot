@@ -607,15 +607,15 @@ async function selectTeam(team) {
   }
 
   // מעדכן הדגשה ו־UI
-  document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
-    el.classList.remove("flag-selected");
-  });
+document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
+  el.classList.remove("flag-selected");
+});
 
-  const selectedFlag = document.getElementById(`score-${team}`);
-  if (selectedFlag) selectedFlag.classList.add("flag-selected");
+const selectedFlag = document.getElementById(`flag-${team}`);
+if (selectedFlag) selectedFlag.classList.add("flag-selected");
 
-  // מרענן נתונים מיד אחרי בחירה
-  await refreshAll();
+// מרענן נתונים מיד אחרי בחירה
+await refreshAll();
 }
 
 // ✅ טוען קבוצה שמורה כשנטען ה־DOM
