@@ -595,6 +595,5 @@ async function selectTeam(team) {
       console.warn("❌ Team select failed:", data.error);
     }
   } catch (err) {
-    console.error("⚠️ Team select error:", err);
-  }
-}
+ console.error("⚠️ Team select error:", err);
+});
