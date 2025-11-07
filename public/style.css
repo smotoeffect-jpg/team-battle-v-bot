@@ -276,6 +276,8 @@ body{
 }
 
 .team-card {
+  display: inline-block;
+  width: 48%;
   cursor: pointer;
   transition: all 0.25s ease;
 }
