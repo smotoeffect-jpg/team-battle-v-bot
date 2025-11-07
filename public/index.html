@@ -29,19 +29,20 @@
       </div>
     </div>
 
-    <p id="choose-team" data-i18n="chooseTeam" class="team-hint">
-  בחר את הקבוצה שלך
-</p>
-    <section class="scores-row">
-      <div class="score-card" id="score-israel">
-        <div class="score-label" data-i18n="israel">Israel</div>
-        <div class="score-value" id="score-israel-value">0</div>
-      </div>
-      <div class="score-card" id="score-gaza">
-        <div class="score-label" data-i18n="gaza">Gaza</div>
-        <div class="score-value" id="score-gaza-value">0</div>
-      </div>
-    </section>
+    <!-- === Team Selection Area === -->
+<section class="scores-row">
+  <div class="team-hint" data-i18n="chooseTeam">בחר את הקבוצה שלך</div>
+
+  <div class="score-card team-card" id="flag-israel">
+    <div class="score-label" data-i18n="israel">🇮🇱 ישראל</div>
+    <div class="score-value" id="score-israel-value">0</div>
+  </div>
+
+  <div class="score-card team-card" id="flag-gaza">
+    <div class="score-label" data-i18n="gaza">🇵🇸 עזה</div>
+    <div class="score-value" id="score-gaza-value">0</div>
+  </div>
+</section>
 
     <!-- === Main Action Buttons === -->
     <div class="action-row">
