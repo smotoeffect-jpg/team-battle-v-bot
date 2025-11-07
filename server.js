@@ -564,24 +564,9 @@ u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
 });
 
 app.post("/api/super", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
-  const u = ensureUser(userId);
-  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
-  const today = todayStr();
-  if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
-  if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
-  u.superUsed += 1;
-  scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
-  // 💰 בונוס $BATTLE על סופר־בוסט
-  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_SUPER;
-  addXpAndMaybeLevelUp(u, SUPER_POINTS * (isDoubleXPOn()?2:1));
-  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
-  if (u.history.length > 200) u.history.shift();
-  writeJSON(USERS_FILE, users);
-  writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
+  return res.json({ ok: false, message: "Super Boost disabled" });
 });
+
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
 app.post("/api/create-invoice", async (req, res) => {
