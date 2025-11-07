@@ -98,12 +98,61 @@ if (window.Telegram?.WebApp?.initData) {
   console.log("✅ Active userId:", telegramUserId);
 console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
-  // ====== Translations ======
-  const i18n = {
-    en:{israel:"Israel",gaza:"Gaza",tap:"Tap (+1)",superBoost:"Super Boost (+25)",switchTeam:"Switch Team",extraTap:"Extra Tap",myBoard:"My Board",stars:"Stars / Extra Tap",playerLevel:"Player Level",referrals:"Invited Friends",tapsToday:"Taps today",top20:"Top 20",copied:"Copied!",err:"Something went wrong",partnerTitle:"Affiliate Program",copy:"Copy Link"},
-    he:{israel:"ישראל",gaza:"עזה",tap:"טאפ (+1)",superBoost:"סופר בוסט (+25)",switchTeam:"החלף קבוצה",extraTap:"Extra Tap",myBoard:"הלוח שלי",stars:"כוכבים / Extra Tap",playerLevel:"רמת שחקן",referrals:"מוזמנים",tapsToday:"טאפים היום",top20:"טופ 20",copied:"הועתק!",err:"אירעה שגיאה",partnerTitle:"תוכנית שותפים",copy:"העתק קישור"},
-    ar:{israel:"إسرائيل",gaza:"غزة",tap:"انقر (+1)",superBoost:"دفعة قوية (+25)",switchTeam:"بدّل الفريق",extraTap:"Extra Tap",myBoard:"لوحتي",stars:"نجوم / Extra Tap",playerLevel:"مستوى اللاعب",referrals:"الأصدقاء المدعوون",tapsToday:"نقرات اليوم",top20:"أفضل 20",copied:"تم النسخ!",err:"حدث خطأ ما",partnerTitle:"برنامج الإحالة",copy:"انسخ الرابط"}
-  };
+ // ====== Translations ======
+const i18n = {
+  en: {
+    israel: "Israel",
+    gaza: "Gaza",
+    tap: "Tap (+1)",
+    switchTeam: "Switch Team",
+    extraTap: "Extra Tap",
+    myBoard: "My Board",
+    stars: "Stars / Extra Tap",
+    playerLevel: "Player Level",
+    referrals: "Invited Friends",
+    tapsToday: "Taps today",
+    top20: "Top 20",
+    copied: "Copied!",
+    err: "Something went wrong",
+    partnerTitle: "Affiliate Program",
+    copy: "Copy Link"
+  },
+  he: {
+    israel: "ישראל",
+    gaza: "עזה",
+    tap: "טאפ (+1)",
+    switchTeam: "החלף קבוצה",
+    extraTap: "Extra Tap",
+    myBoard: "הלוח שלי",
+    stars: "כוכבים / Extra Tap",
+    playerLevel: "רמת שחקן",
+    referrals: "מוזמנים",
+    tapsToday: "טאפים היום",
+    top20: "טופ 20",
+    copied: "הועתק!",
+    err: "אירעה שגיאה",
+    partnerTitle: "תוכנית שותפים",
+    copy: "העתק קישור"
+  },
+  ar: {
+    israel: "إسرائيل",
+    gaza: "غزة",
+    tap: "انقر (+1)",
+    switchTeam: "بدّل الفريق",
+    extraTap: "Extra Tap",
+    myBoard: "لوحتي",
+    stars: "نجوم / Extra Tap",
+    playerLevel: "مستوى اللاعب",
+    referrals: "الأصدقاء المدعوون",
+    tapsToday: "نقرات اليوم",
+    top20: "أفضل 20",
+    copied: "تم النسخ!",
+    err: "حدث خطأ ما",
+    partnerTitle: "برنامج الإحالة",
+    copy: "انسخ الرابط"
+  }
+};
+
 
   function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
   function setLang(l){
@@ -322,9 +371,6 @@ async function handleAction(type, xpGain) {
 const btnTap = document.getElementById('btn-tap');
 if (btnTap) btnTap.addEventListener('click', () => handleAction('tap', 1));
 
-// 💥 Super Boost
-const btnSuper = document.getElementById('btn-super');
-if (btnSuper) btnSuper.addEventListener('click', () => handleAction('super', 25));
 
   // ✨ אפקט ויזואלי קל לעדכון XP
 function flashXP() {
