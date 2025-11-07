@@ -31,14 +31,12 @@ const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
 
 // משחק
 const STAR_TO_POINTS  = 2;
-const SUPER_POINTS    = 25;
 const DAILY_TAPS      = 300;
 const AFFILIATE_BONUS = 0.10; // (שמורה לעתיד; אין חישוב אוטומטי כרגע)
 
 // === BATTLE (virtual token) rules ===
 const BATTLE_RULES = {
   PER_TAP: 0.01,       // כל Tap מוסיף 0.01 $BATTLE
-  PER_SUPER: 0.25,     // כל Super Boost מוסיף 0.25 $BATTLE
   DAILY_BONUS: 5       // בונוס כניסה יומית
 };
 
@@ -153,7 +151,6 @@ const PANEL_TEXTS_DEFAULT = {
     users_export_done: "✅ CSV sent.",
     bonuses_title: "🎁 Bonuses & resets",
     reset_daily: "♻️ Reset daily limits (all)",
-    reset_super: "♻️ Reset super-boost (all)",
     bonus_israel: "➕ +25 to 🇮🇱",
     bonus_gaza: "➕ +25 to 🇵🇸",
     done: "✅ Done.",
@@ -203,7 +200,6 @@ const PANEL_TEXTS_DEFAULT = {
     users_export_done: "✅ נשלח.",
     bonuses_title: "🎁 בונוסים ואיפוסים",
     reset_daily: "♻️ איפוס מגבלות יומיות (לכולם)",
-    reset_super: "♻️ איפוס סופר־בוסט (לכולם)",
     bonus_israel: "➕ +25 ל🇮🇱",
     bonus_gaza: "➕ +25 ל🇵🇸",
     done: "✅ בוצע.",
@@ -255,7 +251,6 @@ function ensureUser(userId) {
     users[userId] = {
       team: null,
       tapsDate: null, tapsToday: 0,
-      superDate: null, superUsed: 0,
       refBy: null,
       referrals: 0,
       referrer: null,
@@ -563,25 +558,6 @@ u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
   });
 });
 
-app.post("/api/super", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
-  const u = ensureUser(userId);
-  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
-  const today = todayStr();
-  if (u.superDate !== today) { u.superDate = today; u.superUsed = 0; }
-  if (u.superUsed >= 1) return res.json({ ok:false, error:"limit", limit:1 });
-  u.superUsed += 1;
-  scores[u.team] = (scores[u.team] || 0) + SUPER_POINTS;
-  // 💰 בונוס $BATTLE על סופר־בוסט
-  u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_SUPER;
-  addXpAndMaybeLevelUp(u, SUPER_POINTS * (isDoubleXPOn()?2:1));
-  u.history.push({ ts: nowTs(), type: "super", points: SUPER_POINTS, team: u.team, xp: SUPER_POINTS });
-  if (u.history.length > 200) u.history.shift();
-  writeJSON(USERS_FILE, users);
-  writeJSON(SCORES_FILE, scores);
-  res.json({ ok:true, scores, superUsed: u.superUsed, limit:1 });
-});
 
 // ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
 app.post("/api/create-invoice", async (req, res) => {
@@ -685,7 +661,6 @@ app.get("/api/me", (req, res) => {
       userId,
       team: u.team,
       tapsToday: u.tapsToday || 0,
-      superUsed: u.superUsed || 0,
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
       battleBalance: u.battleBalance || 0, // 💰 יתרת $BATTLE
@@ -1451,8 +1426,7 @@ else if (data.startsWith("menu:")) {
         reply_markup: {
           inline_keyboard: [
             [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
-            [{ text: tt.reset_super, callback_data: "panel:reset_super" }],
-            [
+           [
               { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
               { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
             ],
@@ -1471,25 +1445,7 @@ else if (data.startsWith("menu:")) {
       }
       writeJSON(USERS_FILE, users);
       await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-    }
-
-    else if (action === "reset_super") {
-      const today = todayStr();
-      for (const k of Object.keys(users)) {
-        const u = users[k];
-        u.superDate = today;
-        u.superUsed = 0;
-      }
-      writeJSON(USERS_FILE, users);
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-    }
-
-    else if (action === "bonus") {
-      const team = extra;
-      if (team === "israel" || team === "gaza") {
-        scores[team] = (scores[team] || 0) + SUPER_POINTS;
-        writeJSON(SCORES_FILE, scores);
-        await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+    
       }
     }
 
