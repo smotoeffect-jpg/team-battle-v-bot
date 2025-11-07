@@ -566,7 +566,10 @@ document.addEventListener("DOMContentLoaded", () => {
     flagGaza.addEventListener("click", () => selectTeam("gaza"));
   }
 
- async function selectTeam(team) {
+}); // ← סוגר את כל ה-DOMContentLoaded
+
+// ====== Team Selection ======
+async function selectTeam(team) {
   try {
     const res = await fetch(`/api/user/${telegramUserId}/team`, {
       method: "POST",
@@ -578,7 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log(`✅ Team selected: ${data.team}`);
       localStorage.setItem("tb_team", team);
 
-      // הסרת הדגשה קיימת מהדגלים
+      // הסרת הדגשה קיימת מדגלים
       document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
         el.classList.remove("flag-selected");
       });
@@ -595,6 +598,3 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("⚠️ Team select error:", err);
   }
 }
-
-
-}); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
