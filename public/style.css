@@ -283,7 +283,7 @@ body{
 }
 
 .flag-selected {
-  box-shadow: 0 0 15px #ff00aa, 0 0 25px #ff00aa;
-  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(255, 0, 170, 0.6), 0 0 15px rgba(255, 0, 170, 0.3);
+  transform: scale(1.04);
   border-radius: 12px;
 }
