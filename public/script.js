@@ -594,8 +594,7 @@ async function selectTeam(team) {
     } else {
       console.warn("❌ Team select failed:", data.error);
     }
-  } catch (err) {
- console.error("⚠️ Team select error:", err);
-});
-    }
-    }
+   } catch (err) {
+    console.error("⚠️ Team select error:", err);
+  }
+} // ✅ ← זה הסוגר שחייב להישאר עכשיו
