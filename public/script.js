@@ -475,6 +475,7 @@ try {
     const connectBtn = document.getElementById("connect-ton");
     const addressDiv = document.getElementById("ton-address");
 
+    // === פונקציה ראשית לחיבור ארנק ===
     async function connectTonWallet() {
       try {
         console.log("💎 Opening TON Connect Wallet (Universal mode only)...");
@@ -491,7 +492,7 @@ try {
             console.log("✅ Wallet connected via injected provider:", addr);
             return;
           }
-} // 👈 תוסיף את הסוגר הזה כאן
+        }
 
         // ✅ אחרת — פתיחת Tonkeeper עם redirect חזרה לאפליקציה
         const link = tonConnect.connect({
@@ -524,8 +525,9 @@ try {
         console.error("❌ TON connect error:", err);
         flashStatus("TON Connect Error");
       }
-    }
+    } // ← סוגר תקין של הפונקציה
 
+    // === מאזין סטטוס לארנק ===
     tonConnect.onStatusChange((wallet) => {
       if (wallet?.account?.address) {
         const addr = wallet.account.address;
@@ -538,8 +540,9 @@ try {
       }
     });
 
+    // === מאזין לכפתור חיבור ===
     connectBtn.addEventListener("click", connectTonWallet);
-  }
+  } // ← סוגר את ה־else של !TonConnectClass
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
