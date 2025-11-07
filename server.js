@@ -1430,51 +1430,48 @@ else if (data.startsWith("menu:")) {
               { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
               { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
             ],
-                    [{ text: tt.back, callback_data: "panel:main" }]
+              [{ text: tt.back, callback_data: "panel:main" }]
     ]
   }
 });
 
+else if (action === "reset_daily") {
+  const today = todayStr();
+  for (const k of Object.keys(users)) {
+    const u = users[k];
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
+  writeJSON(USERS_FILE, users);
+  await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+}
 
-
-    else if (action === "reset_daily") {
-      const today = todayStr();
-      for (const k of Object.keys(users)) {
-        const u = users[k];
-        u.tapsDate = today;
-        u.tapsToday = 0;
-      }
-      writeJSON(USERS_FILE, users);
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-      }
+else if (action === "dxp") {
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: tt.dxp_start, callback_data: "panel:dxp_start" },
+          { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
+        ],
+        [
+          { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
+          { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
+        ],
+        [
+          { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
+          { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
+        ],
+        [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
+        [{ text: tt.back, callback_data: "panel:main" }]
+      ]
     }
-
-    else if (action === "dxp") {
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: tt.dxp_start, callback_data: "panel:dxp_start" },
-              { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
-            ],
-            [
-              { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
-              { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
-            ],
-            [
-              { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
-              { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
-            ],
-            [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
-            [{ text: tt.back, callback_data: "panel:main" }]
-          ]
-        }
-      });
-    }
+  });
+}
 
     else if (action === "dxp_start") {
       await setDoubleXP(true);
