@@ -1,0 +1,322 @@
+:root{
+  --bg:#0b0b12; --panel:#141426; --panel-2:#1b1b33; --text:#e9e9f2; --muted:#a5a5bf;
+  --gold:#ffd76b; --gold-glow: 0 0 14px rgba(255,215,107,.45);
+  --pink:#ff4dc4; --blue:#5aa9ff; --gray:#3b3b55; --accent-glow:0 0 18px rgba(255,77,196,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 800px at 10% -20%, rgba(255,77,196,0.08), transparent 60%),
+    radial-gradient(1000px 700px at 100% 0%, rgba(90,169,255,0.08), transparent 55%),
+    linear-gradient(180deg, #0c0c15, #0a0a12);
+  background-color:var(--bg);
+}
+.wrap{max-width:980px;margin:0 auto;padding:16px 14px 28px}
+.doublexp-line{margin:6px auto 8px;text-align:center;font-weight:700;letter-spacing:.2px;text-shadow: var(--gold-glow)}
+.title{text-align:center;margin:8px 0 14px}
+.title .brand{font-size:36px;font-weight:900;letter-spacing:.4px;text-shadow:0 0 22px rgba(255,77,196,.35), 0 0 12px rgba(90,169,255,.28)}
+.title .subtitle{margin-top:2px;font-size:18px;color:var(--muted)}
+.toolbar{display:flex;justify-content:center;margin:8px 0 12px}
+.lang-switch{display:flex;gap:8px}
+.btn{border:none;cursor:pointer;border-radius:10px;padding:10px 14px;font-weight:800;background:#272744;color:#fff;transition:transform .08s ease, opacity .08s ease}
+.btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+.btn-small{padding:6px 10px;font-size:13px;background:var(--panel-2)}
+.btn-blue{background:linear-gradient(180deg,#5aa9ff,#3a7fe0); box-shadow: 0 0 16px rgba(90,169,255,.35)}
+.btn-pink{background:linear-gradient(180deg,#ff4dc4,#e028a5); box-shadow: 0 0 16px rgba(255,77,196,.35)}
+.btn-gray{background:#2a2a3f}
+.btn-gold{background:linear-gradient(180deg,#ffd76b,#c9a23b); color:#000; font-weight:900; box-shadow: var(--gold-glow)}
+.scores-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 12px}
+.score-card{background:var(--panel);border-radius:12px;padding:14px 12px;text-align:center;border:1px solid rgba(255,255,255,.06)}
+.score-label{font-size:14px;color:var(--muted)}
+.score-value{font-size:28px;font-weight:900;margin-top:6px}
+.row{display:flex;gap:10px;justify-content:center;align-items:center;margin:10px 0}
+.extra-tap .stars-input{width:110px;border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.14);background:#0f0f1a;color:#fff}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.panel{background:var(--panel);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
+.panel-title{font-weight:900;margin:4px 0 10px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 12px}
+.k{color:var(--muted)} .v{font-weight:800}
+.top-list{list-style:none;margin:0;padding:0}
+.top-list li{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(255,255,255,.08);padding:8px 0}
+.foot{margin-top:16px;text-align:center;color:var(--muted);font-size:12px}
+
+/* === Partner / Referral Program (minimal styles) === */
+.partner-box{background:var(--panel);border:1px solid var(--pink);border-radius:12px;padding:16px;margin-top:14px;box-shadow:0 0 18px rgba(255,77,196,.25)}
+.partner-title{color:var(--pink);font-weight:900;margin-bottom:8px;text-align:center}
+.partner-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.partner-input{background:#0f0f1a;border:1px solid var(--pink);color:#fff;border-radius:8px;padding:10px 12px;width:260px;text-align:center}
+.btn.share::before{content:"📩 ";}
+
+/* === ACTION BUTTONS – wider (longer) look === */
+.action-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px; /* טיפה יותר רווח בין הכפתורים */
+  margin-top: 20px;
+  flex-wrap: nowrap;
+}
+
+.action-row button {
+  flex: 1;
+  max-width: 36%;   /* 🔹 היה 33% → עכשיו מעט רחב יותר */
+  min-width: 36%;
+  height: 64px;     /* 🔹 מעט פחות עבה, כדי להיראות מאוזן */
+  font-size: 0.5rem;
+  font-weight: 700;
+  border-radius: 12px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: center;
+  border: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+/* צבעים נשארים בדיוק כמו קודם */
+#btn-tap {
+  background: linear-gradient(180deg,#5aa9ff,#3a7fe0);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(90,169,255,.35);
+}
+#btn-super {
+  background: linear-gradient(180deg,#ff4dc4,#e028a5);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255,77,196,.35);
+}
+#btn-switch {
+  background: #2a2a3f;
+  color: #fff;
+}
+
+.action-row button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 20px rgba(255,255,255,.15);
+}
+
+/* מובייל – נשמר באותה שורה */
+@media (max-width: 600px) {
+  .action-row {
+    gap: 8px;
+  }
+  
+  .action-row button {
+    max-width: 33%;
+    min-width: 33%;
+    height: 60px;
+    font-size: 0.65rem;
+  }
+}
+/* === EXTRA TAP SECTION – Same width/height style as main buttons === */
+.extra-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 25px;
+  flex-wrap: nowrap;
+}
+
+.extra-row input {
+  flex: 1;
+  max-width: 36%;   /* תואם לכפתורים */
+  min-width: 36%;
+  height: 64px;     /* תואם גובה */
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 12px;
+  text-align: center;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: #0f0f1a;
+  color: #fff;
+}
+
+.extra-row button {
+  flex: 1;
+  max-width: 36%;
+  min-width: 36%;
+  height: 64px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border-radius: 12px;
+  background: linear-gradient(180deg,#ffd76b,#c9a23b);
+  color: #000;
+  box-shadow: 0 0 14px rgba(255,215,107,.45);
+  border: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.extra-row button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 20px rgba(255,215,107,.55);
+}
+
+/* מובייל */
+@media (max-width: 600px) {
+  .extra-row input,
+  .extra-row button {
+    max-width: 33%;
+    min-width: 33%;
+    height: 60px;
+    font-size: 0.65rem;
+  }
+}
+/* === TON Wallet === */
+.ton-wallet {
+  text-align: center;
+  margin-top: 18px;
+}
+
+#connect-ton {
+  display: inline-block;
+  width: 100%;
+  padding: 14px 0;
+  font-weight: 900;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, #00e1ff, #0077ff);
+  box-shadow: 0 0 18px rgba(0, 225, 255, 0.45);
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
+}
+
+/* 💎 הוספת אייקון יהלום לפני הטקסט */
+#connect-ton::before {
+  content: "💎 ";
+  font-size: 1.1rem;
+}
+
+#connect-ton:hover {
+  transform: scale(1.04);
+  box-shadow: 0 0 25px rgba(0, 225, 255, 0.7);
+}
+
+#ton-address {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #00e1ff;
+  text-shadow: 0 0 12px rgba(0, 225, 255, 0.55);
+  text-align: center;
+  letter-spacing: 0.4px;
+  word-break: break-all;
+}
+
+/* מובייל */
+@media (max-width: 600px) {
+  #connect-ton {
+    font-size: 0.85rem;
+    padding: 12px 0;
+  }
+  #ton-address {
+    font-size: 0.9rem;
+  }
+}
+
+/* === Top 20 Leaderboard – מבוסס $Battle === */
+#top20-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 250px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+#top20-list .player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px dashed rgba(255,255,255,.08);
+  font-size: 14px;
+  color: #fff;
+  transition: background 0.15s ease;
+}
+
+#top20-list .player-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+#top20-list .player-item.top5 {
+  background: rgba(255, 77, 196, 0.08);
+  font-weight: 900;
+  text-shadow: 0 0 10px rgba(255,77,196,.25);
+}
+
+#top20-list .player-item .name {
+  flex: 1;
+  text-align: left;
+  color: #fff;
+  font-weight: 700;
+}
+
+#top20-list .player-item .battle {
+  flex-shrink: 0;
+  color: var(--pink);
+  font-weight: 800;
+  text-align: right;
+}
+
+/* === Team Selection Text === */
+.team-hint {
+  text-align: center;
+  color: #ff00aa; /* ניאון ורוד */
+  font-size: 22px;
+  margin: 15px 0 5px 0;
+  text-shadow: 0 0 10px #ff00aa, 0 0 20px #ff00aa;
+  font-weight: bold;
+}
+/* === Selected Team Highlight === */
+.flag-selected {
+  outline: 3px solid #ff007f;       /* ורוד ניאון */
+  box-shadow: 0 0 15px #ff007f, 0 0 30px rgba(255, 0, 127, 0.6);
+  border-radius: 12px;
+  transform: scale(1.05);
+  transition: all 0.25s ease;
+}
+
+.flag-selected:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px #ff33aa, 0 0 40px rgba(255, 51, 170, 0.8);
+}
+
+/* ============================================
+   TB_V15 — Team Select minimal additions only
+   (No changes to sizes, spacing, or layout)
+   ============================================ */
+
+/* Hint text above the team cards */
+.team-hint{
+  text-align: center;
+  color: #fff;          /* white as requested */
+  font-size: 16px;      /* smaller than titles */
+  margin: 15px 0 6px 0; /* gentle spacing */
+  text-shadow: 0 0 4px rgba(255, 0, 170, 0.35); /* subtle neon */
+  font-weight: 500;
+}
+
+/* Make existing team cards clickable without changing their size */
+.team-card{
+  cursor: pointer;
+  transition: box-shadow .20s ease, transform .20s ease;
+}
+
+/* Selected team — soft pink glow (subtle) */
+.flag-selected{
+  box-shadow: 0 0 8px rgba(255, 0, 170, 0.40), 0 0 14px rgba(255, 0, 170, 0.20);
+  border: 1px solid rgba(255, 0, 170, 0.25);
+  transform: translateY(-1px);
+  border-radius: 12px;  /* decorative only; does not affect layout */
+}
+
+/* Keep legacy clickable score cards working too (if used) */
+.score-card[data-team]{ cursor: pointer; }
