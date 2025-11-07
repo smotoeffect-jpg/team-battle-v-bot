@@ -513,14 +513,9 @@ app.post("/api/select-team", (req, res) => {
 });
 
 app.post("/api/switch-team", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  const newTeam = req.body?.newTeam;
-  if (!userId || !["israel","gaza"].includes(newTeam)) return res.status(400).json({ ok:false });
-  const u = ensureUser(userId);
-  u.team = newTeam;
-  writeJSON(USERS_FILE, users);
-  res.json({ ok:true, team:newTeam });
+  return res.json({ ok: false, message: "Team switching disabled" });
 });
+
 
 // ====== Tap endpoint – Tap strength equals player level ======
 app.post("/api/tap", (req, res) => {
