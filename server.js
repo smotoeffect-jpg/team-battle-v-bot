@@ -1430,10 +1430,11 @@ else if (data.startsWith("menu:")) {
               { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
               { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
             ],
-               [{ text: tt.back, callback_data: "panel:main" }]
-  ]
+                    [{ text: tt.back, callback_data: "panel:main" }]
+    ]
+  }
 });
-}
+
 
 
     else if (action === "reset_daily") {
