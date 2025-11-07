@@ -597,3 +597,5 @@ async function selectTeam(team) {
   } catch (err) {
  console.error("⚠️ Team select error:", err);
 });
+    }
+    }
