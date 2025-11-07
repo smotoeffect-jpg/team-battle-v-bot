@@ -82,7 +82,11 @@ body{
   color: #fff;
   box-shadow: 0 0 14px rgba(90,169,255,.35);
 }
-
+#btn-super {
+  background: linear-gradient(180deg,#ff4dc4,#e028a5);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255,77,196,.35);
+}
 #btn-switch {
   background: #2a2a3f;
   color: #fff;
