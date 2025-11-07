@@ -1433,7 +1433,7 @@ else if (data.startsWith("menu:")) {
               [{ text: tt.back, callback_data: "panel:main" }]
     ]
   }
-});
+
 
 else if (action === "reset_daily") {
   const today = todayStr();
