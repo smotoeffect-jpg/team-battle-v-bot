@@ -466,6 +466,167 @@ function setAdminAwait(uid, what) {
   adminMeta[uid].awaiting = what;
   writeJSON(AMETA_FILE, adminMeta);
 }
+ else if (action === "lang") {
+      const newLang = lang === "he" ? "en" : "he";
+      setAdminLang(uid, newLang);
+      const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tx });
+      await editToMainPanel(msg, newLang);
+    }
+
+    else if (action === "summary") {
+      const usersCount = Object.keys(users).length;
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section("Summary")}\n${tt.summary_line(scores, usersCount)}`,
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
+      });
+    }
+
+    else if (action === "users") {
+      const ids = Object.keys(users);
+      const active = ids.filter(id=>users[id].active).length;
+      const inactive = ids.length - active;
+      const total = ids.length;
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.users_title(active,inactive,total)}`,
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: tt.users_export, callback_data: "panel:users_export" }],
+            [{ text: tt.back, callback_data: "panel:main" }]
+          ]
+        }
+      });
+    }
+
+    else if (action === "users_export") {
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.users_export_sending });
+      const header = tt.csv_header;
+      const rows = [header];
+      for (const [id,u] of Object.entries(users)) {
+        const name = (u.displayName||"").replace(/,/g," ");
+        const un = (u.username?("@"+u.username):"").replace(/,/g," ");
+        const langUser = u.preferredLang || "";
+        const country = u.country || "";
+        rows.push(`${name},${un},${id},${langUser},${country}`);
+      }
+      const csv = rows.join("\n");
+      const buf = Buffer.from(csv, "utf8");
+
+      const form = new FormData();
+      form.append("chat_id", uid);
+      form.append("document", buf, { filename: "users_export.csv", contentType: "text/csv" });
+
+      try {
+        await axios.post(`${TG_API}/sendDocument`, form, { headers: form.getHeaders() });
+        await tgPost("sendMessage", { chat_id: uid, text: tt.users_export_done });
+      } catch (e) {
+        console.error("CSV send error:", e?.response?.data || e.message);
+      }
+    }
+
+    else if (action === "bonuses") {
+      await tgPost("editMessageText", {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        text: `${tt.title()}\n\n${tt.section(tt.bonuses_title)}`,
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
+           [
+              { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
+              { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
+            ],
+               [{ text: tt.back, callback_data: "panel:main" }]
+      ]
+    }
+  }); // 👈 כאן סוגרים גם את await tgPost וגם את הבלוק
+}
+
+
+else if (action === "reset_daily") {
+  const today = todayStr();
+  for (const k of Object.keys(users)) {
+    const u = users[k];
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
+  writeJSON(USERS_FILE, users);
+  await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
+}
+
+else if (action === "dxp") {
+  await tgPost("editMessageText", {
+    chat_id: msg.chat.id,
+    message_id: msg.message_id,
+    text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: tt.dxp_start, callback_data: "panel:dxp_start" },
+          { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
+        ],
+        [
+          { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
+          { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
+        ],
+        [
+          { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
+          { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
+        ],
+        [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
+        [{ text: tt.back, callback_data: "panel:main" }]
+      ]
+    }
+  });
+}
+
+    else if (action === "dxp_start") {
+      await setDoubleXP(true);
+      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_started_all, en: PANEL_TEXTS.en.dxp_started_all });
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⚡ ON" });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_stop") {
+      await setDoubleXP(false);
+      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_ended_all, en: PANEL_TEXTS.en.dxp_ended_all });
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⏹ OFF" });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_hour") {
+      const delta = Number(extra);
+      let h = (Number(doubleXP.dailyHourUTC) + delta) % 24;
+      if (h < 0) h += 24;
+      doubleXP.dailyHourUTC = h;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `UTC ${h}:00` });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_dur") {
+      const delta = Number(extra);
+      let m = Math.max(15, (Number(doubleXP.durationMin) + delta));
+      doubleXP.durationMin = m;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `${m}m` });
+      await editToMainPanel(msg, lang);
+    }
+
+    else if (action === "dxp_toggle_daily") {
+      doubleXP.dailyEnabled = !doubleXP.dailyEnabled;
+      writeJSON(DXP_FILE, doubleXP);
+      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: doubleXP.dailyEnabled ? "🕒 on" : "🕒 off" });
+      await editToMainPanel(msg, lang);
+    }
 // ====== Double XP helpers ======
 function isDoubleXPOn() {
   return doubleXP.on && doubleXP.endTs > Date.now();
@@ -1353,165 +1514,6 @@ else if (data.startsWith("menu:")) {
       });
     }
 
-    else if (action === "lang") {
-      const newLang = lang === "he" ? "en" : "he";
-      setAdminLang(uid, newLang);
-      const tx = newLang === "he" ? PANEL_TEXTS.he.lang_set_he : PANEL_TEXTS.en.lang_set_en;
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tx });
-      await editToMainPanel(msg, newLang);
-    }
-
-    else if (action === "summary") {
-      const usersCount = Object.keys(users).length;
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.section("Summary")}\n${tt.summary_line(scores, usersCount)}`,
-        parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: tt.back, callback_data: "panel:main" }]] }
-      });
-    }
-
-    else if (action === "users") {
-      const ids = Object.keys(users);
-      const active = ids.filter(id=>users[id].active).length;
-      const inactive = ids.length - active;
-      const total = ids.length;
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.users_title(active,inactive,total)}`,
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: tt.users_export, callback_data: "panel:users_export" }],
-            [{ text: tt.back, callback_data: "panel:main" }]
-          ]
-        }
-      });
-    }
-
-    else if (action === "users_export") {
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.users_export_sending });
-      const header = tt.csv_header;
-      const rows = [header];
-      for (const [id,u] of Object.entries(users)) {
-        const name = (u.displayName||"").replace(/,/g," ");
-        const un = (u.username?("@"+u.username):"").replace(/,/g," ");
-        const langUser = u.preferredLang || "";
-        const country = u.country || "";
-        rows.push(`${name},${un},${id},${langUser},${country}`);
-      }
-      const csv = rows.join("\n");
-      const buf = Buffer.from(csv, "utf8");
-
-      const form = new FormData();
-      form.append("chat_id", uid);
-      form.append("document", buf, { filename: "users_export.csv", contentType: "text/csv" });
-
-      try {
-        await axios.post(`${TG_API}/sendDocument`, form, { headers: form.getHeaders() });
-        await tgPost("sendMessage", { chat_id: uid, text: tt.users_export_done });
-      } catch (e) {
-        console.error("CSV send error:", e?.response?.data || e.message);
-      }
-    }
-
-    else if (action === "bonuses") {
-      await tgPost("editMessageText", {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        text: `${tt.title()}\n\n${tt.section(tt.bonuses_title)}`,
-        parse_mode: "HTML",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: tt.reset_daily, callback_data: "panel:reset_daily" }],
-           [
-              { text: tt.bonus_israel, callback_data: "panel:bonus:israel" },
-              { text: tt.bonus_gaza,   callback_data: "panel:bonus:gaza" }
-            ],
-              [{ text: tt.back, callback_data: "panel:main" }]
-    ]
-  }
-
-
-else if (action === "reset_daily") {
-  const today = todayStr();
-  for (const k of Object.keys(users)) {
-    const u = users[k];
-    u.tapsDate = today;
-    u.tapsToday = 0;
-  }
-  writeJSON(USERS_FILE, users);
-  await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: tt.done });
-}
-
-else if (action === "dxp") {
-  await tgPost("editMessageText", {
-    chat_id: msg.chat.id,
-    message_id: msg.message_id,
-    text: `${tt.title()}\n\n${tt.dxp_title(doubleXP)}`,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: tt.dxp_start, callback_data: "panel:dxp_start" },
-          { text: tt.dxp_stop,  callback_data: "panel:dxp_stop" }
-        ],
-        [
-          { text: tt.dxp_hour_minus, callback_data: "panel:dxp_hour:-1" },
-          { text: tt.dxp_hour_plus,  callback_data: "panel:dxp_hour:+1" }
-        ],
-        [
-          { text: tt.dxp_duration_minus, callback_data: "panel:dxp_dur:-15" },
-          { text: tt.dxp_duration_plus,  callback_data: "panel:dxp_dur:+15" }
-        ],
-        [{ text: tt.dxp_toggle_daily(doubleXP.dailyEnabled), callback_data: "panel:dxp_toggle_daily" }],
-        [{ text: tt.back, callback_data: "panel:main" }]
-      ]
-    }
-  });
-}
-
-    else if (action === "dxp_start") {
-      await setDoubleXP(true);
-      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_started_all, en: PANEL_TEXTS.en.dxp_started_all });
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⚡ ON" });
-      await editToMainPanel(msg, lang);
-    }
-
-    else if (action === "dxp_stop") {
-      await setDoubleXP(false);
-      await broadcastToAllByLang({ he: PANEL_TEXTS.he.dxp_ended_all, en: PANEL_TEXTS.en.dxp_ended_all });
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: "⏹ OFF" });
-      await editToMainPanel(msg, lang);
-    }
-
-    else if (action === "dxp_hour") {
-      const delta = Number(extra);
-      let h = (Number(doubleXP.dailyHourUTC) + delta) % 24;
-      if (h < 0) h += 24;
-      doubleXP.dailyHourUTC = h;
-      writeJSON(DXP_FILE, doubleXP);
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `UTC ${h}:00` });
-      await editToMainPanel(msg, lang);
-    }
-
-    else if (action === "dxp_dur") {
-      const delta = Number(extra);
-      let m = Math.max(15, (Number(doubleXP.durationMin) + delta));
-      doubleXP.durationMin = m;
-      writeJSON(DXP_FILE, doubleXP);
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: `${m}m` });
-      await editToMainPanel(msg, lang);
-    }
-
-    else if (action === "dxp_toggle_daily") {
-      doubleXP.dailyEnabled = !doubleXP.dailyEnabled;
-      writeJSON(DXP_FILE, doubleXP);
-      await tgPost("answerCallbackQuery", { callback_query_id: cq.id, text: doubleXP.dailyEnabled ? "🕒 on" : "🕒 off" });
-      await editToMainPanel(msg, lang);
-    }
 // ====== REFERRAL SETTINGS PANEL (Stylish Version) ======
 else if (action === "referral_settings") {
   const ref = settings.referral_settings || { enabled: true, bonus_per_invite: 2, currency: "$Battle" };
