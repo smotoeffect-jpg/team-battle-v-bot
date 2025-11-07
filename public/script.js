@@ -601,7 +601,6 @@ async function selectTeam(team) {
       console.warn("⚠️ Server did not confirm, saving locally");
       localStorage.setItem("tb_team", team);
     }
-
   } catch (err) {
     console.error("❌ Team select error:", err);
     localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
@@ -622,6 +621,7 @@ async function selectTeam(team) {
 // ✅ טוען קבוצה שמורה כשנטען ה־DOM
 document.addEventListener("DOMContentLoaded", () => {
   const savedTeam = localStorage.getItem("tb_team");
+  if (!savedTeam) return; // אם אין קבוצה שמורה, לא נמשיך
 
   document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
     el.classList.remove("flag-selected");
@@ -629,4 +629,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const selectedFlag = document.getElementById(`score-${savedTeam}`);
   if (selectedFlag) selectedFlag.classList.add("flag-selected");
-});
+}); // ✅ סגירה מלאה ובריאה
