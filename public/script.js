@@ -161,7 +161,8 @@ const i18n = {
 
 
   function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
-  function setLang(l){
+  function setLang(l) {
+
     document.documentElement.setAttribute('data-lang', l);
     localStorage.setItem('tb_lang', l);
     document.querySelectorAll('[data-i18n]').forEach(el=>{
