@@ -1,40 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TeamBattle – Israel Vs Gaza</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TeamBattle • Israel Vs Gaza</title>
+  <link rel="stylesheet" href="./style.css" />
+  <script>
+    (function(){ 
+      const l = localStorage.getItem('tb_lang'); 
+      if(l) document.documentElement.setAttribute('data-lang', l); 
+    })();
+  </script>
 </head>
 <body>
-  <div id="app">
-    <header>
-      <div id="scoreboard">
-        <button id="team-israel" class="team-pill" data-team="israel">🇮🇱 Israel: <span id="score-israel">0</span></button>
-        <button id="team-gaza" class="team-pill" data-team="gaza">🇵🇸 Gaza: <span id="score-gaza">0</span></button>
-      </div>
-      <div id="wallet-row">
-        <span id="battle-balance">$Battle: 0</span>
-        <span id="battle-income">| Income: 0/sec</span>
-      </div>
+  <div id="app" class="wrap">
+    <div id="double-xp" class="doublexp-line" aria-live="polite"></div>
+   
+    <header class="title">
+      <div class="brand">TeamBattle</div>
+      <div class="subtitle">Israel Vs Gaza</div>
     </header>
 
-    <main>
-      <button id="tap-btn" class="tap-btn">TAP</button>
+    <div class="toolbar">
+      <div class="lang-switch">
+        <button class="btn btn-small" data-lang="he">עברית</button>
+        <button class="btn btn-small" data-lang="en">English</button>
+        <button class="btn btn-small" data-lang="ar">العربية</button>
+      </div>
+    </div>
 
-      <div id="upgrades-toggle" class="section-toggle">Upgrades</div>
-      <section id="upgrades-section" class="section" hidden></section>
+    <section class="scores-row">
+      <div class="score-card" id="score-israel">
+        <div class="score-label" data-i18n="israel">Israel</div>
+        <div class="score-value" id="score-israel-value">0</div>
+      </div>
+      <div class="score-card" id="score-gaza">
+        <div class="score-label" data-i18n="gaza">Gaza</div>
+        <div class="score-value" id="score-gaza-value">0</div>
+      </div>
+    </section>
 
-      <div id="myteam-toggle" class="section-toggle">My Team</div>
-      <section id="myteam-section" class="section" hidden></section>
+    <!-- === Main Action Buttons === -->
+    <div class="action-row">
+      <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
+      <button id="btn-super" data-i18n="superBoost">Super Boost (+25)</button>
+      <button id="btn-switch" data-i18n="switchTeam">Switch Team</button>
+    </div>
 
-      <section id="referral-section"></section>
+    <!-- === Extra Tap Section === -->
+    <div class="extra-row">
+      <input id="stars-input" type="number" min="1" max="1000" value="10">
+      <button id="btn-extra" data-i18n="extraTap">Extra Tap</button>
+    </div>
+
+    <!-- Referral Program -->
+<div id="partner" class="partner-box">
+  <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
+  <div class="partner-row">
+    <input id="refLink" class="partner-input" readonly />
+    <button id="copyRef" class="btn small" data-i18n="copy">העתק קישור</button>
+    <button id="shareRef" class="btn small share" aria-label="Share on Telegram"></button>
+  </div>
+</div>
+
+    <!-- === Main Grid === -->
+    <main class="main-grid">
+      <section class="panel" id="my-board">
+        <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
+        <div class="kv">
+        <div class="k" data-i18n="stars">Stars / Extra Tap</div>
+        <div class="v" id="me-stars"></div>
+
+        <div class="k">$BATTLE</div>
+        <div class="v" id="me-battle">0</div>
+
+        <div class="k">XP</div>
+        <div class="v" id="me-xp">0</div>
+
+        <div class="k" data-i18n="playerLevel">Player Level</div>
+        <div class="v" id="me-level"></div>
+
+          <div class="k" data-i18n="referrals">Invited Friends</div>
+          <div class="v" id="me-referrals">–</div>
+
+          <div class="k" data-i18n="tapsToday">Taps today</div>
+          <div class="v" id="me-taps">0/300</div>
+        </div>
+
+        <!-- ✅ Ton Wallet Connect -->
+        <div class="ton-wallet">
+          <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
+          <div id="ton-address" class="wallet-address"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="top20">
+        <div class="panel-title">Top 20</div>
+        <ol id="top20-list" class="top-list" aria-live="polite"></ol>
+      </section>
     </main>
+
+    <footer class="foot">
+      <span id="status-line"></span>
+    </footer>
   </div>
 
-  <script src="i18n.js"></script>
-  <script src="script.js"></script>
-  <script src="upgrades.js"></script>
-  <script src="myteam.js"></script>
+  <!-- === SDKs and Scripts === -->
+  <!-- Telegram SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- ✅ TON Connect SDK (מה־CDN הרשמי) -->
+<script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+
+  <!-- Main Script -->
+  <script src="./script.js"></script>
 </body>
 </html>
