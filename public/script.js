@@ -581,7 +581,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedFlag) savedFlag.classList.add("flag-selected");
   }
 
-  // ✅ בוחר קבוצה ומעדכן גם לוקאלית וגם בשרת
+// ✅ בוחר קבוצה ומעדכן גם לוקאלית וגם בשרת
 async function selectTeam(team) {
   try {
     const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
@@ -589,7 +589,7 @@ async function selectTeam(team) {
     const res = await fetch(`/api/user/${userId}/team`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team }),
+      body: JSON.stringify({ team })
     });
 
     const data = await res.json();
@@ -601,6 +601,7 @@ async function selectTeam(team) {
       console.warn("⚠️ Server did not confirm, saving locally");
       localStorage.setItem("tb_team", team);
     }
+
   } catch (err) {
     console.error("❌ Team select error:", err);
     localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
@@ -614,17 +615,18 @@ async function selectTeam(team) {
   const selectedFlag = document.getElementById(`score-${team}`);
   if (selectedFlag) selectedFlag.classList.add("flag-selected");
 
-  // מרענן כדי לעדכן נתונים מהשרת
-  if (typeof refreshAll === "function") await refreshAll();
+  // מרענן נתונים מיד אחרי בחירה
+  await refreshAll();
 }
-}); // ✅ ← סגירה יחידה וסופית של ה-DOMContentLoaded
+
+// ✅ טוען קבוצה שמורה כשנטען ה־DOM
 document.addEventListener("DOMContentLoaded", () => {
   const savedTeam = localStorage.getItem("tb_team");
-  if (savedTeam) {
-    document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
-      el.classList.remove("flag-selected");
-    });
-    const selectedFlag = document.getElementById(`score-${savedTeam}`);
-    if (selectedFlag) selectedFlag.classList.add("flag-selected");
-  }
+
+  document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
+    el.classList.remove("flag-selected");
+  });
+
+  const selectedFlag = document.getElementById(`score-${savedTeam}`);
+  if (selectedFlag) selectedFlag.classList.add("flag-selected");
 });
