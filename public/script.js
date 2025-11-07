@@ -481,4 +481,20 @@ try {
 } catch (err) {
   console.error("❌ TON Connect initialization failed:", err);
 }
+  
+  // 🔒 Disable hidden buttons (Super + Switch)
+document.addEventListener("DOMContentLoaded", () => {
+  const btnSuper = document.getElementById("btn-super");
+  const btnSwitch = document.getElementById("btn-switch");
+
+  if (btnSuper) {
+    btnSuper.style.display = "none";
+    btnSuper.disabled = true;
+  }
+
+  if (btnSwitch) {
+    btnSwitch.style.display = "none";
+    btnSwitch.disabled = true;
+  }
+
 }); // ✅ ←←← סוגר את כל ה־DOMContentLoaded
