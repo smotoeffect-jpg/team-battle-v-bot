@@ -548,6 +548,8 @@ try {
 }
   
 // 🔒 Disable hidden buttons (Super + Switch) + Team Selection
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   // ===== Hide ghost buttons =====
   const btnSuper = document.getElementById("btn-super");
