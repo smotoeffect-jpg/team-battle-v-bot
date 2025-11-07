@@ -547,8 +547,9 @@ try {
   console.error("❌ TON Connect initialization failed:", err);
 }
   
-  // 🔒 Disable hidden buttons (Super + Switch)
+// 🔒 Disable hidden buttons (Super + Switch) + Team Selection
 document.addEventListener("DOMContentLoaded", () => {
+  // ===== Hide ghost buttons =====
   const btnSuper = document.getElementById("btn-super");
   const btnSwitch = document.getElementById("btn-switch");
 
@@ -561,7 +562,8 @@ document.addEventListener("DOMContentLoaded", () => {
     btnSwitch.style.display = "none";
     btnSwitch.disabled = true;
   }
-  // ===== Team Selection =====
+
+  // ===== Team Selection Buttons =====
   const flagIsrael = document.getElementById("flag-israel");
   const flagGaza = document.getElementById("flag-gaza");
 
@@ -570,22 +572,32 @@ document.addEventListener("DOMContentLoaded", () => {
     flagGaza.addEventListener("click", () => selectTeam("gaza"));
   }
 
-}); // ← סוגר את כל ה-DOMContentLoaded
+  // ===== Re-apply saved highlight =====
+  const savedTeam = localStorage.getItem("tb_team");
+  if (savedTeam) {
+    const savedFlag = document.getElementById(`flag-${savedTeam}`);
+    if (savedFlag) savedFlag.classList.add("flag-selected");
+  }
 
-// ====== Team Selection ======
-async function selectTeam(team) {
-  try {
-    const res = await fetch(`/api/user/${telegramUserId}/team`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team })
-    });
-    const data = await res.json();
-    if (data.ok) {
+  // ===== Team Selection Function =====
+  async function selectTeam(team) {
+    try {
+      const res = await fetch(`/api/user/${telegramUserId}/team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team })
+      });
+
+      const data = await res.json();
+      if (!data.ok) {
+        console.warn("❌ Team select failed:", data.error);
+        return;
+      }
+
       console.log(`✅ Team selected: ${data.team}`);
       localStorage.setItem("tb_team", team);
 
-      // הסרת הדגשה קיימת מדגלים
+      // הסרת הדגשה קיימת מהדגלים
       document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
         el.classList.remove("flag-selected");
       });
@@ -595,10 +607,8 @@ async function selectTeam(team) {
       if (selectedFlag) selectedFlag.classList.add("flag-selected");
 
       await refreshAll();
-    } else {
-      console.warn("❌ Team select failed:", data.error);
+    } catch (err) {
+      console.error("⚠️ Team select error:", err);
     }
-   } catch (err) {
-    console.error("⚠️ Team select error:", err);
   }
-} // ✅ ← זה הסוגר שחייב להישאר עכשיו
+}); // ✅ ← סגירה יחידה וסופית של ה-DOMContentLoaded
