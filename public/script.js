@@ -581,33 +581,50 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedFlag) savedFlag.classList.add("flag-selected");
   }
 
-  async function selectTeam(team) {
+  // ✅ בוחר קבוצה ומעדכן גם לוקאלית וגם בשרת
+async function selectTeam(team) {
   try {
-    // שמירה מקומית מיידית
-    localStorage.setItem("tb_team", team);
+    const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
-    // עיצוב מיידי
-    document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
-      el.classList.remove("flag-selected");
-    });
-    const selectedFlag = document.getElementById(`flag-${team}`);
-    if (selectedFlag) selectedFlag.classList.add("flag-selected");
-
-    // שליחת בקשה לשרת
-    const res = await fetch(`/api/user/${telegramUserId}/team`, {
+    const res = await fetch(`/api/user/${userId}/team`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team })
+      body: JSON.stringify({ team }),
     });
+
     const data = await res.json();
+
     if (data.ok) {
-      console.log(`✅ Team selected: ${data.team}`);
-      await refreshAll();
+      console.log(`✅ Team changed to ${data.team}`);
+      localStorage.setItem("tb_team", team);
     } else {
-      console.warn("❌ Team select failed:", data.error);
+      console.warn("⚠️ Server did not confirm, saving locally");
+      localStorage.setItem("tb_team", team);
     }
   } catch (err) {
-    console.error("⚠️ Team select error:", err);
+    console.error("❌ Team select error:", err);
+    localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
   }
+
+  // מעדכן הדגשה ו־UI
+  document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
+    el.classList.remove("flag-selected");
+  });
+
+  const selectedFlag = document.getElementById(`score-${team}`);
+  if (selectedFlag) selectedFlag.classList.add("flag-selected");
+
+  // מרענן כדי לעדכן נתונים מהשרת
+  if (typeof refreshAll === "function") await refreshAll();
 }
 }); // ✅ ← סגירה יחידה וסופית של ה-DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+  const savedTeam = localStorage.getItem("tb_team");
+  if (savedTeam) {
+    document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
+      el.classList.remove("flag-selected");
+    });
+    const selectedFlag = document.getElementById(`score-${savedTeam}`);
+    if (selectedFlag) selectedFlag.classList.add("flag-selected");
+  }
+});
