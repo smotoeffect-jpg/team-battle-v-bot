@@ -265,3 +265,13 @@ body{
   font-weight: 800;
   text-align: right;
 }
+
+/* === Team Selection Text === */
+.team-hint {
+  text-align: center;
+  color: #ff00aa; /* ניאון ורוד */
+  font-size: 22px;
+  margin: 15px 0 5px 0;
+  text-shadow: 0 0 10px #ff00aa, 0 0 20px #ff00aa;
+  font-weight: bold;
+}
