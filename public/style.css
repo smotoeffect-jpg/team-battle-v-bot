@@ -275,3 +275,16 @@ body{
   text-shadow: 0 0 10px #ff00aa, 0 0 20px #ff00aa;
   font-weight: bold;
 }
+/* === Selected Team Highlight === */
+.flag-selected {
+  outline: 3px solid #ff007f;       /* ורוד ניאון */
+  box-shadow: 0 0 15px #ff007f, 0 0 30px rgba(255, 0, 127, 0.6);
+  border-radius: 12px;
+  transform: scale(1.05);
+  transition: all 0.25s ease;
+}
+
+.flag-selected:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px #ff33aa, 0 0 40px rgba(255, 51, 170, 0.8);
+}
