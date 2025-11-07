@@ -627,6 +627,8 @@ document.addEventListener("DOMContentLoaded", () => {
     el.classList.remove("flag-selected");
   });
 
-  const selectedFlag = document.getElementById(`score-${savedTeam}`);
+    const selectedFlag = document.getElementById(`score-${savedTeam}`);
   if (selectedFlag) selectedFlag.classList.add("flag-selected");
-}); // ✅ סגירה מלאה ובריאה
+}); // ✅ סגירה מלאה ובריאה (inner listener)
+
+}); // ✅ סוגר אחרון שהיה חסר – סוגר את ה־DOMContentLoaded החיצוני
