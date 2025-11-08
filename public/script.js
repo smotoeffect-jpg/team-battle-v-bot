@@ -581,54 +581,40 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedFlag) savedFlag.classList.add("flag-selected");
   }
 
-// ✅ בוחר קבוצה ומעדכן גם לוקאלית וגם בשרת
-async function selectTeam(team) {
-  try {
-    const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
+  // ✅ בחירת קבוצה ושמירה בלוקאל + שרת
+  async function selectTeam(team) {
+    try {
+      const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
-    const res = await fetch(`/api/user/${userId}/team`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ team })
-    });
+      const res = await fetch(`/api/user/${userId}/team`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.ok) {
-      console.log(`✅ Team changed to ${data.team}`);
-      localStorage.setItem("tb_team", team);
-    } else {
-      console.warn("⚠️ Server did not confirm, saving locally");
-      localStorage.setItem("tb_team", team);
+      if (data.ok) {
+        console.log(`✅ Team changed to ${data.team}`);
+        localStorage.setItem("tb_team", team);
+      } else {
+        console.warn("⚠️ Server did not confirm, saving locally");
+        localStorage.setItem("tb_team", team);
+      }
+
+      // מעדכן הדגשה ו־UI
+      document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
+        el.classList.remove("flag-selected");
+      });
+
+      const selectedFlag = document.getElementById(`flag-${team}`);
+      if (selectedFlag) selectedFlag.classList.add("flag-selected");
+
+      // מרענן נתונים מיד אחרי בחירה
+      await refreshAll();
+    } catch (err) {
+      console.error("❌ Team select error:", err);
+      localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
     }
-  } catch (err) {
-    console.error("❌ Team select error:", err);
-    localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
   }
-
-  // מעדכן הדגשה ו־UI
-document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
-  el.classList.remove("flag-selected");
-});
-
-const selectedFlag = document.getElementById(`flag-${team}`);
-if (selectedFlag) selectedFlag.classList.add("flag-selected");
-
-// מרענן נתונים מיד אחרי בחירה
-await refreshAll();
-}
-
-// ✅ טוען קבוצה שמורה כשנטען ה־DOM
-document.addEventListener("DOMContentLoaded", () => {
-  const savedTeam = localStorage.getItem("tb_team");
-  if (!savedTeam) return; // אם אין קבוצה שמורה, לא נמשיך
-
-  document.querySelectorAll("#score-israel, #score-gaza").forEach(el => {
-    el.classList.remove("flag-selected");
-  });
-
-    const selectedFlag = document.getElementById(`score-${savedTeam}`);
-  if (selectedFlag) selectedFlag.classList.add("flag-selected");
-}); // ✅ סגירה מלאה ובריאה (inner listener)
-
-}); // ✅ סוגר אחרון שהיה חסר – סוגר את ה־DOMContentLoaded החיצוני
+}); // ✅ סוגר אחד בלבד ל-DOMContentLoaded
