@@ -517,19 +517,64 @@ app.post("/api/switch-team", (req, res) => {
   return res.json({ ok: false, message: "Team switching disabled" });
 });
 
+// ✅ בחירת קבוצה ושמירה למשתמש
+app.post("/api/user/:id/team", (req, res) => {
+  try {
+    const userId = String(req.params.id || "").trim();
+    const { team } = req.body || {};
 
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: "Missing userId" });
+    }
+
+    if (!["israel", "gaza"].includes(team)) {
+      return res.status(400).json({ ok: false, error: "Invalid team" });
+    }
+
+    const u = ensureUser(userId);
+    u.team = team;
+    writeJSON(USERS_FILE, users);
+
+    console.log(`✅ User ${userId} switched team to ${team}`);
+    return res.json({ ok: true, team });
+  } catch (e) {
+    console.error("❌ Team select error:", e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+// ====== Tap endpoint – Tap strength equals player level ======
 // ====== Tap endpoint – Tap strength equals player level ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+
   const u = ensureUser(userId);
   if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
 
   const today = todayStr();
-  if (u.tapsDate !== today) { u.tapsDate = today; u.tapsToday = 0; }
+  if (u.tapsDate !== today) {
+    u.tapsDate = today;
+    u.tapsToday = 0;
+  }
 
   if (u.tapsToday >= DAILY_TAPS)
     return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+
+  // ✅ קובע את הקבוצה מתוך המשתמש עצמו (לא ברירת מחדל)
+  const team = u.team || "israel";
+
+  // ✨ עדכון הניקוד והנתונים
+  scores[team] = (scores[team] || 0) + 1;
+  u.tapsToday++;
+  u.battle = (u.battle || 0) + 1;
+
+  // 💾 שומר הכל לקבצים
+  writeJSON(SCORES_FILE, scores);
+  writeJSON(USERS_FILE, users);
+
+  // ✅ מחזיר תגובה ללקוח
+  res.json({ ok:true, team, scores });
+});
 
   // ⚡ Tap value = current level
   const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
