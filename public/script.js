@@ -555,15 +555,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSuper = document.getElementById("btn-super");
   const btnSwitch = document.getElementById("btn-switch");
 
-  if (btnSuper) {
-    btnSuper.style.display = "none";
-    btnSuper.disabled = true;
-  }
-
-  if (btnSwitch) {
-    btnSwitch.style.display = "none";
-    btnSwitch.disabled = true;
-  }
+  if (btnSuper) { btnSuper.style.display = "none"; btnSuper.disabled = true; }
+  if (btnSwitch) { btnSwitch.style.display = "none"; btnSwitch.disabled = true; }
 
   // ===== Team Selection Buttons =====
   const flagIsrael = document.getElementById("flag-israel");
@@ -584,12 +577,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // ✅ בחירת קבוצה ושמירה בלוקאל + שרת
   async function selectTeam(team) {
     try {
-      const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
+      // 🧩 הפתרון הקריטי – מקבל userId אמיתי גם אם telegramUserId לא נטען עדיין
+      let userId =
+        window.telegramUserId ||
+        Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+        localStorage.getItem("telegram_userId") ||
+        "guest";
+
+      // שומר לוקאלית שיהיה תמיד זמין
+      localStorage.setItem("telegram_userId", userId);
 
       const res = await fetch(`/api/user/${userId}/team`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ team })
+        body: JSON.stringify({ userId, team })
       });
 
       const data = await res.json();
@@ -606,15 +607,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll("#flag-israel, #flag-gaza").forEach(el => {
         el.classList.remove("flag-selected");
       });
-
       const selectedFlag = document.getElementById(`flag-${team}`);
       if (selectedFlag) selectedFlag.classList.add("flag-selected");
 
-      // מרענן נתונים מיד אחרי בחירה
       await refreshAll();
     } catch (err) {
       console.error("❌ Team select error:", err);
-      localStorage.setItem("tb_team", team); // fallback אם אין תקשורת
+      localStorage.setItem("tb_team", team);
     }
   }
-}); // ✅ סוגר אחד בלבד ל-DOMContentLoaded
+});
