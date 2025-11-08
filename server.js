@@ -542,66 +542,58 @@ app.post("/api/user/:id/team", (req, res) => {
     return res.status(500).json({ ok: false, error: "Server error" });
   }
 });
-// ====== Tap endpoint – Tap strength equals player level ======
+
 // ====== Tap endpoint – Tap strength equals player level ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  if (!userId) return res.status(400).json({ ok:false, error:"no userId" });
+  if (!userId) return res.status(400).json({ ok: false, error: "no userId" });
 
+  // חייבים את המשתמש לפני כל שימוש ב-u
   const u = ensureUser(userId);
-  if (!u.team) return res.status(400).json({ ok:false, error:"no team" });
 
+  // חייב קבוצה מוגדרת – אין ברירת מחדל לישראל
+  if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
+
+  // ריסט יומי של מונה טאפים
   const today = todayStr();
   if (u.tapsDate !== today) {
     u.tapsDate = today;
     u.tapsToday = 0;
   }
 
-  if (u.tapsToday >= DAILY_TAPS)
-    return res.json({ ok:false, error:"limit", limit: DAILY_TAPS });
+  // מגבלת טאפים יומית
+  if (u.tapsToday >= DAILY_TAPS) {
+    return res.json({ ok: false, error: "limit", limit: DAILY_TAPS });
+  }
 
-  // ✅ קובע את הקבוצה מתוך המשתמש עצמו (לא ברירת מחדל)
-  const team = u.team || "israel";
+  // עוצמת הטאפ = רמת השחקן (מינימום 1)
+  const tapPoints = Math.max(1, u.level || 1);
 
-  // ✨ עדכון הניקוד והנתונים
-  scores[team] = (scores[team] || 0) + 1;
-  u.tapsToday++;
-  u.battle = (u.battle || 0) + 1;
+  // הקבוצה שמקבלת את הניקוד = הקבוצה של המשתמש כרגע
+  const team = u.team; // אין דיפולטים
 
-  // 💾 שומר הכל לקבצים
+  // עדכונים
+  scores[team] = (scores[team] || 0) + tapPoints;       // ניקוד לקבוצה
+  u.tapsToday += 1;                                     // מונה יומי
+  u.xp = (u.xp || 0) + tapPoints;                       // XP לפי עוצמה
+  u.battle = (u.battle || 0) + tapPoints;               // מונה פנימי (אם בשימוש)
+  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0); // יתרת $BATTLE
+
+  // שמירה לקבצים
   writeJSON(SCORES_FILE, scores);
   writeJSON(USERS_FILE, users);
 
-  // ✅ מחזיר תגובה ללקוח
-  res.json({ ok:true, team, scores });
-});
-
-  // ⚡ Tap value = current level
-  const tapPoints = Math.max(1, u.level || 1); // מבטיח שלפחות +1
-
-  u.tapsToday += 1;
-  scores[u.team] = (scores[u.team] || 0) + tapPoints;
-// 💰 הוספת מטבע $BATTLE על כל Tap
-u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.PER_TAP;
-  // XP מתעדכן בהתאם לעוצמת הטאפ
-  addXpAndMaybeLevelUp(u, isDoubleXPOn() ? (tapPoints * 2) : tapPoints);
-
-  // היסטוריה
-  u.history.push({ ts: nowTs(), type: "tap", points: tapPoints, team: u.team, xp: tapPoints });
-  if (u.history.length > 200) u.history.shift();
-
-  writeJSON(USERS_FILE, users);
-  writeJSON(SCORES_FILE, scores);
-
+  // תגובה לקליינט
   res.json({
-    ok:true,
-    scores,
-    tapsToday: u.tapsToday,
+    ok: true,
+    team,
     tapPoints,
-    level: u.level,
-    limit: DAILY_TAPS,
-    doubleXP: isDoubleXPOn()
+    tapsToday: u.tapsToday,
+    battleBalance: u.battleBalance,
+    xp: u.xp,
+    scores
   });
+});
 
 
 app.post("/api/super", (req, res) => {
