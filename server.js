@@ -502,15 +502,16 @@ async function broadcastToAllByLang(textsPerLang) {
 // ====== Mini-App API ======
 app.get("/api/state", (_, res) => res.json({ ok: true, scores, doubleXP: { on: isDoubleXPOn() } }));
 
-app.post("/api/select-team", (req, res) => {
-  const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-  const team   = req.body?.team;
-  if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
-  const u = ensureUser(userId);
-  u.team = team;
-  writeJSON(USERS_FILE, users);
-  res.json({ ok:true });
-});
+// 🚫 נתיב select-team הישן - כבוי (לא בשימוש)
+// app.post("/api/select-team", (req, res) => {
+//   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
+//   const team   = req.body?.team;
+//   if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
+//   const u = ensureUser(userId);
+//   u.team = team;
+//   writeJSON(USERS_FILE, users);
+//   res.json({ ok:true });
+// });
 
 app.post("/api/switch-team", (req, res) => {
   return res.json({ ok: false, message: "Team switching disabled" });
