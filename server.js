@@ -500,24 +500,28 @@ async function broadcastToAllByLang(textsPerLang) {
 }
 
 // ====== Mini-App API ======
-app.get("/api/state", (_, res) => res.json({ ok: true, scores, doubleXP: { on: isDoubleXPOn() } }));
+app.get("/api/state", (_, res) =>
+  res.json({ ok: true, scores, doubleXP: { on: isDoubleXPOn() } })
+);
 
 // 🚫 נתיב select-team הישן - כבוי (לא בשימוש)
 // app.post("/api/select-team", (req, res) => {
 //   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-//   const team   = req.body?.team;
-//   if (!userId || !["israel","gaza"].includes(team)) return res.status(400).json({ ok:false });
+//   const team = req.body?.team;
+//   if (!userId || !["israel", "gaza"].includes(team))
+//     return res.status(400).json({ ok: false });
 //   const u = ensureUser(userId);
 //   u.team = team;
 //   writeJSON(USERS_FILE, users);
-//   res.json({ ok:true });
+//   res.json({ ok: true });
 // });
 
-app.post("/api/switch-team", (req, res) => {
-  return res.json({ ok: false, message: "Team switching disabled" });
-});
+// 🚫 כבוי – כבר לא בשימוש
+// app.post("/api/switch-team", (req, res) => {
+//   return res.json({ ok: false, message: "Team switching disabled" });
+// });
 
-// ✅ בחירת קבוצה ושמירה למשתמש
+// ✅ הנתיב הרשמי לבחירת/החלפת קבוצה
 app.post("/api/user/:id/team", (req, res) => {
   try {
     const userId = String(req.params.id || "").trim();
