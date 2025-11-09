@@ -357,7 +357,7 @@ async function refreshAll() {
     GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
     GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
     GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
-    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
+    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? M.battle ?? 0);
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
     GAME.me.username = M.username ?? GAME.me.username ?? null;
 
@@ -371,21 +371,37 @@ async function refreshAll() {
     }
     GAME.partner = partner || {};
 
-    // --- חישוב כולל של $Battle ---
-    const battleFromTaps = GAME.me.battle || 0;
-    const battleFromRefs = GAME.partner.earnedBattle || 0;
-    const passiveIncome = GAME.partner.incomePerSec || 0;
-    const xpBonus = (GAME.me.xp || 0) * 0.1;
+    // --- 🔗 נתוני הכנסה כוללת מהשרת (כולל כל סוגי הרווחים) ---
+    let totalBattle = 0;
+    let incomePerSec = 0;
 
-    const totalBattle = battleFromTaps + battleFromRefs + xpBonus;
-    const incomePerSec = passiveIncome;
+    try {
+      const earnResp = await getJSON(`/api/earnings/${userId}`);
+      if (earnResp?.ok) {
+        totalBattle = earnResp.totalBattle || 0;
+        incomePerSec =
+          earnResp.breakdown?.passiveEarningsPerSec ||
+          (earnResp.breakdown?.passiveEarnings
+            ? earnResp.breakdown.passiveEarnings / 60
+            : 0);
+      }
+    } catch (e) {
+      console.warn("⚠️ /api/earnings unavailable, using local fallback");
+      const battleFromTaps = GAME.me.battle || 0;
+      const battleFromRefs = GAME.partner.earnedBattle || 0;
+      const xpBonus = (GAME.me.xp || 0) * 0.1;
+      totalBattle = battleFromTaps + battleFromRefs + xpBonus;
+      incomePerSec = GAME.partner.incomePerSec || 0;
+    }
 
     // --- הצגת הנתונים בזמן אמת ---
     const battleEl = document.getElementById("battleShort");
     const incomeEl = document.getElementById("incomeShort");
 
-    if (battleEl) battleEl.textContent = `${totalBattle.toLocaleString()} $Battle`;
-    if (incomeEl) incomeEl.textContent = `⚡ ${incomePerSec.toFixed(2)}/sec`;
+    if (battleEl)
+      battleEl.textContent = `${Number(totalBattle).toLocaleString()} $Battle`;
+    if (incomeEl)
+      incomeEl.textContent = `⚡ ${Number(incomePerSec).toFixed(2)}/sec`;
 
     paintMe();
   } catch (err) {
