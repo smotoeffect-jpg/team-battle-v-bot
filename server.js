@@ -1761,24 +1761,24 @@ app.get("/api/earnings/:id", (req, res) => {
     const userId = String(req.params.id || "").trim();
     if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
 
-    const u = ensureUser(userId);
+    // שולף את המשתמש הנכון
+    const u = users[userId] || ensureUser(userId);
 
-    // 🟦 רווח מלחיצות (Tap Earnings)
-    const tapEarnings = (u.battleBalance || 0);
+    // אם אין שום נתון, מחזיר לפחות 0
+    const tapEarnings = Number(u.battleBalance || u.battle || 0);
+    const xpEarnings = Number(u.xp || 0) * 0.1;
+    const bonusEarnings = Number(u.bonusBattle || 0);
 
-    // 🟨 רווחים מתוכנית שותפים
-    const partners = u.partners || [];
-    const partnerEarnings = partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
+    // תכנית שותפים — אם יש
+    let partnerEarnings = 0;
+    let passiveEarnings = 0;
+    if (Array.isArray(u.partners)) {
+      partnerEarnings = u.partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
+      passiveEarnings = u.partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
+    }
 
-    // 🟩 רווחים פסיביים (לשנייה)
-    const passive = partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
-    const passiveEarnings = passive * 60; // לדוגמה: סיכום בדקה
-
-    // 🟪 רווחים מבונוסים או XP מומרים (אם קיימים)
-    const bonusEarnings = (u.bonusBattle || 0) + (u.xp || 0) * 0.1; // כל XP שווה 0.1 Battle
-
-    // 💎 סיכום כולל
-    const totalBattle = tapEarnings + partnerEarnings + passiveEarnings + bonusEarnings;
+    // חישוב כולל אמיתי
+    const totalBattle = tapEarnings + xpEarnings + bonusEarnings + partnerEarnings + passiveEarnings;
 
     return res.json({
       ok: true,
@@ -1786,9 +1786,10 @@ app.get("/api/earnings/:id", (req, res) => {
       totalBattle,
       breakdown: {
         tapEarnings,
+        xpEarnings,
+        bonusEarnings,
         partnerEarnings,
-        passiveEarnings,
-        bonusEarnings
+        passiveEarnings
       }
     });
   } catch (e) {
