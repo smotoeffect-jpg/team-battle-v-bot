@@ -1761,23 +1761,30 @@ app.get("/api/earnings/:id", (req, res) => {
     const userId = String(req.params.id || "").trim();
     if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
 
-    // שולף את המשתמש הנכון
+    // ✅ טוען קבצי נתונים עדכניים בזמן אמת
+    users = readJSON(USERS_FILE, {});
+    referrals = readJSON(REFERRALS_FILE, {});
+
+    // ✅ דואג שהמשתמש קיים
     const u = users[userId] || ensureUser(userId);
 
-    // אם אין שום נתון, מחזיר לפחות 0
+    // 💰 רווחים מלחיצות (טאפים)
     const tapEarnings = Number(u.battleBalance || u.battle || 0);
+
+    // 💎 בונוסים ו־XP מומרים
     const xpEarnings = Number(u.xp || 0) * 0.1;
     const bonusEarnings = Number(u.bonusBattle || 0);
 
-    // תכנית שותפים — אם יש
-    let partnerEarnings = 0;
-    let passiveEarnings = 0;
-    if (Array.isArray(u.partners)) {
-      partnerEarnings = u.partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
-      passiveEarnings = u.partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
-    }
+    // 💸 רווחים מתוכנית שותפים (referrals.json)
+    const refData = referrals[userId] || { earnings: 0 };
+    const partnerEarnings = Number(refData.earnings || 0);
 
-    // חישוב כולל אמיתי
+    // ⚙️ הכנסה פסיבית (אם קיימת)
+    const passiveEarnings = Array.isArray(u.partners)
+      ? u.partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0)
+      : 0;
+
+    // 🧮 סיכום כולל אמיתי
     const totalBattle = tapEarnings + xpEarnings + bonusEarnings + partnerEarnings + passiveEarnings;
 
     return res.json({
