@@ -98,7 +98,7 @@ if (window.Telegram?.WebApp?.initData) {
   console.log("✅ Active userId:", telegramUserId);
 console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
- // ====== Translations ======
+// ====== Translations ======
 const i18n = {
   en: {
     israel: "Israel",
@@ -117,7 +117,9 @@ const i18n = {
     err: "Something went wrong",
     partnerTitle: "Affiliate Program",
     copy: "Copy Link",
-    chooseTeam: "Choose your team"
+    chooseTeam: "Choose your team",
+    battleShort: "$Battle",
+    incomeShort: "Income"
   },
   he: {
     israel: "ישראל",
@@ -136,7 +138,9 @@ const i18n = {
     err: "אירעה שגיאה",
     partnerTitle: "תוכנית שותפים",
     copy: "העתק קישור",
-    chooseTeam: "בחר את הקבוצה שלך"
+    chooseTeam: "בחר את הקבוצה שלך",
+    battleShort: "$Battle",
+    incomeShort: "הכנסה"
   },
   ar: {
     israel: "إسرائيل",
@@ -155,7 +159,9 @@ const i18n = {
     err: "حدث خطأ ما",
     partnerTitle: "برنامج الإحالة",
     copy: "انسخ الرابط",
-    chooseTeam: "اختر فريقك"
+    chooseTeam: "اختر فريقك",
+    battleShort: "$Battle",
+    incomeShort: "الدخل"
   }
 };
 
