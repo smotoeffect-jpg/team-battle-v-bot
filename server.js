@@ -1762,52 +1762,53 @@ app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ===== Combined Battle Earnings (Total Real-Time Value) =====
+// ====== Combined Battle Earnings (debug + safe version) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
-    const userId = String(req.params.id || "").trim();
+    const userId =
+      String(req.params.id || req.query.userId || req.body?.userId || getUserIdFromReq(req) || "").trim();
     if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
 
-    // ✅ טוען קבצי נתונים עדכניים בזמן אמת
+    // טוען את קובץ המשתמשים ומוודא שהמשתמש קיים
     users = readJSON(USERS_FILE, {});
-    referrals = readJSON(REFERRALS_FILE, {});
+    const u = ensureUser(userId);
 
-    // ✅ דואג שהמשתמש קיים
-    const u = users[userId] || ensureUser(userId);
+    // 🧠 הדפסת בדיקה ללוג (ככה נבין אם יש נתונים בכלל)
+    console.log("💾 Earnings debug for", userId, {
+      battleBalance: u.battleBalance,
+      xp: u.xp,
+      partners: u.partners?.length || 0,
+    });
 
-    // 💰 רווחים מלחיצות (טאפים)
-    const tapEarnings = Number(u.battleBalance || u.battle || 0);
+    // 🟦 רווח מלחיצות (Tap Earnings)
+    const tapEarnings = Number(u.battleBalance || 0);
 
-    // 💎 בונוסים ו־XP מומרים
-    const xpEarnings = Number(u.xp || 0) * 0.1;
-    const bonusEarnings = Number(u.bonusBattle || 0);
+    // 🟨 רווחים מתוכנית שותפים
+    const partners = Array.isArray(u.partners) ? u.partners : [];
+    const partnerEarnings = partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
 
-    // 💸 רווחים מתוכנית שותפים (referrals.json)
-    const refData = referrals[userId] || { earnings: 0 };
-    const partnerEarnings = Number(refData.earnings || 0);
+    // 🟩 רווחים פסיביים לשנייה
+    const passivePerSec = partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
 
-    // ⚙️ הכנסה פסיבית (אם קיימת)
-    const passiveEarnings = Array.isArray(u.partners)
-      ? u.partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0)
-      : 0;
+    // 🟪 רווחים מבונוסים ו־XP
+    const bonusEarnings = Number(u.bonusBattle || 0) + (Number(u.xp || 0) * 0.1);
 
-    // 🧮 סיכום כולל אמיתי
-    const totalBattle = tapEarnings + xpEarnings + bonusEarnings + partnerEarnings + passiveEarnings;
+    // 💎 סיכום כולל
+    const totalBattle = tapEarnings + partnerEarnings + bonusEarnings;
 
-    return res.json({
+    res.json({
       ok: true,
       userId,
       totalBattle,
       breakdown: {
         tapEarnings,
-        xpEarnings,
-        bonusEarnings,
         partnerEarnings,
-        passiveEarnings
-      }
+        passivePerSec,
+        bonusEarnings,
+      },
     });
   } catch (e) {
-    console.error("❌ /api/earnings error:", e);
+    console.error("❌ /api/earnings critical error:", e);
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
