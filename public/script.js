@@ -357,7 +357,7 @@ async function refreshAll() {
     GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
     GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
     GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
-    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? M.battle ?? 0);
+    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
     GAME.me.username = M.username ?? GAME.me.username ?? null;
 
@@ -378,12 +378,14 @@ async function refreshAll() {
     try {
       const earnResp = await getJSON(`/api/earnings/${userId}`);
       if (earnResp?.ok) {
-        totalBattle = earnResp.totalBattle || 0;
-        incomePerSec =
-          earnResp.breakdown?.passiveEarningsPerSec ||
-          (earnResp.breakdown?.passiveEarnings
-            ? earnResp.breakdown.passiveEarnings / 60
-            : 0);
+        totalBattle = Number(earnResp.totalBattle || 0);
+
+        // 🧩 מחשב הכנסה לשנייה לפי פירוט breakdown
+        const bd = earnResp.breakdown || {};
+        const passiveEarnings = Number(bd.passiveEarnings || 0);
+        incomePerSec = passiveEarnings > 0 ? passiveEarnings / 60 : 0;
+      } else {
+        console.warn("⚠️ /api/earnings returned not-ok:", earnResp);
       }
     } catch (e) {
       console.warn("⚠️ /api/earnings unavailable, using local fallback");
@@ -398,10 +400,8 @@ async function refreshAll() {
     const battleEl = document.getElementById("battleShort");
     const incomeEl = document.getElementById("incomeShort");
 
-    if (battleEl)
-      battleEl.textContent = `${Number(totalBattle).toLocaleString()} $Battle`;
-    if (incomeEl)
-      incomeEl.textContent = `⚡ ${Number(incomePerSec).toFixed(2)}/sec`;
+    if (battleEl) battleEl.textContent = `${totalBattle.toLocaleString()} $Battle`;
+    if (incomeEl) incomeEl.textContent = `⚡ ${incomePerSec.toFixed(2)}/sec`;
 
     paintMe();
   } catch (err) {
