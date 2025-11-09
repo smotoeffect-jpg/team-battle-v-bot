@@ -1755,5 +1755,47 @@ app.get("*", (_, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ===== Combined Battle Earnings (Total Real-Time Value) =====
+app.get("/api/earnings/:id", (req, res) => {
+  try {
+    const userId = String(req.params.id || "").trim();
+    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
+
+    const u = ensureUser(userId);
+
+    // 🟦 רווח מלחיצות (Tap Earnings)
+    const tapEarnings = (u.battleBalance || 0);
+
+    // 🟨 רווחים מתוכנית שותפים
+    const partners = u.partners || [];
+    const partnerEarnings = partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
+
+    // 🟩 רווחים פסיביים (לשנייה)
+    const passive = partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
+    const passiveEarnings = passive * 60; // לדוגמה: סיכום בדקה
+
+    // 🟪 רווחים מבונוסים או XP מומרים (אם קיימים)
+    const bonusEarnings = (u.bonusBattle || 0) + (u.xp || 0) * 0.1; // כל XP שווה 0.1 Battle
+
+    // 💎 סיכום כולל
+    const totalBattle = tapEarnings + partnerEarnings + passiveEarnings + bonusEarnings;
+
+    return res.json({
+      ok: true,
+      userId,
+      totalBattle,
+      breakdown: {
+        tapEarnings,
+        partnerEarnings,
+        passiveEarnings,
+        bonusEarnings
+      }
+    });
+  } catch (e) {
+    console.error("❌ /api/earnings error:", e);
+    res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
