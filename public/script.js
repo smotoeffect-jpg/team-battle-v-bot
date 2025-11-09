@@ -340,12 +340,12 @@ async function refreshAll() {
   try {
     const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
-    // --- מצב כללי ---
+    // --- מצב כללי (ניקוד כולל מהשרת) ---
     const state = await getJSON("/api/state");
-    if (state.scores) GAME.scores = state.scores;
+    if (state?.scores) GAME.scores = state.scores;
     paintScores();
 
-    // --- משתמש ---
+    // --- נתוני משתמש ---
     const meResp = await getJSON(`/api/me?userId=${userId}`);
     const M = meResp?.me || meResp || {};
     if (!GAME.me) GAME.me = {};
@@ -361,24 +361,31 @@ async function refreshAll() {
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
     GAME.me.username = M.username ?? GAME.me.username ?? null;
 
-    // --- נתוני שותפים ---
+    // --- נתוני שותפים מהבוט ---
+    let partner = {};
     try {
-      const partner = await getJSON(`/api/partner/${userId}`);
-      GAME.partner = partner || {};
+      const partnerResp = await getJSON(`/api/partner/${userId}`);
+      if (partnerResp?.ok || partnerResp?.earnedBattle) partner = partnerResp;
     } catch {
-      GAME.partner = {};
+      console.warn("ℹ️ Partner API unavailable, fallback to empty data");
     }
+    GAME.partner = partner || {};
 
-    // --- חישוב משולב ---
-    const totalBattle =
-      (GAME.me.battle || 0) + (GAME.partner.earnedBattle || 0);
-    const incomePerSec = GAME.partner.incomePerSec || 0;
+    // --- חישוב כולל של $Battle ---
+    const battleFromTaps = GAME.me.battle || 0;
+    const battleFromRefs = GAME.partner.earnedBattle || 0;
+    const passiveIncome = GAME.partner.incomePerSec || 0;
+    const xpBonus = (GAME.me.xp || 0) * 0.1;
 
-    // --- עדכון תצוגת Battle ו־Income ---
+    const totalBattle = battleFromTaps + battleFromRefs + xpBonus;
+    const incomePerSec = passiveIncome;
+
+    // --- הצגת הנתונים בזמן אמת ---
     const battleEl = document.getElementById("battleShort");
     const incomeEl = document.getElementById("incomeShort");
-    if (battleEl) battleEl.textContent = `$${totalBattle.toFixed(2)}`;
-    if (incomeEl) incomeEl.textContent = `${incomePerSec.toFixed(2)}/sec`;
+
+    if (battleEl) battleEl.textContent = `${totalBattle.toLocaleString()} $Battle`;
+    if (incomeEl) incomeEl.textContent = `⚡ ${incomePerSec.toFixed(2)}/sec`;
 
     paintMe();
   } catch (err) {
