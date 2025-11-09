@@ -11,6 +11,13 @@ const FormData = require("form-data");
 
 const app = express();
 app.use(cors());
+// ===== CORS Fix for Telegram Mini-App =====
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 app.use(express.json({ type: ["application/json", "text/json"], limit: "1mb" }));
 app.use(express.urlencoded({ extended: false }));
 // ====== Global Dev Mode Middleware ======
