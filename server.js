@@ -1765,19 +1765,33 @@ app.get("*", (_, res) => {
 // ====== Combined Battle Earnings (debug + safe version) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
-    const userId =
-      String(req.params.id || req.query.userId || req.body?.userId || getUserIdFromReq(req) || "").trim();
-    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
+    const userId = String(
+      req.params.id ||
+      req.query.userId ||
+      req.body?.userId ||
+      getUserIdFromReq(req) ||
+      ""
+    ).trim();
 
-    // טוען את קובץ המשתמשים ומוודא שהמשתמש קיים
-    users = readJSON(USERS_FILE, {});
-    const u = ensureUser(userId);
+    if (!userId) {
+      console.warn("⚠️ Missing userId in /api/earnings request");
+      return res.status(400).json({ ok: false, error: "Missing userId" });
+    }
 
-    // 🧠 הדפסת בדיקה ללוג (ככה נבין אם יש נתונים בכלל)
+    // טוען את קובץ המשתמשים ובודק אם המשתמש קיים
+    const users = readJSON(USERS_FILE, {});
+    const u = users[userId];
+
+    if (!u) {
+      console.warn("⚠️ No user found for", userId);
+      return res.json({ ok: false, error: "User not found", totalBattle: 0 });
+    }
+
+    // 🧠 הדפסת בדיקה ללוג (נראה בזמן אמת אם יש נתונים)
     console.log("💾 Earnings debug for", userId, {
-      battleBalance: u.battleBalance,
-      xp: u.xp,
-      partners: u.partners?.length || 0,
+      battleBalance: u.battleBalance || 0,
+      xp: u.xp || 0,
+      partners: Array.isArray(u.partners) ? u.partners.length : 0,
     });
 
     // 🟦 רווח מלחיצות (Tap Earnings)
@@ -1796,7 +1810,8 @@ app.get("/api/earnings/:id", (req, res) => {
     // 💎 סיכום כולל
     const totalBattle = tapEarnings + partnerEarnings + bonusEarnings;
 
-    res.json({
+    // החזרת תשובה מסודרת
+    return res.json({
       ok: true,
       userId,
       totalBattle,
@@ -1812,6 +1827,5 @@ app.get("/api/earnings/:id", (req, res) => {
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
