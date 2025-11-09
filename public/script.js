@@ -335,16 +335,18 @@ try {
   console.error("Leaderboard fetch error:", err);
 }
 
-// ===== Refresh Game Data =====
+// ===== Refresh Game Data (Real-time 0.5s) =====
 async function refreshAll() {
   try {
-    const state = await getJSON('/api/state');
+    const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
+
+    // --- מצב כללי ---
+    const state = await getJSON("/api/state");
     if (state.scores) GAME.scores = state.scores;
     paintScores();
-  } catch (_) {}
 
-  try {
-    const meResp = await getJSON('/api/me?userId=' + telegramUserId);
+    // --- משתמש ---
+    const meResp = await getJSON(`/api/me?userId=${userId}`);
     const M = meResp?.me || meResp || {};
     if (!GAME.me) GAME.me = {};
 
@@ -356,16 +358,36 @@ async function refreshAll() {
     GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
     GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
     GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
-    GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0); // ✅ שומר XP בין רענונים
+    GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
     GAME.me.username = M.username ?? GAME.me.username ?? null;
+
+    // --- נתוני שותפים ---
+    try {
+      const partner = await getJSON(`/api/partner/${userId}`);
+      GAME.partner = partner || {};
+    } catch {
+      GAME.partner = {};
+    }
+
+    // --- חישוב משולב ---
+    const totalBattle =
+      (GAME.me.battle || 0) + (GAME.partner.earnedBattle || 0);
+    const incomePerSec = GAME.partner.incomePerSec || 0;
+
+    // --- עדכון תצוגת Battle ו־Income ---
+    const battleEl = document.getElementById("battleShort");
+    const incomeEl = document.getElementById("incomeShort");
+    if (battleEl) battleEl.textContent = `$${totalBattle.toFixed(2)}`;
+    if (incomeEl) incomeEl.textContent = `${incomePerSec.toFixed(2)}/sec`;
 
     paintMe();
   } catch (err) {
-    console.error("refreshAll error:", err);
+    console.error("⚠️ refreshAll error:", err);
   }
 }
 
-setInterval(refreshAll, 5000);
+// 🔁 רענון כל 0.5 שניות
+setInterval(refreshAll, 500);
 refreshAll();
   
   // ===== Status Bar =====
