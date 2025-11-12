@@ -554,101 +554,58 @@ app.post("/api/user/:id/team", (req, res) => {
   }
 });
 
-// ====== Tap endpoint – upgraded to Battery System ======
+// ====== Tap endpoint – Tap strength equals player level ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok: false, error: "no userId" });
 
+  // חייבים את המשתמש לפני כל שימוש ב-u
   const u = ensureUser(userId);
+
+  // חייב קבוצה מוגדרת – אין ברירת מחדל לישראל
   if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
 
-  // 🎯 הגדרות בסיסיות של מערכת הבטרייה
-  if (!u.batteryLevel) u.batteryLevel = 1;
-  if (!u.batteryCapacity) u.batteryCapacity = 300; // ברירת מחדל (כמו DAILY_TAPS)
-  if (!u.tapsToday) u.tapsToday = 0;
-
+  // ריסט יומי של מונה טאפים
   const today = todayStr();
   if (u.tapsDate !== today) {
     u.tapsDate = today;
     u.tapsToday = 0;
   }
 
-  // ⚡ מגבלת הבטרייה — לפי הקיבולת הנוכחית
-  if (u.tapsToday >= u.batteryCapacity) {
-    return res.json({
-      ok: false,
-      error: "battery_empty",
-      capacity: u.batteryCapacity,
-      level: u.batteryLevel
-    });
+  // מגבלת טאפים יומית
+  if (u.tapsToday >= DAILY_TAPS) {
+    return res.json({ ok: false, error: "limit", limit: DAILY_TAPS });
   }
 
-  // עוצמת הטאפ = רמת השחקן (לפחות 1)
+  // עוצמת הטאפ = רמת השחקן (מינימום 1)
   const tapPoints = Math.max(1, u.level || 1);
-  const team = u.team;
 
-  // ⚡ מוסיף טאפים + XP + $Battle
-  scores[team] = (scores[team] || 0) + tapPoints;
-  u.tapsToday += 1;
-  u.xp = (u.xp || 0) + tapPoints;
-  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0);
+  // הקבוצה שמקבלת את הניקוד = הקבוצה של המשתמש כרגע
+  const team = u.team; // אין דיפולטים
 
-  // 💎 שומר
+  // עדכונים
+  scores[team] = (scores[team] || 0) + tapPoints;       // ניקוד לקבוצה
+  u.tapsToday += 1;                                     // מונה יומי
+  u.xp = (u.xp || 0) + tapPoints;                       // XP לפי עוצמה
+  u.battle = (u.battle || 0) + tapPoints;               // מונה פנימי (אם בשימוש)
+  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0); // יתרת $BATTLE
+
+  // שמירה לקבצים
   writeJSON(SCORES_FILE, scores);
   writeJSON(USERS_FILE, users);
 
+  // תגובה לקליינט
   res.json({
     ok: true,
     team,
     tapPoints,
     tapsToday: u.tapsToday,
-    capacity: u.batteryCapacity,
-    level: u.batteryLevel,
     battleBalance: u.battleBalance,
     xp: u.xp,
     scores
   });
 });
 
-// ====== Upgrade Battery (POST /api/upgrade/battery) ======
-app.post("/api/upgrade/battery", (req, res) => {
-  try {
-    const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
-
-    const u = ensureUser(userId);
-
-    // נתוני בסיס
-    u.batteryLevel = u.batteryLevel || 1;
-    u.batteryCap = u.batteryCap || 300;
-    u.batteryCost = u.batteryCost || 100;
-    u.battleBalance = u.battleBalance || 0;
-
-    // בדיקת יתרה
-    if (u.battleBalance < u.batteryCost) {
-      return res.json({ ok: false, error: "not_enough_battle", need: u.batteryCost });
-    }
-
-    // שדרוג
-    u.battleBalance -= u.batteryCost;
-    u.batteryLevel += 1;
-    u.batteryCap = Math.round(u.batteryCap * 1.15);
-    u.batteryCost = Math.round(u.batteryCost * 1.5);
-
-    writeJSON(USERS_FILE, users);
-
-    return res.json({
-      ok: true,
-      newLevel: u.batteryLevel,
-      newCap: u.batteryCap,
-      newCost: u.batteryCost,
-      balance: u.battleBalance
-    });
-  } catch (e) {
-    console.error("❌ Battery upgrade error:", e);
-    return res.status(500).json({ ok: false, error: "server_error" });
-  }
-});
 
 app.post("/api/super", (req, res) => {
   return res.json({ ok: false, message: "Super Boost disabled" });
