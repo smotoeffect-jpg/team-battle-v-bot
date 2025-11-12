@@ -1,3 +1,5 @@
+// ===== Auto-detect API base (Render / local / Telegram) =====
+const API_BASE = window.location.origin || "";
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
 function waitForWebApp(maxWait = 2000) {
@@ -756,7 +758,7 @@ document.addEventListener("DOMContentLoaded", () => {
     msgEl.style.color = "#ccc";
 
     try {
-      const res = await fetch("/api/upgrade/battery", {
+      const res = await fetch(`${API_BASE}/api/upgrade/battery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: telegramUserId })
