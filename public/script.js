@@ -811,11 +811,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // מאזין לכל כפתור
   Object.entries(buttons).forEach(([key, btn]) => {
     if (!btn) return;
-    btn.addEventListener("click", () => showPanel(key));
+    btn.addEventListener("click", () => {
+      showPanel(key);
+      syncPanels(key); // 🔄 סנכרון בזמן מעבר בין פאנלים
+    });
   });
 
-  // ברירת מחדל – מציג רק את המסך הראשי
+  // ברירת מחדל – מציג רק את המסך הראשי ומרנדר נתונים חיים
   showPanel("home");
+  syncPanels("home");
 });
 
 // ===== TB_V17 — Battery Upgrade Client Logic (Multilingual) =====
