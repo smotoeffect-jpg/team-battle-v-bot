@@ -721,7 +721,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// === TB_V15 — Bottom Navigation Logic (Fixed + Clean) ===
+// === TB_V15 — Bottom Navigation Logic (Final Fixed Version) ===
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
     home: document.querySelector(".wrap"),
@@ -739,10 +739,22 @@ document.addEventListener("DOMContentLoaded", () => {
     referrals: document.getElementById("btn-referrals")
   };
 
+  // 👇 פונקציה שמציגה רק את הפאנל הנבחר
   function showPanel(panelKey) {
-    Object.values(panels).forEach(p => { if (p) p.style.display = "none"; });
+    Object.values(panels).forEach(p => {
+      if (!p) return;
+      p.classList.add("hidden"); // מוסתר
+      p.style.display = "none";
+    });
+
     Object.values(buttons).forEach(b => b?.classList.remove("active"));
-    if (panels[panelKey]) panels[panelKey].style.display = "block";
+
+    const panel = panels[panelKey];
+    if (panel) {
+      panel.classList.remove("hidden"); // מציג
+      panel.style.display = "block";
+    }
+
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
   }
 
@@ -751,6 +763,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => showPanel(key));
   });
 
+  // 👇 ברירת מחדל – דף הבית
   showPanel("home");
 });
 
