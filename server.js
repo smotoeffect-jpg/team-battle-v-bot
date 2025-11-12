@@ -837,14 +837,25 @@ app.post("/api/successful_payment", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
-// ====== Me (referrals + stats + daily bonus) ======
+// ====== Me (referrals + stats + daily bonus + VIP + Battery) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
   if (!userId) return res.json({ ok: false });
 
+  const now = Date.now();
+
   // ✅ ודא שמשתמש קיים בזיכרון
   const u = ensureUser(userId);
+
+  // ✅ אתחול שדות קבועים אם חסרים (כדי שישמרו לקובץ)
+  if (u.batteryLevel == null) u.batteryLevel = 1;
+  if (u.batteryCap == null)   u.batteryCap   = 300;
+
+  // VIP מחושב לפי תוקף בפועל
+  const vipActive = !!(u.perkExpiry && now < u.perkExpiry);
+  if (vipActive && !u.vipActive) u.vipActive = true;
+  if (!vipActive && u.vipActive) u.vipActive = false;
 
   // ✅ אפס טאפ יומי אם עבר יום
   const today = todayStr();
@@ -859,12 +870,8 @@ app.get("/api/me", (req, res) => {
     u.referrer = String(start);
     const inviter = ensureUser(String(start));
     inviter.referrals = (inviter.referrals || 0) + 1;
-    inviter.referralsList = Array.isArray(inviter.referralsList)
-      ? inviter.referralsList
-      : [];
-    if (!inviter.referralsList.includes(userId)) {
-      inviter.referralsList.push(userId);
-    }
+    inviter.referralsList = Array.isArray(inviter.referralsList) ? inviter.referralsList : [];
+    if (!inviter.referralsList.includes(userId)) inviter.referralsList.push(userId);
   }
 
   // ✅ נרמול רשימת הזמנות
@@ -873,26 +880,13 @@ app.get("/api/me", (req, res) => {
 
   // ✅ בונוס יומי
   let justGotDailyBonus = false;
-  const now = nowTs();
-  if (
-    u.team &&
-    (!u.lastDailyBonus ||
-      now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)
-  ) {
+  if (u.team && (!u.lastDailyBonus || now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)) {
     scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
-
-    // 💰 מוסיף בונוס יומי של מטבע $BATTLE
     u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
-
     addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
     u.lastDailyBonus = now;
-    u.history.push({
-      ts: now,
-      type: "daily_bonus",
-      points: DAILY_BONUS_POINTS,
-      team: u.team,
-      xp: DAILY_BONUS_XP,
-    });
+    u.history = u.history || [];
+    u.history.push({ ts: now, type: "daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
     if (u.history.length > 200) u.history.shift();
     justGotDailyBonus = true;
     writeJSON(SCORES_FILE, scores);
@@ -902,7 +896,13 @@ app.get("/api/me", (req, res) => {
   users[userId] = u;
   writeJSON(USERS_FILE, users);
 
+  // 🧮 חישוב עלות השדרוג הבא של הבטרייה (לתצוגה בלבד)
+  const baseCost = 100;
+  const costMultiplier = 1.8;
+  const batteryNextCost = Math.floor(baseCost * Math.pow(costMultiplier, (u.batteryLevel || 1) - 1));
+
   const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
+
   // ✅ שליחה חזרה למיני-אפליקציה
   res.json({
     ok: true,
@@ -911,21 +911,38 @@ app.get("/api/me", (req, res) => {
       team: u.team,
       tapsToday: u.tapsToday || 0,
       superUsed: u.superUsed || 0,
+
+      // 💎 תשלומים/יתרות
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
-      battleBalance: u.battleBalance || 0, // 💰 יתרת $BATTLE
+      battleBalance: u.battleBalance || 0,
+
+      // 🎮 שחקן
       displayName: u.displayName || null,
       username: u.username || null,
       xp: u.xp || 0,
       level: u.level || 1,
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
+
+      // 🔋 בטרייה
+      batteryLevel: u.batteryLevel || 1,
+      batteryCap: u.batteryCap || 300,
+      batteryNextCost,
+
+      // 💠 VIP
+      isVIP: vipActive,
+      vipActive,
+      perkExpiry: u.perkExpiry || 0,
+
+      // 👥 שותפים
       preferredLang: u.preferredLang || "he",
-      history: (u.history || []).slice(-50),
       referrals: u.referrals || 0,
       referrer: u.referrer || null,
       referralsList: u.referralsList,
-      refLink, // 👈 נשלח למיני-אפליקציה
+
+      // 🔗 קישור אישי
+      refLink,
     },
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs },
