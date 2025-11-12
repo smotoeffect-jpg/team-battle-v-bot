@@ -1757,19 +1757,6 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ====== Static fallback ======
-// ✅ חשוב: נרשום את זה אחרי כל נתיבי ה־API,
-// אבל לפני סגירת הקובץ (ולא לפני ה־/api/earnings)
-app.get("*", (req, res) => {
-  // אם מדובר בבקשה ל־API, לא מחזירים HTML אלא 404 JSON
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ ok: false, error: "API endpoint not found" });
-  }
-
-  // אחרת – מחזירים את המיני אפליקציה
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
 // ====== Combined Battle Earnings (debug + safe version) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
@@ -1835,5 +1822,19 @@ app.get("/api/earnings/:id", (req, res) => {
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
+
+// ====== Static fallback ======
+// ✅ חשוב: נרשום את זה אחרי כל נתיבי ה־API,
+// אבל לפני סגירת הקובץ (ולא לפני ה־/api/earnings)
+app.get("*", (req, res) => {
+  // אם מדובר בבקשה ל־API, לא מחזירים HTML אלא 404 JSON
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ ok: false, error: "API endpoint not found" });
+  }
+
+  // אחרת – מחזירים את המיני אפליקציה
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`✅ Server running on :${PORT} | DATA_DIR=${DATA_DIR}`));
