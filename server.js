@@ -606,45 +606,61 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
-// ===== TB_V16 — Battery Upgrade System =====
+// ===== TB_V16 — Battery Upgrade API =====
 app.post("/api/upgrade/battery", (req, res) => {
   try {
-    const userId = String(req.body?.userId || "").trim();
-    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
+    const { userId } = req.body;
+    if (!userId) return res.json({ ok: false, error: "missing_user" });
 
-    const u = ensureUser(userId);
+    const usersPath = path.join(DATA_DIR, "users.json");
+    const users = fs.existsSync(usersPath)
+      ? JSON.parse(fs.readFileSync(usersPath, "utf8"))
+      : {};
 
-    // ⚙️ ערכים התחלתיים
-    if (!u.batteryLevel) u.batteryLevel = 1;
-    if (!u.battleBalance) u.battleBalance = 0;
+    const user = users[userId] || {
+      battle: 0,
+      batteryLevel: 1,
+      batteryCap: 300
+    };
 
-    // 🧮 הגדרת נתוני השדרוג
-    const currentLevel = u.batteryLevel;
-    const upgradeCost = 100 * currentLevel; // כל רמה עולה פי 100
-    const newLevel = currentLevel + 1;
-    const newCap = 300 + (newLevel - 1) * 45; // כל שדרוג מעלה 15%
+    // הגדרת שלבים של רמות הבטרייה
+    const maxLevel = 10;
+    const baseCost = 100;
+    const costMultiplier = 1.8; // הקושי בינוני עד קשה
+    const capacityMultiplier = 1.25; // תוספת 25% בכל רמה
 
-    // 💰 בדיקה אם יש מספיק $Battle
-    if (u.battleBalance < upgradeCost) {
+    // חישוב עלות הרמה הבאה
+    const currentLevel = user.batteryLevel || 1;
+    const nextLevel = currentLevel + 1;
+    const upgradeCost = Math.floor(baseCost * Math.pow(costMultiplier, currentLevel - 1));
+
+    // אם כבר הגיע למקסימום
+    if (currentLevel >= maxLevel) {
+      return res.json({ ok: false, error: "max_level" });
+    }
+
+    // בדיקה שיש מספיק Battle balance
+    if ((user.battle || 0) < upgradeCost) {
       return res.json({ ok: false, error: "not_enough_battle" });
     }
 
-    // ✅ מבצע שדרוג
-    u.battleBalance -= upgradeCost;
-    u.batteryLevel = newLevel;
-    u.batteryCap = newCap;
+    // ניכוי Battle והגדלת רמה
+    user.battle -= upgradeCost;
+    user.batteryLevel = nextLevel;
+    user.batteryCap = Math.floor(user.batteryCap * capacityMultiplier);
 
-    writeJSON(USERS_FILE, users);
+    users[userId] = user;
+    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
 
-    return res.json({
+    res.json({
       ok: true,
-      newLevel,
-      newCap,
-      newCost: 100 * newLevel
+      newLevel: user.batteryLevel,
+      newCap: user.batteryCap,
+      newCost: Math.floor(baseCost * Math.pow(costMultiplier, nextLevel - 1))
     });
   } catch (err) {
-    console.error("⚠️ Battery upgrade error:", err);
-    return res.status(500).json({ ok: false, error: "Server error" });
+    console.error("Battery upgrade error:", err);
+    res.json({ ok: false, error: "server_error" });
   }
 });
 
