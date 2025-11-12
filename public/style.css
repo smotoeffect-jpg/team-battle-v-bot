@@ -359,5 +359,59 @@ body{
   text-shadow: 0 0 10px rgba(255, 223, 0, 0.8);
 }
 
+/* === TB_V15 — Bottom Navigation Bar === */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--panel);
+  border-top: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 -2px 18px rgba(255,77,196,.25);
+  z-index: 9999;
+}
+
+.nav-scroll {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 10px 8px;
+  justify-content: space-between;
+}
+
+.nav-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background: rgba(255,77,196,0.15);
+  color: var(--pink);
+  box-shadow: 0 0 10px rgba(255,77,196,.25);
+}
+
+.nav-btn.active {
+  background: linear-gradient(180deg,#ff4dc4,#e028a5);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255,77,196,.35);
+}
+
+/* למוביילים קטנים */
+@media (max-width: 600px) {
+  .nav-btn {
+    font-size: 13px;
+    padding: 7px 8px;
+  }
+}
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
