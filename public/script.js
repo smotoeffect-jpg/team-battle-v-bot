@@ -688,7 +688,7 @@ document.addEventListener("DOMContentLoaded", () => {
     referrals: document.getElementById("btn-referrals")
   };
 
-  // מציג רק את הפאנל הנבחר
+  // 👇 מציג רק את הפאנל הנבחר
   function showPanel(panelKey) {
     Object.values(panels).forEach(p => {
       if (p) p.style.display = "none";
@@ -699,13 +699,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
   }
 
-  // מאזינים לכל כפתור
+  // 👇 מאזין לכל כפתור בסרגל
   Object.entries(buttons).forEach(([key, btn]) => {
     if (!btn) return;
     btn.addEventListener("click", () => showPanel(key));
   });
 
-  // ברירת מחדל: מציג את "הלוח שלי"
+  // 👇 ברירת מחדל: מציג את "הלוח שלי"
   showPanel("home");
 });
 
