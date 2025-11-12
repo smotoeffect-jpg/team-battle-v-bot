@@ -606,7 +606,7 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
-// ===== TB_V16 — Battery Upgrade API =====
+// ===== TB_V17 — Battery Upgrade API (Persistent Fix) =====
 app.post("/api/upgrade/battery", (req, res) => {
   try {
     const { userId } = req.body;
@@ -626,8 +626,10 @@ app.post("/api/upgrade/battery", (req, res) => {
       ? JSON.parse(fs.readFileSync(usersPath, "utf8"))
       : {};
 
+    // ✅ טעינת המשתמש או יצירת חדש
     const user = users[userId] || {
       battle: 0,
+      battleBalance: 0,
       batteryLevel: 1,
       batteryCap: 300
     };
@@ -649,20 +651,21 @@ app.post("/api/upgrade/battery", (req, res) => {
       return res.json({ ok: false, error: "max_level" });
     }
 
-    // 💰 בדיקה שיש מספיק Battle balance
-    if ((user.battle || 0) < upgradeCost) {
-      console.log(`❌ User ${userId} has insufficient balance (${user.battle} < ${upgradeCost})`);
+    // 💰 בדיקה שיש מספיק Battle balance (נבדוק גם battleBalance וגם battle)
+    const balance = user.battleBalance ?? user.battle ?? 0;
+    if (balance < upgradeCost) {
+      console.log(`❌ User ${userId} has insufficient balance (${balance} < ${upgradeCost})`);
       return res.json({ ok: false, error: "not_enough_battle" });
     }
 
     // ✅ ביצוע השדרוג
-    user.battle -= upgradeCost;
+    user.battleBalance = balance - upgradeCost;
     user.batteryLevel = nextLevel;
     user.batteryCap = Math.floor(user.batteryCap * capacityMultiplier);
 
-    // 💾 שמירת נתונים
+    // 💾 שמירת נתונים גם בזיכרון וגם לקובץ
     users[userId] = user;
-    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+    writeJSON(USERS_FILE, users);
 
     // 🟢 תשובת הצלחה ללקוח
     console.log(`✅ User ${userId} upgraded to level ${user.batteryLevel}, new cap ${user.batteryCap}`);
