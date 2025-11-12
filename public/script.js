@@ -750,35 +750,59 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ===== TB_V17 — Panels Real-Time Sync =====
+// ===== TB_V17 — Panels Real-Time Sync (FIXED userId) =====
 async function syncPanels(panelKey) {
   try {
-    const res = await fetch("/api/user/" + window.telegramUserId);
+    // ⚠️ אל תסמוך רק על window.telegramUserId
+    const uid =
+      window.telegramUserId ||
+      (window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+        ? String(window.Telegram.WebApp.initDataUnsafe.user.id)
+        : null) ||
+      localStorage.getItem("telegram_userId") ||
+      "guest";
+
+    // נוודא שגם window יתעדכן אם היה ריק
+    if (!window.telegramUserId && uid) window.telegramUserId = uid;
+
+    const res = await fetch(`/api/user/${uid}`);
     const data = await res.json();
-    if (!data.ok) return;
+    if (!data || !data.ok || !data.user) return;
 
     // === עמוד שדרוגים (Upgrades) ===
     if (panelKey === "upgrades" || panelKey === "home") {
-      document.getElementById("batteryLevel").textContent = data.user.batteryLevel || 1;
-      document.getElementById("batteryCap").textContent = data.user.batteryCap || 300;
-      document.getElementById("batteryCost").textContent = data.user.batteryCost || 100;
+      const u = data.user || {};
+      const lvlEl = document.getElementById("batteryLevel");
+      const capEl = document.getElementById("batteryCap");
+      const costEl = document.getElementById("batteryCost");
+
+      if (lvlEl) lvlEl.textContent = u.batteryLevel ?? 1;
+      if (capEl) capEl.textContent = u.batteryCap ?? 300;
+      if (costEl) costEl.textContent = u.batteryCost ?? 100;
 
       const vipStatus = document.getElementById("vipStatus");
       if (vipStatus) {
-        const active = data.user.isVIP && Date.now() < data.user.perkExpiry;
-        vipStatus.textContent = active ? i18n[getLang()].vipActive : i18n[getLang()].vipInactive;
+        const active = !!(u.isVIP && u.perkExpiry && Date.now() < u.perkExpiry);
+        const lang = (document.documentElement.getAttribute("data-lang") || "he");
+        vipStatus.textContent = active
+          ? (i18n[lang]?.vipActive || "Active")
+          : (i18n[lang]?.vipInactive || "Inactive");
         vipStatus.style.color = active ? "#00ff99" : "#ff4d4d";
       }
     }
 
     // === עמוד הלוח שלי (My Board) ===
     if (panelKey === "myteam") {
-      document.getElementById("me-stars").textContent = data.user.stars || 0;
-      document.getElementById("me-battle").textContent = data.user.battle || 0;
-      document.getElementById("me-xp").textContent = data.user.xp || 0;
-      document.getElementById("me-referrals").textContent = data.user.referrals || 0;
+      const u = data.user || {};
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = v ?? 0;
+      };
+      set("me-stars", u.stars);
+      set("me-battle", (typeof u.battle === "number") ? u.battle.toFixed(2) : (u.battle ?? 0));
+      set("me-xp", u.xp);
+      set("me-referrals", u.referrals);
     }
-
   } catch (err) {
     console.warn("⚠️ syncPanels failed:", err);
   }
