@@ -67,33 +67,55 @@
         <div class="panel-title">🪖 My Team (Coming Soon)</div>
       </section>
 
-      <!-- ⚙️ Upgrades Panel -->
-      <section class="panel hidden" id="upgradesPanel">
-        <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
-        <div class="upgrade-card">
-          <div class="upgrade-info">
-            <div class="upgrade-row">
-              🔋 <span data-i18n="batteryLevel">Battery Level</span>:
-              <span id="batteryLevel" class="upgrade-value">1</span>
-            </div>
-            <div class="upgrade-row">
-              ⚡ <span data-i18n="batteryCap">Capacity</span>:
-              <span id="batteryCap" class="upgrade-value">300</span>
-            </div>
-            <div class="upgrade-row">
-              💰 <span data-i18n="batteryCost">Cost</span>:
-              <span id="batteryCost" class="upgrade-value">100</span> $Battle
-            </div>
-          </div>
-          <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">
-            🔼 Upgrade Battery
-          </button>
-          <div id="batteryMsg" class="upgrade-msg"></div>
-        </div>
-        <div class="comingsoon" style="margin-top:20px;opacity:.6;">
-          <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
-        </div>
-      </section>
+<!-- ⚙️ Upgrades Panel -->
+<section class="panel hidden" id="upgradesPanel">
+  <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
+
+  <!-- 🔋 Battery Upgrade -->
+  <div class="upgrade-card">
+    <div class="upgrade-info">
+      <div class="upgrade-row">
+        🔋 <span data-i18n="batteryLevel">Battery Level</span>:
+        <span id="batteryLevel" class="upgrade-value">1</span>
+      </div>
+      <div class="upgrade-row">
+        ⚡ <span data-i18n="batteryCap">Capacity</span>:
+        <span id="batteryCap" class="upgrade-value">300</span>
+      </div>
+      <div class="upgrade-row">
+        💰 <span data-i18n="batteryCost">Cost</span>:
+        <span id="batteryCost" class="upgrade-value">100</span> $Battle
+      </div>
+    </div>
+    <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">
+      🔼 <span data-i18n="upgradeBatteryBtn">Upgrade Battery</span>
+    </button>
+    <div id="batteryMsg" class="upgrade-msg"></div>
+  </div>
+
+  <!-- 💎 VIP Upgrade -->
+  <div class="upgrade-card">
+    <div class="upgrade-info">
+      <div class="upgrade-row">
+        💎 <span data-i18n="vipTitle">VIP Status</span>:
+        <span id="vipStatus" class="upgrade-value" data-i18n="vipInactive">Inactive</span>
+      </div>
+      <div class="upgrade-row">
+        ⭐ <span data-i18n="vipCost">Cost</span>: <span>300</span> Stars
+      </div>
+    </div>
+
+    <button id="btn-activate-vip" class="btn btn-purple" data-i18n="buyVip">
+      💰 <span data-i18n="buyVip">Buy VIP</span>
+    </button>
+
+    <div id="vipMsg" class="upgrade-msg"></div>
+  </div>
+
+  <div class="comingsoon" style="margin-top:20px;opacity:.6;">
+    <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
+  </div>
+</section>
 
       <!-- 🏆 Leaderboard + My Board Combined -->
       <section class="panel hidden" id="leaderboard">
