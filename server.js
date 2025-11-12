@@ -794,7 +794,6 @@ app.post("/api/successful_payment", async (req, res) => {
     const payment = req.body;
     console.log("💰 Successful payment received:", payment);
 
-    // מוודא שיש payload תקין
     const payload = payment?.payload ? JSON.parse(payment.payload) : null;
     if (!payload?.userId) {
       console.warn("⚠️ Missing userId in payment payload");
@@ -806,26 +805,27 @@ app.post("/api/successful_payment", async (req, res) => {
     const stars  = Number(payload.stars || 0);
     const team   = payload.team || "unknown";
 
-    const user = ensureUser(userId);
-    if (!user.team) user.team = team;
+    const u = ensureUser(userId);
+    if (!u.team) u.team = team;
 
     // 💫 לוגיקה לפי סוג תשלום
     if (type === "donation") {
-      user.starsDonated = (user.starsDonated || 0) + stars;
-      user.battleBalance = (user.battleBalance || 0) + stars * 0.5;
+      u.starsDonated = (u.starsDonated || 0) + stars;
+      u.battleBalance = (u.battleBalance || 0) + stars * 0.5;
       console.log(`⭐ Donation processed for ${userId}: +${stars} Stars`);
     }
 
-    // 💎 אם זה תשלום VIP
     if (type === "vip") {
       const now = Date.now();
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      user.isVIP = true;
-      user.perkExpiry = now + sevenDays;
-      console.log(`💎 VIP activated for user ${userId} until ${new Date(user.perkExpiry).toLocaleString()}`);
+      u.isVIP = true;
+      u.perkExpiry = now + sevenDays;
+      u.vipActive = true;
+      console.log(`💎 VIP activated for user ${userId} until ${new Date(u.perkExpiry).toLocaleString()}`);
     }
 
-    // שמירת הנתונים
+    // ✅ שמירת המשתמש בזיכרון + לקובץ
+    users[userId] = u;
     writeJSON(USERS_FILE, users);
 
     res.json({ ok: true });
