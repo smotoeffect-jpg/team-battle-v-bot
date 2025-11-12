@@ -122,18 +122,18 @@ const i18n = {
     incomeShort: "Income",
 
     // ⚙️ Upgrades + Battery
-    upgradesTitle: "Upgrades",
-    batteryLevel: "Battery Level",
-    batteryCap: "Capacity",
-    batteryCost: "Cost",
-    upgradeBattery: "Upgrade Battery",
+    upgradesTitle: "⚙️ Upgrades",
+    batteryLevel: "🔋 Battery Level",
+    batteryCap: "⚡ Capacity",
+    batteryCost: "💰 Cost",
+    upgradeBattery: "🔼 Upgrade Battery",
 
-    // 🧭 Bottom Navigation
-    navHome: "Home",
-    navMyTeam: "My Team",
-    navUpgrades: "Upgrades",
-    navLeaderboard: "Leaderboard",
-    navReferrals: "Referrals"
+    // 🧭 Bottom Navigation (with emojis)
+    navHome: "🏠 Home",
+    navMyTeam: "🪖 My Team",
+    navUpgrades: "⚙️ Upgrades",
+    navLeaderboard: "🏆 Leaderboard",
+    navReferrals: "🔗 Referrals"
   },
 
   he: {
@@ -158,18 +158,18 @@ const i18n = {
     incomeShort: "הכנסה",
 
     // ⚙️ Upgrades + Battery
-    upgradesTitle: "שדרוגים",
-    batteryLevel: "רמת בטרייה",
-    batteryCap: "קיבולת",
-    batteryCost: "עלות",
-    upgradeBattery: "שדרג בטרייה",
+    upgradesTitle: "⚙️ שדרוגים",
+    batteryLevel: "🔋 רמת בטרייה",
+    batteryCap: "⚡ קיבולת",
+    batteryCost: "💰 עלות",
+    upgradeBattery: "🔼 שדרג בטרייה",
 
-    // 🧭 Bottom Navigation
-    navHome: "בית",
-    navMyTeam: "הקבוצה שלי",
-    navUpgrades: "שדרוגים",
-    navLeaderboard: "לוח מובילים",
-    navReferrals: "שותפים"
+    // 🧭 Bottom Navigation (עם אימוג’ים)
+    navHome: "🏠 בית",
+    navMyTeam: "🪖 הקבוצה שלי",
+    navUpgrades: "⚙️ שדרוגים",
+    navLeaderboard: "🏆 לוח מובילים",
+    navReferrals: "🔗 שותפים"
   },
 
   ar: {
@@ -194,42 +194,49 @@ const i18n = {
     incomeShort: "الدخل",
 
     // ⚙️ Upgrades + Battery
-    upgradesTitle: "الترقيات",
-    batteryLevel: "مستوى البطارية",
-    batteryCap: "السعة",
-    batteryCost: "التكلفة",
-    upgradeBattery: "ترقية البطارية",
+    upgradesTitle: "⚙️ الترقيات",
+    batteryLevel: "🔋 مستوى البطارية",
+    batteryCap: "⚡ السعة",
+    batteryCost: "💰 التكلفة",
+    upgradeBattery: "🔼 ترقية البطارية",
 
-    // 🧭 Bottom Navigation
-    navHome: "الرئيسية",
-    navMyTeam: "فريقي",
-    navUpgrades: "الترقيات",
-    navLeaderboard: "المتصدرون",
-    navReferrals: "الإحالات"
+    // 🧭 Bottom Navigation (بالرموز التعبيرية)
+    navHome: "🏠 الرئيسية",
+    navMyTeam: "🪖 فريقي",
+    navUpgrades: "⚙️ الترقيات",
+    navLeaderboard: "🏆 المتصدرون",
+    navReferrals: "🔗 الإحالات"
   }
 };
 
 
-  function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
-  function setLang(l) {
+// ====== Language Handling ======
+function getLang(){ 
+  return document.documentElement.getAttribute('data-lang') || 'he'; 
+}
 
-    document.documentElement.setAttribute('data-lang', l);
-    localStorage.setItem('tb_lang', l);
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const k = el.getAttribute('data-i18n');
-      el.textContent = i18n[l]?.[k] || k;
-    });
+function setLang(l) {
+  document.documentElement.setAttribute('data-lang', l);
+  localStorage.setItem('tb_lang', l);
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.getAttribute('data-i18n');
+    el.textContent = i18n[l]?.[k] || k;
+  });
+}
+
+const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
+if (langBtns && langBtns.length) {
+  langBtns.forEach(btn => btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
+}
+
+(function(){
+  const s=localStorage.getItem('tb_lang');
+  if(s) setLang(s); 
+  else { 
+    const t=(navigator.language||'he').slice(0,2); 
+    setLang(['he','en','ar'].includes(t)?t:'he'); 
   }
-
-  const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
-  if (langBtns && langBtns.length) {
-    langBtns.forEach(btn => btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
-  }
-
-  (function(){
-    const s=localStorage.getItem('tb_lang');
-    if(s) setLang(s); else { const t=(navigator.language||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); }
-  })();
+})();
 // שמירת הדגשה מהבחירה הקודמת
 const savedTeam = localStorage.getItem("tb_team");
 if (savedTeam) {
