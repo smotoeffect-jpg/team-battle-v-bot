@@ -100,7 +100,7 @@ if (window.Telegram?.WebApp?.initData) {
   console.log("✅ Active userId:", telegramUserId);
 console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
-// ====== Translations ======
+// ====== Translations (Full Multilingual Map) ======
 const i18n = {
   en: {
     // 🏁 General
@@ -134,7 +134,7 @@ const i18n = {
     comingSoon: "⚙️ Upgrade your power, energy and rewards!",
 
     // 💎 VIP
-    vipTitle: "VIP Status",
+    vipStatusLabel: "VIP Status",
     vipCost: "Cost",
     buyVip: "Buy VIP",
     vipActive: "Active",
@@ -180,7 +180,7 @@ const i18n = {
     comingSoon: "⚙️ שדרג את העוצמה, האנרגיה והפרסים שלך!",
 
     // 💎 VIP
-    vipTitle: "מצב VIP",
+    vipStatusLabel: "מצב VIP",
     vipCost: "עלות",
     buyVip: "קנה VIP",
     vipActive: "פעיל",
@@ -226,9 +226,9 @@ const i18n = {
     comingSoon: "⚙️ قم بترقية قوتك وطاقتك ومكافآتك!",
 
     // 💎 VIP
-    vipTitle: "حالة VIP",
+    vipStatusLabel: "حالة VIP",
     vipCost: "التكلفة",
-    buyVip: "اشتري VIP",
+    buyVip: "شراء VIP",
     vipActive: "نشط",
     vipInactive: "غير نشط",
 
@@ -240,7 +240,6 @@ const i18n = {
     navReferrals: "الإحالات"
   }
 };
-
 
   function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
   function setLang(l) {
