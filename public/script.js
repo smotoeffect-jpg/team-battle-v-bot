@@ -670,10 +670,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// === TB_V15 — Bottom Navigation Logic (Fixed) ===
+// === TB_V15 — Bottom Navigation Logic (Fixed Final) ===
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
-    home: document.querySelector(".wrap"), // המסך הראשי
+    home: document.getElementById("my-board"),      // הלוח שלי (ברירת מחדל)
     myteam: document.getElementById("my-board"),
     upgrades: document.getElementById("upgradesPanel"),
     leaderboard: document.getElementById("top20"),
@@ -688,27 +688,24 @@ document.addEventListener("DOMContentLoaded", () => {
     referrals: document.getElementById("btn-referrals")
   };
 
-  // 👇 פונקציה שמציגה רק את הפאנל הנבחר
+  // מציג רק את הפאנל הנבחר
   function showPanel(panelKey) {
-    // מסתיר הכול
     Object.values(panels).forEach(p => {
       if (p) p.style.display = "none";
     });
-    // מסיר סימון נבחר מכל הכפתורים
     Object.values(buttons).forEach(b => b?.classList.remove("active"));
 
-    // מציג את הפאנל הנבחר בלבד
     if (panels[panelKey]) panels[panelKey].style.display = "block";
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
   }
 
-  // 👇 מאזינים לכל כפתור בסרגל
+  // מאזינים לכל כפתור
   Object.entries(buttons).forEach(([key, btn]) => {
     if (!btn) return;
     btn.addEventListener("click", () => showPanel(key));
   });
 
-  // 👇 מציג את המסך הראשי כברירת מחדל
+  // ברירת מחדל: מציג את "הלוח שלי"
   showPanel("home");
 });
 
