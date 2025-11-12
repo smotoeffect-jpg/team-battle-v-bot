@@ -378,12 +378,14 @@ async function refreshAll() {
     try {
       const earnResp = await getJSON(`/api/earnings/${userId}`);
       if (earnResp?.ok) {
-        totalBattle = Number(earnResp.totalBattle || 0);
-
-        // 🧩 מחשב הכנסה לשנייה לפי פירוט breakdown
         const bd = earnResp.breakdown || {};
-        const passiveEarnings = Number(bd.passiveEarnings || 0);
-        incomePerSec = passiveEarnings > 0 ? passiveEarnings / 60 : 0;
+        const tapEarnings = Number(bd.tapEarnings || 0);
+        const partnerEarnings = Number(bd.partnerEarnings || 0);
+        const bonusEarnings = Number(bd.bonusEarnings || 0);
+        const passivePerSec = Number(bd.passivePerSec || 0);
+
+        totalBattle = Number(earnResp.totalBattle || tapEarnings + partnerEarnings + bonusEarnings);
+        incomePerSec = passivePerSec > 0 ? passivePerSec : 0;
       } else {
         console.warn("⚠️ /api/earnings returned not-ok:", earnResp);
       }
