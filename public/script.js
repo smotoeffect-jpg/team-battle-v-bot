@@ -721,10 +721,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// === TB_V15 — Bottom Navigation Logic (Fixed) ===
+// === TB_V15 — Bottom Navigation Logic (Fixed + Clean) ===
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
-    home: document.querySelector(".wrap"), // המסך הראשי
+    home: document.querySelector(".wrap"),
     myteam: document.getElementById("my-board"),
     upgrades: document.getElementById("upgradesPanel"),
     leaderboard: document.getElementById("top20"),
@@ -739,30 +739,23 @@ document.addEventListener("DOMContentLoaded", () => {
     referrals: document.getElementById("btn-referrals")
   };
 
-  // 👇 פונקציה שמציגה רק את הפאנל הנבחר
   function showPanel(panelKey) {
-    // מסתיר הכול
-    Object.values(panels).forEach(p => {
-      if (p) p.style.display = "none";
-    });
-    // מסיר סימון נבחר מכל הכפתורים
+    Object.values(panels).forEach(p => { if (p) p.style.display = "none"; });
     Object.values(buttons).forEach(b => b?.classList.remove("active"));
-
-    // מציג את הפאנל הנבחר בלבד
     if (panels[panelKey]) panels[panelKey].style.display = "block";
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
   }
 
-  // 👇 מאזינים לכל כפתור בסרגל
   Object.entries(buttons).forEach(([key, btn]) => {
     if (!btn) return;
     btn.addEventListener("click", () => showPanel(key));
   });
 
-  // 👇 מציג את המסך הראשי כברירת מחדל
   showPanel("home");
 });
-// ====== Upgrade Battery Button ======
+
+
+// ====== Upgrade Battery Button (with i18n support) ======
 document.addEventListener("DOMContentLoaded", () => {
   const btnUpgradeBattery = document.getElementById("btn-upgrade-battery");
   const levelEl = document.getElementById("batteryLevel");
@@ -772,8 +765,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!btnUpgradeBattery) return;
 
+  // פונקציה לחילוץ הודעות בשפה הנוכחית
+  function t(key) {
+    const lang = document.documentElement.getAttribute("data-lang") || "he";
+    const messages = {
+      en: {
+        processing: "⏳ Processing...",
+        success: "✅ Upgrade successful!",
+        notEnough: "❌ Not enough $Battle!",
+        failed: "⚠️ Upgrade failed.",
+        error: "⚠️ Connection error."
+      },
+      he: {
+        processing: "⏳ מעבד...",
+        success: "✅ השדרוג בוצע בהצלחה!",
+        notEnough: "❌ אין מספיק $Battle!",
+        failed: "⚠️ השדרוג נכשל.",
+        error: "⚠️ שגיאת חיבור."
+      },
+      ar: {
+        processing: "⏳ جارٍ المعالجة...",
+        success: "✅ تم الترقية بنجاح!",
+        notEnough: "❌ لا يوجد ما يكفي من $Battle!",
+        failed: "⚠️ فشلت الترقية.",
+        error: "⚠️ خطأ في الاتصال."
+      }
+    };
+    return messages[lang]?.[key] || messages.he[key];
+  }
+
   btnUpgradeBattery.addEventListener("click", async () => {
-    msgEl.textContent = "⏳ Processing...";
+    msgEl.textContent = t("processing");
     msgEl.style.color = "#ccc";
 
     try {
@@ -789,18 +811,18 @@ document.addEventListener("DOMContentLoaded", () => {
         levelEl.textContent = data.newLevel;
         capEl.textContent = data.newCap;
         costEl.textContent = data.newCost;
-        msgEl.textContent = "✅ Upgrade successful!";
+        msgEl.textContent = t("success");
         msgEl.style.color = "#00ff99";
       } else if (data.error === "not_enough_battle") {
-        msgEl.textContent = "❌ Not enough $Battle!";
+        msgEl.textContent = t("notEnough");
         msgEl.style.color = "#ff4d4d";
       } else {
-        msgEl.textContent = "⚠️ Upgrade failed.";
+        msgEl.textContent = t("failed");
         msgEl.style.color = "#ffcc00";
       }
     } catch (err) {
       console.error("Upgrade Battery error:", err);
-      msgEl.textContent = "⚠️ Connection error.";
+      msgEl.textContent = t("error");
       msgEl.style.color = "#ffcc00";
     }
   });
