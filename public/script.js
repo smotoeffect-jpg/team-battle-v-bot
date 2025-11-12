@@ -335,12 +335,21 @@ try {
   console.error("Leaderboard fetch error:", err);
 }
 
+// ===== Helper: Convert large numbers (K, M, B, T) =====
+function formatNumber(num) {
+  if (num >= 1_000_000_000_000) return (num / 1_000_000_000_000).toFixed(2) + "T";
+  if (num >= 1_000_000_000) return (num / 1_000_000_000).toFixed(2) + "B";
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(2) + "M";
+  if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
+  return num.toFixed(2);
+}
+
 // ===== Refresh Game Data (Real-time 0.5s) =====
 async function refreshAll() {
   try {
     const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
-    // --- מצב כללי (ניקוד כולל מהשרת) ---
+    // --- מצב כללי ---
     const state = await getJSON("/api/state");
     if (state?.scores) GAME.scores = state.scores;
     paintScores();
@@ -353,15 +362,13 @@ async function refreshAll() {
     GAME.me.id = M.userId ?? M.id ?? telegramUserId;
     GAME.me.team = M.team ?? GAME.me.team ?? null;
     GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
-    GAME.me.tapsLimit = meResp?.limit ?? M.tapsLimit ?? M.taps_limit ?? GAME.me.tapsLimit ?? 300;
     GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
     GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
     GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
     GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
-    GAME.me.username = M.username ?? GAME.me.username ?? null;
 
-    // --- נתוני שותפים מהבוט ---
+    // --- נתוני שותפים ---
     let partner = {};
     try {
       const partnerResp = await getJSON(`/api/partner/${userId}`);
@@ -371,26 +378,19 @@ async function refreshAll() {
     }
     GAME.partner = partner || {};
 
-    // --- 🔗 נתוני הכנסה כוללת מהשרת (כולל כל סוגי הרווחים) ---
+    // --- נתוני הכנסה כוללת ---
     let totalBattle = 0;
     let incomePerSec = 0;
 
     try {
       const earnResp = await getJSON(`/api/earnings/${userId}`);
       if (earnResp?.ok) {
+        totalBattle = Number(earnResp.totalBattle || 0);
         const bd = earnResp.breakdown || {};
-        const tapEarnings = Number(bd.tapEarnings || 0);
-        const partnerEarnings = Number(bd.partnerEarnings || 0);
-        const bonusEarnings = Number(bd.bonusEarnings || 0);
-        const passivePerSec = Number(bd.passivePerSec || 0);
-
-        totalBattle = Number(earnResp.totalBattle || tapEarnings + partnerEarnings + bonusEarnings);
-        incomePerSec = passivePerSec > 0 ? passivePerSec : 0;
-      } else {
-        console.warn("⚠️ /api/earnings returned not-ok:", earnResp);
+        const passiveEarnings = Number(bd.passiveEarnings || 0);
+        incomePerSec = passiveEarnings > 0 ? passiveEarnings / 60 : 0;
       }
-    } catch (e) {
-      console.warn("⚠️ /api/earnings unavailable, using local fallback");
+    } catch {
       const battleFromTaps = GAME.me.battle || 0;
       const battleFromRefs = GAME.partner.earnedBattle || 0;
       const xpBonus = (GAME.me.xp || 0) * 0.1;
@@ -398,12 +398,12 @@ async function refreshAll() {
       incomePerSec = GAME.partner.incomePerSec || 0;
     }
 
-    // --- הצגת הנתונים בזמן אמת ---
+    // --- הצגת נתונים מעוצבים ---
     const battleEl = document.getElementById("battleShort");
     const incomeEl = document.getElementById("incomeShort");
 
-    if (battleEl) battleEl.textContent = `${totalBattle.toLocaleString()} $Battle`;
-    if (incomeEl) incomeEl.textContent = `⚡ ${incomePerSec.toFixed(2)}/sec`;
+    if (battleEl) battleEl.textContent = `${formatNumber(totalBattle)} $Battle`;
+    if (incomeEl) incomeEl.textContent = `⚡ ${formatNumber(incomePerSec)}/sec`;
 
     paintMe();
   } catch (err) {
@@ -411,7 +411,6 @@ async function refreshAll() {
   }
 }
 
-// 🔁 רענון כל 0.5 שניות
 setInterval(refreshAll, 500);
 refreshAll();
   
