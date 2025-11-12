@@ -359,65 +359,64 @@ body{
   text-shadow: 0 0 10px rgba(255, 223, 0, 0.8);
 }
 
-/* === TB_V15 — Bottom Navigation (Fixed clean layout) === */
+/* === TB_V15 — Bottom Navigation (same style, fixed spacing) === */
 .bottom-nav {
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 0);
+  bottom: 0;
   left: 0;
   width: 100%;
   background: var(--panel);
   border-top: 1px solid rgba(255,255,255,.08);
   box-shadow: 0 -4px 20px rgba(255,77,196,.25);
   z-index: 9999;
-  padding: 8px 0 calc(env(safe-area-inset-bottom, 0) + 6px);
+  padding: 14px 0 calc(env(safe-area-inset-bottom, 16px) + 10px);
   backdrop-filter: blur(8px);
 }
 
 .nav-scroll {
   display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  gap: 6px;
   overflow-x: auto;
+  gap: 16px;
+  padding: 6px 16px;
+  justify-content: center;
+  align-items: center;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  padding: 0 10px;
 }
 
 .nav-btn {
-  flex: 1;
+  flex: 0 0 auto;
   background: transparent;
   border: none;
   color: var(--text);
-  font-weight: 700;
-  font-size: 14px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  white-space: nowrap;
+  font-weight: 800;
+  font-size: 15.5px;
+  padding: 10px 18px;
+  border-radius: 14px;
   transition: all 0.25s ease;
+  white-space: nowrap;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-width: 85px;
+  gap: 6px;
 }
 
 .nav-btn:hover {
-  background: rgba(255,77,196,0.15);
+  background: rgba(255,77,196,0.18);
   color: var(--pink);
 }
 
 .nav-btn.active {
   background: linear-gradient(180deg,#ff4dc4,#e028a5);
   color: #fff;
-  box-shadow: 0 0 10px rgba(255,77,196,.35);
+  box-shadow: 0 0 12px rgba(255,77,196,.45);
 }
 
 @media (max-width: 600px) {
   .nav-btn {
-    font-size: 13.5px;
-    padding: 7px 8px;
+    font-size: 14.5px;
+    padding: 10px 16px;
   }
 }
 /* Keep legacy clickable score cards working too (if used) */
