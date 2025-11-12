@@ -606,6 +606,47 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
+// ===== TB_V16 — Battery Upgrade System =====
+app.post("/api/upgrade/battery", (req, res) => {
+  try {
+    const userId = String(req.body?.userId || "").trim();
+    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
+
+    const u = ensureUser(userId);
+
+    // ⚙️ ערכים התחלתיים
+    if (!u.batteryLevel) u.batteryLevel = 1;
+    if (!u.battleBalance) u.battleBalance = 0;
+
+    // 🧮 הגדרת נתוני השדרוג
+    const currentLevel = u.batteryLevel;
+    const upgradeCost = 100 * currentLevel; // כל רמה עולה פי 100
+    const newLevel = currentLevel + 1;
+    const newCap = 300 + (newLevel - 1) * 45; // כל שדרוג מעלה 15%
+
+    // 💰 בדיקה אם יש מספיק $Battle
+    if (u.battleBalance < upgradeCost) {
+      return res.json({ ok: false, error: "not_enough_battle" });
+    }
+
+    // ✅ מבצע שדרוג
+    u.battleBalance -= upgradeCost;
+    u.batteryLevel = newLevel;
+    u.batteryCap = newCap;
+
+    writeJSON(USERS_FILE, users);
+
+    return res.json({
+      ok: true,
+      newLevel,
+      newCap,
+      newCost: 100 * newLevel
+    });
+  } catch (err) {
+    console.error("⚠️ Battery upgrade error:", err);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
 
 app.post("/api/super", (req, res) => {
   return res.json({ ok: false, message: "Super Boost disabled" });
