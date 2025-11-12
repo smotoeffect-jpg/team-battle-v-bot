@@ -108,14 +108,39 @@
         <ol id="top20-list" class="top-list" aria-live="polite"></ol>
       </section>
 
-      <!-- ✅ TB_V15: Upgrades Panel -->
-      <section id="upgradesPanel" class="panel hidden">
-        <h2 class="panel-title" data-i18n="upgrades">Upgrades</h2>
-        <div class="upgrades-list">
-          <p data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</p>
-        </div>
-      </section>
-    </main>
+      <!-- ⚙️ Upgrades Panel -->
+<section class="panel" id="upgradesPanel">
+  <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
+
+  <div class="upgrade-card">
+    <div class="upgrade-info">
+      <div class="upgrade-row">
+        🔋 <span data-i18n="batteryLevel">Battery Level</span>:
+        <span id="batteryLevel" class="upgrade-value">1</span>
+      </div>
+
+      <div class="upgrade-row">
+        ⚡ <span data-i18n="batteryCap">Capacity</span>:
+        <span id="batteryCap" class="upgrade-value">300</span>
+      </div>
+
+      <div class="upgrade-row">
+        💰 <span data-i18n="batteryCost">Cost</span>:
+        <span id="batteryCost" class="upgrade-value">100</span> $Battle
+      </div>
+    </div>
+
+    <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">
+      🔼 Upgrade Battery
+    </button>
+
+    <div id="batteryMsg" class="upgrade-msg"></div>
+  </div>
+
+  <div class="comingsoon" style="margin-top:20px;opacity:.6;">
+    <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
+  </div>
+</section>
 
     <footer class="foot">
       <span id="status-line"></span>
