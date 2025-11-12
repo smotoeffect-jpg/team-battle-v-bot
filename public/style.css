@@ -528,5 +528,21 @@ body{
   opacity: 0.9;
 }
 
+/* 🏠 Home Panel Fix – Full Width View */
+#homePanel {
+  background: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  max-width: none;
+}
+
+/* שמירה על ריווח פנימי של התוכן */
+#homePanel > * {
+  margin-top: 0;
+}
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
