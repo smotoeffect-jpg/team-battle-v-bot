@@ -863,65 +863,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== TB_V17 — VIP Upgrade (Client Logic) =====
-document.addEventListener("DOMContentLoaded", () => {
-  const vipBtn = document.getElementById("btn-activate-vip");
-  const vipMsg = document.getElementById("vipMsg");
-
-  if (!vipBtn) return;
-
-  vipBtn.addEventListener("click", async () => {
-    vipMsg.textContent = "⏳ Processing...";
-    vipMsg.style.color = "#ccc";
-
-    try {
-      const res = await fetch("/api/upgrade/vip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: telegramUserId })
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        const lang = document.documentElement.getAttribute("data-lang") || "en";
-        const messages = {
-          en: "✅ VIP activated for 7 days!",
-          he: "✅ VIP הופעל ל־7 ימים!",
-          ar: "✅ تم تفعيل VIP لمدة 7 أيام!"
-        };
-        vipMsg.textContent = messages[lang];
-        vipMsg.style.color = "#00ff99";
-      } else if (data.error === "not_enough_stars") {
-        const lang = document.documentElement.getAttribute("data-lang") || "en";
-        const messages = {
-          en: "❌ Not enough Stars!",
-          he: "❌ אין מספיק כוכבים!",
-          ar: "❌ لا يوجد نجوم كافية!"
-        };
-        vipMsg.textContent = messages[lang];
-        vipMsg.style.color = "#ff4d4d";
-      } else if (data.error === "already_vip") {
-        const lang = document.documentElement.getAttribute("data-lang") || "en";
-        const messages = {
-          en: "⚠️ VIP already active!",
-          he: "⚠️ VIP כבר פעיל!",
-          ar: "⚠️ VIP مفعل بالفعل!"
-        };
-        vipMsg.textContent = messages[lang];
-        vipMsg.style.color = "#ffcc00";
-      } else {
-        vipMsg.textContent = "⚠️ Something went wrong.";
-        vipMsg.style.color = "#ffcc00";
-      }
-    } catch (err) {
-      console.error("VIP error:", err);
-      vipMsg.textContent = "⚠️ Connection error.";
-      vipMsg.style.color = "#ffcc00";
-    }
-  });
-});
-// ===== TB_V17 — Buy VIP via Telegram Stars =====
+// ===== TB_V17 — Buy VIP via Telegram Stars (Unified) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -936,27 +878,30 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // פתיחת חשבון תשלום בכוכבים (כמו Extra Tap)
-      const payload = { t: "vip", userId, team };
+      // שליחת בקשה לשרת ליצירת חשבונית VIP
       const res = await fetch("/api/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: "Buy VIP – TeamBattle",
-          description: "7-Day VIP access with bonuses",
-          payload,
-          currency: "XTR",
-          amount: 300, // ⭐️ 300 כוכבים
+          userId,
+          team,
+          t: "vip",
+          stars: 300, // ⭐️ מחיר VIP
         }),
       });
 
       const data = await res.json();
-      if (data.ok && data.invoiceLink) {
-        // פותח את חלון התשלום
-        openInvoice(data.invoiceLink);
-        vipMsg.textContent = "💫 Waiting for payment...";
+      if (data.ok && data.url) {
+        if (window.Telegram?.WebApp?.openInvoice) {
+          Telegram.WebApp.openInvoice(data.url, () => {
+            vipMsg.textContent = "💫 Waiting for payment confirmation...";
+            setTimeout(() => location.reload(), 3000);
+          });
+        } else {
+          window.location.href = data.url;
+        }
       } else {
-        vipMsg.textContent = "⚠️ Failed to create invoice.";
+        vipMsg.textContent = "⚠️ Failed to create VIP invoice.";
         vipMsg.style.color = "#ffcc00";
       }
     } catch (err) {
