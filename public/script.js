@@ -98,6 +98,11 @@ if (window.Telegram?.WebApp?.initData) {
   }
 
   console.log("✅ Active userId:", telegramUserId);
+
+// ✅ חשוב: לחשוף את ה־userId ל־window + לשמור בלוקאל
+window.telegramUserId = telegramUserId;
+localStorage.setItem("telegram_userId", telegramUserId);
+
 console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
 // ====== Translations (Full Multilingual Map) ======
