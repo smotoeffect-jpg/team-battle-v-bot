@@ -359,28 +359,29 @@ body{
   text-shadow: 0 0 10px rgba(255, 223, 0, 0.8);
 }
 
-/* === TB_V15 — Bottom Navigation (Improved for iPhone) === */
+/* === TB_V15 — Bottom Navigation (Fixed clean layout) === */
 .bottom-nav {
   position: fixed;
-  bottom: 0;
+  bottom: env(safe-area-inset-bottom, 0);
   left: 0;
   width: 100%;
   background: var(--panel);
   border-top: 1px solid rgba(255,255,255,.08);
   box-shadow: 0 -4px 20px rgba(255,77,196,.25);
   z-index: 9999;
-  padding: 14px 0 calc(env(safe-area-inset-bottom, 16px) + 10px);
+  padding: 8px 0 calc(env(safe-area-inset-bottom, 0) + 6px);
   backdrop-filter: blur(8px);
 }
 
 .nav-scroll {
   display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 6px;
   overflow-x: auto;
-  gap: 10px;
-  padding: 6px 12px;
-  justify-content: space-around;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  padding: 0 10px;
 }
 
 .nav-btn {
@@ -388,14 +389,18 @@ body{
   background: transparent;
   border: none;
   color: var(--text);
-  font-weight: 800;
-  font-size: 16px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  transition: all 0.2s ease;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
   white-space: nowrap;
+  transition: all 0.25s ease;
   cursor: pointer;
-  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 85px;
 }
 
 .nav-btn:hover {
@@ -406,15 +411,14 @@ body{
 .nav-btn.active {
   background: linear-gradient(180deg,#ff4dc4,#e028a5);
   color: #fff;
-  box-shadow: 0 0 12px rgba(255,77,196,.45);
+  box-shadow: 0 0 10px rgba(255,77,196,.35);
 }
 
 @media (max-width: 600px) {
   .nav-btn {
-    font-size: 15px;
-    padding: 9px 10px;
+    font-size: 13.5px;
+    padding: 7px 8px;
   }
 }
-
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
