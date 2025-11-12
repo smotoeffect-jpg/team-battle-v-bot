@@ -119,23 +119,8 @@ const i18n = {
     copy: "Copy Link",
     chooseTeam: "Choose your team",
     battleShort: "$Battle",
-    incomeShort: "Income",
-
-    // ⚙️ Upgrades + Battery
-    upgradesTitle: "⚙️ Upgrades",
-    batteryLevel: "🔋 Battery Level",
-    batteryCap: "⚡ Capacity",
-    batteryCost: "💰 Cost",
-    upgradeBattery: "🔼 Upgrade Battery",
-
-    // 🧭 Bottom Navigation (with emojis)
-    navHome: "🏠 Home",
-    navMyTeam: "🪖 My Team",
-    navUpgrades: "⚙️ Upgrades",
-    navLeaderboard: "🏆 Leaderboard",
-    navReferrals: "🔗 Referrals"
+    incomeShort: "Income"
   },
-
   he: {
     israel: "ישראל",
     gaza: "עזה",
@@ -155,23 +140,8 @@ const i18n = {
     copy: "העתק קישור",
     chooseTeam: "בחר את הקבוצה שלך",
     battleShort: "$Battle",
-    incomeShort: "הכנסה",
-
-    // ⚙️ Upgrades + Battery
-    upgradesTitle: "⚙️ שדרוגים",
-    batteryLevel: "🔋 רמת בטרייה",
-    batteryCap: "⚡ קיבולת",
-    batteryCost: "💰 עלות",
-    upgradeBattery: "🔼 שדרג בטרייה",
-
-    // 🧭 Bottom Navigation (עם אימוג’ים)
-    navHome: "🏠 בית",
-    navMyTeam: "🪖 הקבוצה שלי",
-    navUpgrades: "⚙️ שדרוגים",
-    navLeaderboard: "🏆 לוח מובילים",
-    navReferrals: "🔗 שותפים"
+    incomeShort: "הכנסה"
   },
-
   ar: {
     israel: "إسرائيل",
     gaza: "غزة",
@@ -191,52 +161,31 @@ const i18n = {
     copy: "انسخ الرابط",
     chooseTeam: "اختر فريقك",
     battleShort: "$Battle",
-    incomeShort: "الدخل",
-
-    // ⚙️ Upgrades + Battery
-    upgradesTitle: "⚙️ الترقيات",
-    batteryLevel: "🔋 مستوى البطارية",
-    batteryCap: "⚡ السعة",
-    batteryCost: "💰 التكلفة",
-    upgradeBattery: "🔼 ترقية البطارية",
-
-    // 🧭 Bottom Navigation (بالرموز التعبيرية)
-    navHome: "🏠 الرئيسية",
-    navMyTeam: "🪖 فريقي",
-    navUpgrades: "⚙️ الترقيات",
-    navLeaderboard: "🏆 المتصدرون",
-    navReferrals: "🔗 الإحالات"
+    incomeShort: "الدخل"
   }
 };
 
 
-// ====== Language Handling ======
-function getLang(){ 
-  return document.documentElement.getAttribute('data-lang') || 'he'; 
-}
+  function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
+  function setLang(l) {
 
-function setLang(l) {
-  document.documentElement.setAttribute('data-lang', l);
-  localStorage.setItem('tb_lang', l);
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k = el.getAttribute('data-i18n');
-    el.textContent = i18n[l]?.[k] || k;
-  });
-}
-
-const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
-if (langBtns && langBtns.length) {
-  langBtns.forEach(btn => btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
-}
-
-(function(){
-  const s=localStorage.getItem('tb_lang');
-  if(s) setLang(s); 
-  else { 
-    const t=(navigator.language||'he').slice(0,2); 
-    setLang(['he','en','ar'].includes(t)?t:'he'); 
+    document.documentElement.setAttribute('data-lang', l);
+    localStorage.setItem('tb_lang', l);
+    document.querySelectorAll('[data-i18n]').forEach(el=>{
+      const k = el.getAttribute('data-i18n');
+      el.textContent = i18n[l]?.[k] || k;
+    });
   }
-})();
+
+  const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
+  if (langBtns && langBtns.length) {
+    langBtns.forEach(btn => btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
+  }
+
+  (function(){
+    const s=localStorage.getItem('tb_lang');
+    if(s) setLang(s); else { const t=(navigator.language||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); }
+  })();
 // שמירת הדגשה מהבחירה הקודמת
 const savedTeam = localStorage.getItem("tb_team");
 if (savedTeam) {
@@ -721,10 +670,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// === TB_V15 — Bottom Navigation Logic (Final Fixed Version) ===
+// === TB_V15 — Bottom Navigation Logic (Fixed) ===
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
-    home: document.querySelector(".wrap"),
+    home: document.querySelector(".wrap"), // המסך הראשי
     myteam: document.getElementById("my-board"),
     upgrades: document.getElementById("upgradesPanel"),
     leaderboard: document.getElementById("top20"),
@@ -741,102 +690,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 👇 פונקציה שמציגה רק את הפאנל הנבחר
   function showPanel(panelKey) {
+    // מסתיר הכול
     Object.values(panels).forEach(p => {
-      if (!p) return;
-      p.classList.add("hidden"); // מוסתר
-      p.style.display = "none";
+      if (p) p.style.display = "none";
     });
-
+    // מסיר סימון נבחר מכל הכפתורים
     Object.values(buttons).forEach(b => b?.classList.remove("active"));
 
-    const panel = panels[panelKey];
-    if (panel) {
-      panel.classList.remove("hidden"); // מציג
-      panel.style.display = "block";
-    }
-
+    // מציג את הפאנל הנבחר בלבד
+    if (panels[panelKey]) panels[panelKey].style.display = "block";
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
   }
 
+  // 👇 מאזינים לכל כפתור בסרגל
   Object.entries(buttons).forEach(([key, btn]) => {
     if (!btn) return;
     btn.addEventListener("click", () => showPanel(key));
   });
 
-  // 👇 ברירת מחדל – דף הבית
+  // 👇 מציג את המסך הראשי כברירת מחדל
   showPanel("home");
-});
-
-
-// ====== Upgrade Battery Button (with i18n support) ======
-document.addEventListener("DOMContentLoaded", () => {
-  const btnUpgradeBattery = document.getElementById("btn-upgrade-battery");
-  const levelEl = document.getElementById("batteryLevel");
-  const capEl = document.getElementById("batteryCap");
-  const costEl = document.getElementById("batteryCost");
-  const msgEl = document.getElementById("batteryMsg");
-
-  if (!btnUpgradeBattery) return;
-
-  // פונקציה לחילוץ הודעות בשפה הנוכחית
-  function t(key) {
-    const lang = document.documentElement.getAttribute("data-lang") || "he";
-    const messages = {
-      en: {
-        processing: "⏳ Processing...",
-        success: "✅ Upgrade successful!",
-        notEnough: "❌ Not enough $Battle!",
-        failed: "⚠️ Upgrade failed.",
-        error: "⚠️ Connection error."
-      },
-      he: {
-        processing: "⏳ מעבד...",
-        success: "✅ השדרוג בוצע בהצלחה!",
-        notEnough: "❌ אין מספיק $Battle!",
-        failed: "⚠️ השדרוג נכשל.",
-        error: "⚠️ שגיאת חיבור."
-      },
-      ar: {
-        processing: "⏳ جارٍ المعالجة...",
-        success: "✅ تم الترقية بنجاح!",
-        notEnough: "❌ لا يوجد ما يكفي من $Battle!",
-        failed: "⚠️ فشلت الترقية.",
-        error: "⚠️ خطأ في الاتصال."
-      }
-    };
-    return messages[lang]?.[key] || messages.he[key];
-  }
-
-  btnUpgradeBattery.addEventListener("click", async () => {
-    msgEl.textContent = t("processing");
-    msgEl.style.color = "#ccc";
-
-    try {
-      const res = await fetch("/api/upgrade/battery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: telegramUserId })
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        levelEl.textContent = data.newLevel;
-        capEl.textContent = data.newCap;
-        costEl.textContent = data.newCost;
-        msgEl.textContent = t("success");
-        msgEl.style.color = "#00ff99";
-      } else if (data.error === "not_enough_battle") {
-        msgEl.textContent = t("notEnough");
-        msgEl.style.color = "#ff4d4d";
-      } else {
-        msgEl.textContent = t("failed");
-        msgEl.style.color = "#ffcc00";
-      }
-    } catch (err) {
-      console.error("Upgrade Battery error:", err);
-      msgEl.textContent = t("error");
-      msgEl.style.color = "#ffcc00";
-    }
-  });
 });

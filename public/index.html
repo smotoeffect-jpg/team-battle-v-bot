@@ -74,7 +74,6 @@
 
     <!-- === Main Grid === -->
     <main class="main-grid">
-      <!-- 🏠 My Board -->
       <section class="panel" id="my-board">
         <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
         <div class="kv">
@@ -96,70 +95,43 @@
           <div class="k" data-i18n="tapsToday">Taps today</div>
           <div class="v" id="me-taps">0/300</div>
         </div>
+
+        <!-- ✅ Ton Wallet Connect -->
+        <div class="ton-wallet">
+          <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
+          <div id="ton-address" class="wallet-address"></div>
+        </div>
       </section>
 
-   <!-- ⚙️ Upgrades Panel -->
-<section class="panel hidden" id="upgradesPanel">
-  <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
-
-  <div class="upgrade-card">
-    <div class="upgrade-info">
-      <div class="upgrade-row">
-        🔋 <span data-i18n="batteryLevel">Battery Level</span>:
-        <span id="batteryLevel" class="upgrade-value">1</span>
-      </div>
-
-      <div class="upgrade-row">
-        ⚡ <span data-i18n="batteryCap">Capacity</span>:
-        <span id="batteryCap" class="upgrade-value">300</span>
-      </div>
-
-      <div class="upgrade-row">
-        💰 <span data-i18n="batteryCost">Cost</span>:
-        <span id="batteryCost" class="upgrade-value">100</span> $Battle
-      </div>
-    </div>
-
-    <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">
-      🔼 Upgrade Battery
-    </button>
-
-    <div id="batteryMsg" class="upgrade-msg"></div>
-  </div>
-
-  <div class="comingsoon" style="margin-top:20px;opacity:.6;">
-    <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
-  </div>
-</section>
-
-      <!-- 🏆 Top 20 -->
       <section class="panel" id="top20">
         <div class="panel-title">Top 20</div>
         <ol id="top20-list" class="top-list" aria-live="polite"></ol>
       </section>
-    </main>
 
-    <!-- ✅ Ton Wallet Connect -->
-    <div class="ton-wallet">
-      <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
-      <div id="ton-address" class="wallet-address"></div>
-    </div>
+      <!-- ✅ TB_V15: Upgrades Panel -->
+      <section id="upgradesPanel" class="panel hidden">
+        <h2 class="panel-title" data-i18n="upgrades">Upgrades</h2>
+        <div class="upgrades-list">
+          <p data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</p>
+        </div>
+      </section>
+    </main>
 
     <footer class="foot">
       <span id="status-line"></span>
     </footer>
   </div>
 
-  <!-- === TB_V15 — Bottom Navigation Bar (Multilingual) === -->
-  <nav class="bottom-nav">
-    <div class="nav-scroll">
-      <button class="nav-btn active" id="btn-home" data-i18n="navHome">🏠 Home</button>
-      <button class="nav-btn" id="btn-myteam" data-i18n="navMyTeam">🪖 My Team</button>
-      <button class="nav-btn" id="btn-upgrades" data-i18n="navUpgrades">⚙️ Upgrades</button>
-      <button class="nav-btn" id="btn-leaderboard" data-i18n="navLeaderboard">🏆 Leaderboard</button>
-      <button class="nav-btn" id="btn-referrals" data-i18n="navReferrals">🔗 Invited Friends</button>
-    </div>
-  </nav>
+<!-- === TB_V15 — Bottom Navigation Bar === -->
+<nav class="bottom-nav">
+  <div class="nav-scroll">
+    <button class="nav-btn active" id="btn-home">🏠 Home</button>
+    <button class="nav-btn" id="btn-myteam">🪖 My Team</button>
+    <button class="nav-btn" id="btn-upgrades">⚙️ Upgrades</button>
+    <button class="nav-btn" id="btn-leaderboard">🏆 Leaderboard</button>
+    <button class="nav-btn" id="btn-referrals">🔗 Invited Friends</button>
+  </div>
+</nav>
 
   <!-- === SDKs and Scripts === -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
