@@ -836,13 +836,13 @@ app.use((req, res, next) => {
     .filter(k => k.startsWith('x-') || k.startsWith('content'))
     .reduce((obj, k) => { obj[k] = req.headers[k]; return obj; }, {});
 
-  console.log("🧩 Incoming request:", req.method, req.path);
-  console.log("📨 Headers snapshot:", headers);
+  // console.log("🧩 Incoming request:", req.method, req.path);
+  // console.log("📨 Headers snapshot:", headers);
 
   if (req.headers["x-init-data"] || req.headers["x-telegram-init-data"]) {
-    console.log("✅ Found init-data header!");
+   // console.log("✅ Found init-data header!");
     const initData = req.headers["x-init-data"] || req.headers["x-telegram-init-data"];
-    console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
+   // console.log("📦 Raw init-data (first 300 chars):", initData.slice(0,300));
   } else {
     console.warn("⚠️ No init-data header received for", req.path);
   }
