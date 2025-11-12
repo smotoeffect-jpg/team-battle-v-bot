@@ -29,36 +29,31 @@
       </div>
     </div>
 
-<!-- ✅ TB_V15: Live Battle/Income strip -->
-<div id="battle-stats" class="battle-stats">
-  <span id="battleShort" data-i18n="battleShort">$Battle</span>:
-  <span id="incomeShort">⚡ 0.00/sec</span>
-</div>
+    <!-- ✅ TB_V15: Live Battle/Income strip -->
+    <div id="battle-stats" class="battle-stats">
+      <span id="battleShort" data-i18n="battleShort">$Battle</span>:
+      <span id="incomeShort">⚡ 0.00/sec</span>
+    </div>
     
     <!-- === Team Selection Area === -->
- <div class="team-hint" data-i18n="chooseTeam">בחר את הקבוצה שלך</div>
+    <div class="team-hint" data-i18n="chooseTeam">בחר את הקבוצה שלך</div>
     <section class="scores-row">
- 
-  <div class="score-card team-card" id="flag-israel">
-    <div class="score-label" data-i18n="israel">🇮🇱 ישראל</div>
-    <div class="score-value" id="score-israel-value">0</div>
-  </div>
+      <div class="score-card team-card" id="flag-israel">
+        <div class="score-label" data-i18n="israel">🇮🇱 ישראל</div>
+        <div class="score-value" id="score-israel-value">0</div>
+      </div>
 
-  <div class="score-card team-card" id="flag-gaza">
-    <div class="score-label" data-i18n="gaza">🇵🇸 עזה</div>
-    <div class="score-value" id="score-gaza-value">0</div>
-  </div>
-</section>
+      <div class="score-card team-card" id="flag-gaza">
+        <div class="score-label" data-i18n="gaza">🇵🇸 עזה</div>
+        <div class="score-value" id="score-gaza-value">0</div>
+      </div>
+    </section>
 
     <!-- === Main Action Buttons === -->
     <div class="action-row">
       <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
-    <!-- Super Boost (מוסתר) -->
       <button id="btn-super" style="display:none" data-i18n="superBoost">Super Boost (+25)</button>
-
-    <!-- Switch Team (מוסתר) -->
-    <button id="btn-switch" style="display:none" data-i18n="switchTeam">Switch Team</button>
-
+      <button id="btn-switch" style="display:none" data-i18n="switchTeam">Switch Team</button>
     </div>
 
     <!-- === Extra Tap Section === -->
@@ -68,31 +63,31 @@
     </div>
 
     <!-- Referral Program -->
-<div id="partner" class="partner-box">
-  <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
-  <div class="partner-row">
-    <input id="refLink" class="partner-input" readonly />
-    <button id="copyRef" class="btn small" data-i18n="copy">העתק קישור</button>
-    <button id="shareRef" class="btn small share" aria-label="Share on Telegram"></button>
-  </div>
-</div>
+    <div id="partner" class="partner-box">
+      <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
+      <div class="partner-row">
+        <input id="refLink" class="partner-input" readonly />
+        <button id="copyRef" class="btn small" data-i18n="copy">העתק קישור</button>
+        <button id="shareRef" class="btn small share" aria-label="Share on Telegram"></button>
+      </div>
+    </div>
 
     <!-- === Main Grid === -->
     <main class="main-grid">
       <section class="panel" id="my-board">
         <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
         <div class="kv">
-        <div class="k" data-i18n="stars">Stars / Extra Tap</div>
-        <div class="v" id="me-stars"></div>
+          <div class="k" data-i18n="stars">Stars / Extra Tap</div>
+          <div class="v" id="me-stars"></div>
 
-        <div class="k">$BATTLE</div>
-        <div class="v" id="me-battle">0</div>
+          <div class="k">$BATTLE</div>
+          <div class="v" id="me-battle">0</div>
 
-        <div class="k">XP</div>
-        <div class="v" id="me-xp">0</div>
+          <div class="k">XP</div>
+          <div class="v" id="me-xp">0</div>
 
-        <div class="k" data-i18n="playerLevel">Player Level</div>
-        <div class="v" id="me-level"></div>
+          <div class="k" data-i18n="playerLevel">Player Level</div>
+          <div class="v" id="me-level"></div>
 
           <div class="k" data-i18n="referrals">Invited Friends</div>
           <div class="v" id="me-referrals">–</div>
@@ -112,6 +107,14 @@
         <div class="panel-title">Top 20</div>
         <ol id="top20-list" class="top-list" aria-live="polite"></ol>
       </section>
+
+      <!-- ✅ TB_V15: Upgrades Panel -->
+      <section id="upgradesPanel" class="panel hidden">
+        <h2 class="panel-title" data-i18n="upgrades">Upgrades</h2>
+        <div class="upgrades-list">
+          <p data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</p>
+        </div>
+      </section>
     </main>
 
     <footer class="foot">
@@ -119,14 +122,20 @@
     </footer>
   </div>
 
+  <!-- 🧭 TB_V15: Persistent Bottom Navigation -->
+  <nav class="bottom-nav">
+    <div class="nav-scroll">
+      <button class="nav-btn" id="btn-home" data-i18n="home">🏠 Home</button>
+      <button class="nav-btn" id="btn-myteam" data-i18n="myTeam">🪖 My Team</button>
+      <button class="nav-btn" id="btn-upgrades" data-i18n="upgrades">⚙️ Upgrades</button>
+      <button class="nav-btn" id="btn-leaderboard" data-i18n="leaderboard">🏆 Top 20</button>
+      <button class="nav-btn" id="btn-referrals" data-i18n="referrals">🔗 Referrals</button>
+    </div>
+  </nav>
+
   <!-- === SDKs and Scripts === -->
-  <!-- Telegram SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- ✅ TON Connect SDK (מה־CDN הרשמי) -->
-<script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
-
-  <!-- Main Script -->
+  <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
   <script src="./script.js"></script>
 </body>
 </html>
