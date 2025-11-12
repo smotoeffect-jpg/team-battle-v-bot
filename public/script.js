@@ -103,6 +103,7 @@ console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 // ====== Translations ======
 const i18n = {
   en: {
+    // 🏁 General
     israel: "Israel",
     gaza: "Gaza",
     tap: "Tap (+1)",
@@ -121,9 +122,34 @@ const i18n = {
     copy: "Copy Link",
     chooseTeam: "Choose your team",
     battleShort: "$Battle",
-    incomeShort: "Income"
+    incomeShort: "Income",
+
+    // ⚙️ Upgrades + Battery
+    upgradesTitle: "Upgrades",
+    batteryLevel: "Battery Level",
+    batteryCap: "Capacity",
+    batteryCost: "Cost",
+    upgradeBattery: "Upgrade Battery",
+    upgradeBatteryBtn: "Upgrade Battery",
+    comingSoon: "⚙️ Upgrade your power, energy and rewards!",
+
+    // 💎 VIP
+    vipTitle: "VIP Status",
+    vipCost: "Cost",
+    buyVip: "Buy VIP",
+    vipActive: "Active",
+    vipInactive: "Inactive",
+
+    // 🧭 Bottom Navigation
+    navHome: "Home",
+    navMyTeam: "My Team",
+    navUpgrades: "Upgrades",
+    navLeaderboard: "Leaderboard",
+    navReferrals: "Referrals"
   },
+
   he: {
+    // 🏁 כללי
     israel: "ישראל",
     gaza: "עזה",
     tap: "טאפ (+1)",
@@ -142,9 +168,34 @@ const i18n = {
     copy: "העתק קישור",
     chooseTeam: "בחר את הקבוצה שלך",
     battleShort: "$Battle",
-    incomeShort: "הכנסה"
+    incomeShort: "הכנסה",
+
+    // ⚙️ שדרוגים + בטרייה
+    upgradesTitle: "שדרוגים",
+    batteryLevel: "רמת בטרייה",
+    batteryCap: "קיבולת",
+    batteryCost: "עלות",
+    upgradeBattery: "שדרג בטרייה",
+    upgradeBatteryBtn: "שדרוג בטרייה",
+    comingSoon: "⚙️ שדרג את העוצמה, האנרגיה והפרסים שלך!",
+
+    // 💎 VIP
+    vipTitle: "מצב VIP",
+    vipCost: "עלות",
+    buyVip: "קנה VIP",
+    vipActive: "פעיל",
+    vipInactive: "לא פעיל",
+
+    // 🧭 סרגל תחתון
+    navHome: "בית",
+    navMyTeam: "הקבוצה שלי",
+    navUpgrades: "שדרוגים",
+    navLeaderboard: "לוח מובילים",
+    navReferrals: "שותפים"
   },
+
   ar: {
+    // 🏁 عام
     israel: "إسرائيل",
     gaza: "غزة",
     tap: "انقر (+1)",
@@ -163,7 +214,30 @@ const i18n = {
     copy: "انسخ الرابط",
     chooseTeam: "اختر فريقك",
     battleShort: "$Battle",
-    incomeShort: "الدخل"
+    incomeShort: "الدخل",
+
+    // ⚙️ الترقيات + البطارية
+    upgradesTitle: "الترقيات",
+    batteryLevel: "مستوى البطارية",
+    batteryCap: "السعة",
+    batteryCost: "التكلفة",
+    upgradeBattery: "ترقية البطارية",
+    upgradeBatteryBtn: "ترقية البطارية",
+    comingSoon: "⚙️ قم بترقية قوتك وطاقتك ومكافآتك!",
+
+    // 💎 VIP
+    vipTitle: "حالة VIP",
+    vipCost: "التكلفة",
+    buyVip: "اشتري VIP",
+    vipActive: "نشط",
+    vipInactive: "غير نشط",
+
+    // 🧭 شريط التنقل السفلي
+    navHome: "الرئيسية",
+    navMyTeam: "فريقي",
+    navUpgrades: "الترقيات",
+    navLeaderboard: "المتصدرون",
+    navReferrals: "الإحالات"
   }
 };
 
