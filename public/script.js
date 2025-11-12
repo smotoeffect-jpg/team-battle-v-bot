@@ -711,3 +711,47 @@ document.addEventListener("DOMContentLoaded", () => {
   // 👇 מציג את המסך הראשי כברירת מחדל
   showPanel("home");
 });
+
+// ===== TB_V16 — Upgrade Battery (Client Logic) =====
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btn-upgrade-battery");
+  const levelEl = document.getElementById("batteryLevel");
+  const capEl = document.getElementById("batteryCap");
+  const costEl = document.getElementById("batteryCost");
+  const msgEl = document.getElementById("batteryMsg");
+
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    msgEl.textContent = "⏳ Processing...";
+    msgEl.style.color = "#ccc";
+
+    try {
+      const res = await fetch("/api/upgrade/battery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: telegramUserId })
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        levelEl.textContent = data.newLevel;
+        capEl.textContent = data.newCap;
+        costEl.textContent = data.newCost;
+        msgEl.textContent = "✅ Upgrade successful!";
+        msgEl.style.color = "#00ff99";
+      } else if (data.error === "not_enough_battle") {
+        msgEl.textContent = "❌ Not enough $Battle!";
+        msgEl.style.color = "#ff4d4d";
+      } else {
+        msgEl.textContent = "⚠️ Upgrade failed.";
+        msgEl.style.color = "#ffcc00";
+      }
+    } catch (err) {
+      console.error("Upgrade Battery error:", err);
+      msgEl.textContent = "⚠️ Connection error.";
+      msgEl.style.color = "#ffcc00";
+    }
+  });
+});
