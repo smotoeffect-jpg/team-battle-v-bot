@@ -472,5 +472,61 @@ body{
   text-align: center;
   color: var(--muted);
 }
+
+/* === TB_V16 — Panels isolation fix === */
+.panel {
+  display: none;           /* מוסתר כברירת מחדל */
+  background: rgba(0,0,0,0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 12px auto;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 0 20px rgba(255,77,196,0.15);
+}
+
+.panel:not(.hidden) {
+  display: block !important; /* רק הפאנל הנבחר יוצג */
+}
+
+.panel-title {
+  font-weight: 800;
+  font-size: 1.1em;
+  color: var(--pink);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.upgrade-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.upgrade-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+}
+
+.upgrade-row:last-child {
+  border-bottom: none;
+}
+
+.upgrade-value {
+  font-weight: 700;
+  color: #ffcc66;
+}
+
+.upgrade-msg {
+  margin-top: 6px;
+  font-size: 0.9em;
+  text-align: center;
+  opacity: 0.9;
+}
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
