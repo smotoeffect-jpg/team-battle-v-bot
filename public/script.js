@@ -1,5 +1,9 @@
+// ✅ Define Telegram User ID variable globally
+let telegramUserId = null;
+
 // ===== Auto-detect API base (Render / local / Telegram) =====
 const API_BASE = window.location.origin || "";
+
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
 function waitForWebApp(maxWait = 2000) {
@@ -9,8 +13,23 @@ function waitForWebApp(maxWait = 2000) {
       if (window.Telegram?.WebApp) {
         clearInterval(iv);
         console.log("🌐 WebApp Detected:", true);
+
+        // 🧠 Extract Telegram user ID
+        try {
+          const tUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+          if (tUser?.id) {
+            window.telegramUserId = String(tUser.id);
+            console.log("✅ Telegram User ID:", window.telegramUserId);
+          } else {
+            console.warn("⚠️ Telegram user ID not found in initDataUnsafe");
+          }
+        } catch (err) {
+          console.error("Telegram user initData error:", err);
+        }
+
         resolve(window.Telegram.WebApp);
       }
+
       waited += 100;
       if (waited >= maxWait) {
         clearInterval(iv);
@@ -20,23 +39,27 @@ function waitForWebApp(maxWait = 2000) {
     }, 100);
   });
 }
+
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
   console.log("🔑 initData:", WebApp?.initData);
- // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
-if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get("tgWebAppData");
-  if (data) {
-    console.log("🧩 Injecting initData manually from URL (early)!");
-    if (!window.Telegram) window.Telegram = {};
-    if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
-    window.Telegram.WebApp.initData = decodeURIComponent(data);
+
+  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
+  if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("tgWebAppData");
+    if (data) {
+      console.log("🧩 Injecting initData manually from URL (early)!");
+      if (!window.Telegram) window.Telegram = {};
+      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+      window.Telegram.WebApp.initData = decodeURIComponent(data);
+    }
   }
-}
+
   if (window.Telegram?.WebApp?.initData) {
-  WebApp.initData = window.Telegram.WebApp.initData;
-}
+    WebApp.initData = window.Telegram.WebApp.initData;
+  }
+});
   // ====== FORCE Telegram InitData Injection (for some Android/iOS/Desktop issues) ======
 if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   try {
