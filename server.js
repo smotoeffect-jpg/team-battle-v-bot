@@ -679,6 +679,53 @@ app.post("/api/upgrade/battery", (req, res) => {
   }
 });
 
+// ===== TB_V17 — VIP Purchase API =====
+app.post("/api/upgrade/vip", (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.json({ ok: false, error: "missing_user" });
+
+    const usersPath = path.join(DATA_DIR, "users.json");
+    const users = fs.existsSync(usersPath)
+      ? JSON.parse(fs.readFileSync(usersPath, "utf8"))
+      : {};
+
+    const user = users[userId] || { stars: 0 };
+
+    const VIP_COST = 300;
+    const VIP_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 ימים במילישניות
+
+    // בדיקה אם כבר פעיל
+    const now = Date.now();
+    if (user.perkExpiry && user.perkExpiry > now) {
+      return res.json({ ok: false, error: "already_vip" });
+    }
+
+    // אין מספיק כוכבים
+    if ((user.stars || 0) < VIP_COST) {
+      return res.json({ ok: false, error: "not_enough_stars" });
+    }
+
+    // ניכוי כוכבים והפעלה
+    user.stars -= VIP_COST;
+    user.isVIP = true;
+    user.perkExpiry = now + VIP_DURATION;
+
+    // שמירה
+    users[userId] = user;
+    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+
+    res.json({
+      ok: true,
+      expiry: user.perkExpiry,
+      message: "VIP activated for 7 days!"
+    });
+  } catch (err) {
+    console.error("VIP Upgrade Error:", err);
+    res.json({ ok: false, error: "server_error" });
+  }
+});
+
 app.post("/api/super", (req, res) => {
   return res.json({ ok: false, message: "Super Boost disabled" });
 });
