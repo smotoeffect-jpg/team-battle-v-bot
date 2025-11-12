@@ -709,7 +709,7 @@ document.addEventListener("DOMContentLoaded", () => {
   showPanel("home");
 });
 
-// ===== TB_V16 — Upgrade Battery (Client Logic) =====
+// ===== TB_V17 — Battery Upgrade Client Logic (Multilingual) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btn-upgrade-battery");
   const levelEl = document.getElementById("batteryLevel");
@@ -719,8 +719,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!btn) return;
 
+  // 🗣️ תרגומים להודעות
+  const lang = localStorage.getItem("tb_lang") || "he";
+  const MESSAGES = {
+    he: {
+      processing: "⏳ מעבד...",
+      success: "✅ השדרוג בוצע בהצלחה!",
+      max: "⚡ הגעת לרמה המקסימלית!",
+      notEnough: "❌ אין מספיק $Battle!",
+      fail: "⚠️ השדרוג נכשל.",
+      connection: "⚠️ שגיאת חיבור."
+    },
+    en: {
+      processing: "⏳ Processing...",
+      success: "✅ Upgrade successful!",
+      max: "⚡ MAX LEVEL reached!",
+      notEnough: "❌ Not enough $Battle!",
+      fail: "⚠️ Upgrade failed.",
+      connection: "⚠️ Connection error."
+    },
+    ar: {
+      processing: "⏳ جارٍ المعالجة...",
+      success: "✅ تمت الترقية بنجاح!",
+      max: "⚡ وصلت إلى الحد الأقصى!",
+      notEnough: "❌ لا يوجد ما يكفي من $Battle!",
+      fail: "⚠️ فشل الترقية.",
+      connection: "⚠️ خطأ في الاتصال."
+    }
+  };
+
+  const T = MESSAGES[lang] || MESSAGES["he"];
+
+  // ⚡ אירוע לחיצה על כפתור השדרוג
   btn.addEventListener("click", async () => {
-    msgEl.textContent = "⏳ Processing...";
+    msgEl.textContent = T.processing;
     msgEl.style.color = "#ccc";
 
     try {
@@ -736,18 +768,21 @@ document.addEventListener("DOMContentLoaded", () => {
         levelEl.textContent = data.newLevel;
         capEl.textContent = data.newCap;
         costEl.textContent = data.newCost;
-        msgEl.textContent = "✅ Upgrade successful!";
+        msgEl.textContent = T.success;
         msgEl.style.color = "#00ff99";
+      } else if (data.error === "max_level") {
+        msgEl.textContent = T.max;
+        msgEl.style.color = "#ffcc00";
       } else if (data.error === "not_enough_battle") {
-        msgEl.textContent = "❌ Not enough $Battle!";
+        msgEl.textContent = T.notEnough;
         msgEl.style.color = "#ff4d4d";
       } else {
-        msgEl.textContent = "⚠️ Upgrade failed.";
+        msgEl.textContent = T.fail;
         msgEl.style.color = "#ffcc00";
       }
     } catch (err) {
       console.error("Upgrade Battery error:", err);
-      msgEl.textContent = "⚠️ Connection error.";
+      msgEl.textContent = T.connection;
       msgEl.style.color = "#ffcc00";
     }
   });
