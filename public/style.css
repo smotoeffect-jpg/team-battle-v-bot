@@ -419,5 +419,51 @@ body{
     padding: 10px 16px;
   }
 }
+
+/* ===== ⚙️ Upgrades Panel ===== */
+#upgradesPanel {
+  padding: 20px;
+  text-align: center;
+}
+
+.upgrade-box {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 20px;
+  display: inline-block;
+  min-width: 250px;
+}
+
+.upgrade-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  font-size: 1.1em;
+}
+
+.upgrade-btn {
+  background: linear-gradient(90deg, #ff007f, #ff66b2);
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 10px 16px;
+  margin-top: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.upgrade-btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+.upgrade-msg {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #ccc;
+}
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
