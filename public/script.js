@@ -988,7 +988,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-// ===== TB_V17 — Buy VIP via Telegram Stars =====
+
+// ===== TB_V17 — Buy VIP via Telegram Stars (Stable Payment Flow) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -1003,29 +1004,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // פתיחת חשבון תשלום בכוכבים (כמו Extra Tap)
-      const payload = { t: "vip", userId, team };
-      const res = await fetch("/api/create-invoice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: "Buy VIP – TeamBattle",
-          description: "7-Day VIP access with bonuses",
-          payload,
-          currency: "XTR",
-          amount: 300, // ⭐️ 300 כוכבים
-        }),
-      });
+      // ✅ תשלום VIP דרך openInvoice היציבה
+      const payload = {
+        t: "vip",                 // מזהה סוג התשלום
+        userId,                   // מזהה משתמש
+        team,                     // קבוצה
+        stars: 300,               // עלות VIP
+        title: "Buy VIP Access",  // כותרת החשבונית
+        description: "7-Day VIP Access with bonuses" // תיאור החשבונית
+      };
 
-      const data = await res.json();
-      if (data.ok && data.invoiceLink) {
-        // פותח את חלון התשלום
-        openInvoice(data.invoiceLink);
-        vipMsg.textContent = "💫 Waiting for payment...";
-      } else {
-        vipMsg.textContent = "⚠️ Failed to create invoice.";
-        vipMsg.style.color = "#ffcc00";
-      }
+      // פתיחת חשבונית דרך הפונקציה הקיימת שלך
+      openInvoice(payload);
+
+      vipMsg.textContent = "💫 Waiting for payment...";
+      vipMsg.style.color = "#ffd76b";
     } catch (err) {
       console.error("VIP purchase error:", err);
       vipMsg.textContent = "⚠️ Connection error.";
