@@ -669,3 +669,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+// === TB_V15 — Bottom Navigation Logic ===
+document.addEventListener("DOMContentLoaded", () => {
+  const panels = {
+    home: document.getElementById("app"),
+    myteam: document.getElementById("my-board"),
+    upgrades: document.getElementById("upgradesPanel"),
+    leaderboard: document.getElementById("top20"),
+    referrals: document.getElementById("partner")
+  };
+
+  const buttons = {
+    home: document.getElementById("btn-home"),
+    myteam: document.getElementById("btn-myteam"),
+    upgrades: document.getElementById("btn-upgrades"),
+    leaderboard: document.getElementById("btn-leaderboard"),
+    referrals: document.getElementById("btn-referrals")
+  };
+
+  // פונקציה שמציגה רק את הפאנל הנבחר
+  function showPanel(panelKey) {
+    Object.values(panels).forEach(p => p?.classList.add("hidden"));
+    Object.values(buttons).forEach(b => b?.classList.remove("active"));
+    if (panels[panelKey]) panels[panelKey].classList.remove("hidden");
+    if (buttons[panelKey]) buttons[panelKey].classList.add("active");
+  }
+
+  // מאזינים לכל כפתור בסרגל
+  Object.entries(buttons).forEach(([key, btn]) => {
+    if (!btn) return;
+    btn.addEventListener("click", () => showPanel(key));
+  });
+
+  // מצב ברירת מחדל
+  showPanel("home");
+});
