@@ -989,7 +989,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== TB_V17 — Buy VIP via Telegram Stars (Final, Stable) =====
+// ===== TB_V17 — Buy VIP via Telegram Stars (Final + Working) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -1004,14 +1004,38 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // ✅ פתיחת חשבונית אמיתית דרך openInvoice
-      const payload = { t: "vip", userId, team, stars: 300 };
+      // ✅ שולחים בקשה אמיתית לשרת כדי ליצור חשבונית
+      const res = await fetch("/api/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          team,
+          stars: 300, // ⭐️ עלות VIP
+          t: "vip"
+        })
+      });
 
-      console.log("💎 [VIP] Creating invoice:", payload);
-      openInvoice(payload); // בדיוק כמו Extra Tap
+      const data = await res.json();
+      console.log("💎 [VIP] create-invoice response:", data);
 
-      vipMsg.textContent = "💫 Waiting for payment...";
-      vipMsg.style.color = "#ffd76b";
+      if (data.ok && (data.url || data.invoiceLink)) {
+        const invoiceUrl = data.url || data.invoiceLink;
+        console.log("🧾 Opening Telegram Stars invoice:", invoiceUrl);
+
+        if (window.Telegram?.WebApp?.openInvoice) {
+          Telegram.WebApp.openInvoice(invoiceUrl, () => {
+            console.log("📲 VIP invoice closed or paid.");
+            vipMsg.textContent = "💫 Waiting for payment confirmation...";
+            setTimeout(() => location.reload(), 1500);
+          });
+        } else {
+          window.location.href = invoiceUrl;
+        }
+      } else {
+        vipMsg.textContent = "⚠️ Failed to create invoice.";
+        vipMsg.style.color = "#ffcc00";
+      }
     } catch (err) {
       console.error("VIP purchase error:", err);
       vipMsg.textContent = "⚠️ Connection error.";
