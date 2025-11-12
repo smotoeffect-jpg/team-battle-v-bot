@@ -745,6 +745,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// ===== TB_V17 — Panels Real-Time Sync =====
+async function syncPanels(panelKey) {
+  try {
+    const res = await fetch("/api/user/" + window.telegramUserId);
+    const data = await res.json();
+    if (!data.ok) return;
+
+    // === עמוד שדרוגים (Upgrades) ===
+    if (panelKey === "upgrades" || panelKey === "home") {
+      document.getElementById("batteryLevel").textContent = data.user.batteryLevel || 1;
+      document.getElementById("batteryCap").textContent = data.user.batteryCap || 300;
+      document.getElementById("batteryCost").textContent = data.user.batteryCost || 100;
+
+      const vipStatus = document.getElementById("vipStatus");
+      if (vipStatus) {
+        const active = data.user.isVIP && Date.now() < data.user.perkExpiry;
+        vipStatus.textContent = active ? i18n[getLang()].vipActive : i18n[getLang()].vipInactive;
+        vipStatus.style.color = active ? "#00ff99" : "#ff4d4d";
+      }
+    }
+
+    // === עמוד הלוח שלי (My Board) ===
+    if (panelKey === "myteam") {
+      document.getElementById("me-stars").textContent = data.user.stars || 0;
+      document.getElementById("me-battle").textContent = data.user.battle || 0;
+      document.getElementById("me-xp").textContent = data.user.xp || 0;
+      document.getElementById("me-referrals").textContent = data.user.referrals || 0;
+    }
+
+  } catch (err) {
+    console.warn("⚠️ syncPanels failed:", err);
+  }
+}
+
 // === TB_V15 — Bottom Navigation Logic (Clean & Fixed) ===
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
