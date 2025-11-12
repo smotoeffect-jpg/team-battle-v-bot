@@ -989,7 +989,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== TB_V17 — Buy VIP via Telegram Stars (Stable Payment Flow) =====
+// ===== TB_V17 — Buy VIP via Telegram Stars (Final, Stable) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -1004,18 +1004,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // ✅ תשלום VIP דרך openInvoice היציבה
-      const payload = {
-        t: "vip",                 // מזהה סוג התשלום
-        userId,                   // מזהה משתמש
-        team,                     // קבוצה
-        stars: 300,               // עלות VIP
-        title: "Buy VIP Access",  // כותרת החשבונית
-        description: "7-Day VIP Access with bonuses" // תיאור החשבונית
-      };
+      // ✅ פתיחת חשבונית אמיתית דרך openInvoice
+      const payload = { t: "vip", userId, team, stars: 300 };
 
-      // פתיחת חשבונית דרך הפונקציה הקיימת שלך
-      openInvoice(payload);
+      console.log("💎 [VIP] Creating invoice:", payload);
+      openInvoice(payload); // בדיוק כמו Extra Tap
 
       vipMsg.textContent = "💫 Waiting for payment...";
       vipMsg.style.color = "#ffd76b";
