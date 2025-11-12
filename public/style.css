@@ -359,25 +359,28 @@ body{
   text-shadow: 0 0 10px rgba(255, 223, 0, 0.8);
 }
 
-/* === TB_V15 — Bottom Navigation Fix === */
+/* === TB_V15 — Bottom Navigation (Improved for iPhone) === */
 .bottom-nav {
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 10px);
+  bottom: 0;
   left: 0;
   width: 100%;
   background: var(--panel);
   border-top: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 -2px 18px rgba(255,77,196,.25);
+  box-shadow: 0 -4px 20px rgba(255,77,196,.25);
   z-index: 9999;
-  padding-bottom: env(safe-area-inset-bottom, 10px);
+  padding: 14px 0 calc(env(safe-area-inset-bottom, 16px) + 10px);
+  backdrop-filter: blur(8px);
 }
 
 .nav-scroll {
   display: flex;
   overflow-x: auto;
-  gap: 4px;
-  padding: 8px 6px;
+  gap: 10px;
+  padding: 6px 12px;
   justify-content: space-around;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .nav-btn {
@@ -385,13 +388,14 @@ body{
   background: transparent;
   border: none;
   color: var(--text);
-  font-weight: 700;
-  font-size: 14px;
-  padding: 6px 8px;
-  border-radius: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 12px;
   transition: all 0.2s ease;
   white-space: nowrap;
   cursor: pointer;
+  min-width: 80px;
 }
 
 .nav-btn:hover {
@@ -402,12 +406,13 @@ body{
 .nav-btn.active {
   background: linear-gradient(180deg,#ff4dc4,#e028a5);
   color: #fff;
-  box-shadow: 0 0 10px rgba(255,77,196,.35);
+  box-shadow: 0 0 12px rgba(255,77,196,.45);
 }
 
 @media (max-width: 600px) {
   .nav-btn {
-    font-size: 13px;
+    font-size: 15px;
+    padding: 9px 10px;
   }
 }
 
