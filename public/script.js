@@ -1,4 +1,4 @@
-// ✅ Define Telegram User ID variable globally
+// ✅ Global Telegram User ID
 let telegramUserId = null;
 
 // ===== Auto-detect API base (Render / local / Telegram) =====
@@ -6,109 +6,79 @@ const API_BASE = window.location.origin || "";
 
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
-function waitForWebApp(maxWait = 2000) {
+function waitForWebApp(maxWait = 2500) {
   return new Promise(resolve => {
     let waited = 0;
     const iv = setInterval(() => {
       if (window.Telegram?.WebApp) {
         clearInterval(iv);
         console.log("🌐 WebApp Detected:", true);
-
-        // 🧠 Extract Telegram user ID
-        try {
-          const tUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-          if (tUser?.id) {
-            window.telegramUserId = String(tUser.id);
-            console.log("✅ Telegram User ID:", window.telegramUserId);
-          } else {
-            console.warn("⚠️ Telegram user ID not found in initDataUnsafe");
-          }
-        } catch (err) {
-          console.error("Telegram user initData error:", err);
-        }
-
         resolve(window.Telegram.WebApp);
       }
-
       waited += 100;
       if (waited >= maxWait) {
         clearInterval(iv);
-        console.warn("⚠️ Telegram WebApp not detected after wait — using fallback.");
+        console.warn("⚠️ Telegram WebApp not detected — using fallback.");
         resolve(null);
       }
     }, 100);
   });
 }
 
-// === DOMContentLoaded ===
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
-  console.log("🔑 initData:", WebApp?.initData);
 
-  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
-  if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
+  // ===== Try to extract Telegram user info =====
+  try {
+    const tUser = WebApp?.initDataUnsafe?.user;
+    if (tUser?.id) {
+      telegramUserId = String(tUser.id);
+      console.log("✅ Telegram User ID:", telegramUserId);
+    } else {
+      console.warn("⚠️ Telegram user ID not found in initDataUnsafe");
+    }
+  } catch (err) {
+    console.error("Telegram initData error:", err);
+  }
+
+  // ====== Fallback for Android/iOS/Desktop ======
+  if (!telegramUserId && window.location.search.includes("tgWebAppData=")) {
     try {
       const params = new URLSearchParams(window.location.search);
       const data = params.get("tgWebAppData");
       if (data) {
-        console.log("🧩 Injecting initData manually from URL!");
         if (!window.Telegram) window.Telegram = {};
         if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
         window.Telegram.WebApp.initData = decodeURIComponent(data);
-
-        // נסה לפרש גם את המשתמש מתוך המידע הגולמי
         const parsed = Object.fromEntries(new URLSearchParams(data));
         if (parsed.user) {
           window.Telegram.WebApp.initDataUnsafe = { user: JSON.parse(parsed.user) };
-          window.telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user?.id || "");
-          console.log("✅ Recovered Telegram User ID from URL:", window.telegramUserId);
+          telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user?.id || "");
+          console.log("✅ Recovered Telegram User ID from URL:", telegramUserId);
         }
       }
     } catch (e) {
-      console.warn("InitData injection failed:", e);
+      console.warn("InitData fix (URL) failed:", e);
     }
   }
 
-  // ודא שה־initData נשמר גם לאובייקט הראשי
-  if (window.Telegram?.WebApp?.initData) {
-    WebApp.initData = window.Telegram.WebApp.initData;
-  }
-});
-  // ====== Desktop & WebApp fallback ======
-if (!window.Telegram?.WebApp?.initData && window.location.hash.includes("tgWebAppData=")) {
-  try {
-    const hash = window.location.hash.split("tgWebAppData=")[1];
-    const data = decodeURIComponent(hash.split("&")[0]);
-    if (data) {
-      if (!window.Telegram) window.Telegram = {};
-      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
-      window.Telegram.WebApp.initData = data;
-      window.Telegram.WebApp.initDataUnsafe = JSON.parse(Object.fromEntries(new URLSearchParams(data)).user || "{}");
-      console.log("🧩 Fixed Telegram initData from hash fragment!");
-    }
-  } catch (e) {
-    console.warn("InitData hash fix failed:", e);
-  }
-}
-// ✅ אם הצלחנו לשחזר את initData - ודא שהאובייקט הראשי מעודכן
-if (window.Telegram?.WebApp?.initData) {
-  WebApp.initData = window.Telegram.WebApp.initData;
-}
-
-  // ===== Detect Telegram user or create fallback ID =====
-  let telegramUserId = null;
-    async function waitForTelegramUser() {
-    for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
-      if (WebApp?.initDataUnsafe?.user?.id) {
-        return WebApp.initDataUnsafe.user.id;
+  // ===== Hash fallback (desktop web) =====
+  if (!telegramUserId && window.location.hash.includes("tgWebAppData=")) {
+    try {
+      const hash = window.location.hash.split("tgWebAppData=")[1];
+      const data = decodeURIComponent(hash.split("&")[0]);
+      const parsed = Object.fromEntries(new URLSearchParams(data));
+      if (parsed.user) {
+        window.Telegram.WebApp.initDataUnsafe = { user: JSON.parse(parsed.user) };
+        telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user?.id || "");
+        console.log("✅ Recovered Telegram User ID from hash:", telegramUserId);
       }
-      await new Promise(r => setTimeout(r, 100));
+    } catch (e) {
+      console.warn("InitData hash fix failed:", e);
     }
-    return null;
   }
 
-  telegramUserId = await waitForTelegramUser();
-
+  // ===== If still no ID, create fallback guest =====
   if (!telegramUserId) {
     console.warn("⚠️ Telegram userId not found — using fallback guest ID");
     telegramUserId = localStorage.getItem("tb_fallback_id");
@@ -119,7 +89,8 @@ if (window.Telegram?.WebApp?.initData) {
   }
 
   console.log("✅ Active userId:", telegramUserId);
-console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
+  console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
+});
 
 // ====== Translations (Full Multilingual Map) ======
 const i18n = {
