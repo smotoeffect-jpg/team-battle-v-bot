@@ -742,35 +742,98 @@ app.post("/api/user/:id/team", (req, res) => {
 });
 
 
-// ====== Stars Payment – DO NOT TOUCH (logic unchanged) ======
+// ====== Stars Payment – DO NOT TOUCH (logic unchanged, +VIP support) ======
 app.post("/api/create-invoice", async (req, res) => {
   try {
     // Only *fallback* to header if body missing userId (doesn't change flow)
     const userId = String(req.body?.userId || getUserIdFromReq(req) || "");
     const team   = req.body?.team;
     const stars  = Number(req.body?.stars || 0);
+    const type   = req.body?.t || "donation"; // ← הוספנו סוג תשלום
+
     if (!userId || !team || !["israel","gaza"].includes(team) || !stars || stars < 1)
       return res.status(400).json({ ok:false, error:"bad params" });
 
     const u = ensureUser(userId);
     if (!u.team) u.team = team;
 
-    const payload = { t:"donation", userId, team, stars };
+    // בוחרים payload לפי סוג התשלום
+    const payload = { t: type, userId, team, stars };
+
+    // כותרת ותיאור שונים לפי סוג
+    let title = "TeamBattle Boost";
+    let description = `Donate ${stars}⭐ to ${team}`;
+
+    if (type === "vip") {
+      title = "Buy VIP – TeamBattle";
+      description = "7-Day VIP access with bonuses";
+    }
+
     const r = await axios.post(`${TG_API}/createInvoiceLink`, {
-      title: "TeamBattle Boost",
-      description: `Donate ${stars}⭐ to ${team}`,
-      payload: JSON.stringify(payload).slice(0,128),
+      title,
+      description,
+      payload: JSON.stringify(payload).slice(0, 128),
       currency: "XTR",
       prices: [{ label: "Stars", amount: Math.floor(stars) }],
     });
-    if (!r.data?.ok) return res.status(500).json({ ok:false, error:r.data });
-    res.json({ ok:true, url:r.data.result });
+
+    if (!r.data?.ok)
+      return res.status(500).json({ ok:false, error:r.data });
+
+    res.json({ ok:true, url: r.data.result });
+
   } catch (e) {
     console.error("create-invoice", e?.response?.data || e.message);
     res.status(500).json({ ok:false, error:e.message });
   }
 });
 
+// ====== Handle successful Telegram Payments (Stars / VIP) ======
+app.post("/api/successful_payment", async (req, res) => {
+  try {
+    const payment = req.body;
+    console.log("💰 Successful payment received:", payment);
+
+    // מוודא שיש payload תקין
+    const payload = payment?.payload ? JSON.parse(payment.payload) : null;
+    if (!payload?.userId) {
+      console.warn("⚠️ Missing userId in payment payload");
+      return res.status(400).json({ ok: false });
+    }
+
+    const userId = String(payload.userId);
+    const type   = payload.t || "donation";
+    const stars  = Number(payload.stars || 0);
+    const team   = payload.team || "unknown";
+
+    const user = ensureUser(userId);
+    if (!user.team) user.team = team;
+
+    // 💫 לוגיקה לפי סוג תשלום
+    if (type === "donation") {
+      user.starsDonated = (user.starsDonated || 0) + stars;
+      user.battleBalance = (user.battleBalance || 0) + stars * 0.5;
+      console.log(`⭐ Donation processed for ${userId}: +${stars} Stars`);
+    }
+
+    // 💎 אם זה תשלום VIP
+    if (type === "vip") {
+      const now = Date.now();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      user.isVIP = true;
+      user.perkExpiry = now + sevenDays;
+      console.log(`💎 VIP activated for user ${userId} until ${new Date(user.perkExpiry).toLocaleString()}`);
+    }
+
+    // שמירת הנתונים
+    writeJSON(USERS_FILE, users);
+
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("❌ Error in successful_payment:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
 // ====== Me (referrals + stats + daily bonus) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
