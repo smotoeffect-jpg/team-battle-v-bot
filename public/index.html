@@ -95,6 +95,28 @@
           <div class="k" data-i18n="tapsToday">Taps today</div>
           <div class="v" id="me-taps">0/300</div>
         </div>
+      </section>
+
+      <!-- ⚙️ Upgrades Panel -->
+      <section class="panel hidden" id="upgradesPanel">
+        <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
+
+        <div class="upgrade-card">
+          <div class="upgrade-info">
+            <div>🔋 <span data-i18n="batteryLevel">Battery Level</span>: <span id="batteryLevel">1</span></div>
+            <div>⚡ <span data-i18n="batteryCap">Capacity</span>: <span id="batteryCap">300</span></div>
+            <div>💰 <span data-i18n="batteryCost">Cost</span>: <span id="batteryCost">100</span> $Battle</div>
+          </div>
+          <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">Upgrade Battery</button>
+          <div id="batteryMsg" class="upgrade-msg"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="top20">
+        <div class="panel-title">Top 20</div>
+        <ol id="top20-list" class="top-list" aria-live="polite"></ol>
+      </section>
+    </main>
 
         <!-- ✅ Ton Wallet Connect -->
         <div class="ton-wallet">
@@ -122,14 +144,14 @@
     </footer>
   </div>
 
-<!-- === TB_V15 — Bottom Navigation Bar === -->
+<!-- === TB_V15 — Bottom Navigation Bar (Multilingual) === -->
 <nav class="bottom-nav">
   <div class="nav-scroll">
-    <button class="nav-btn active" id="btn-home">🏠 Home</button>
-    <button class="nav-btn" id="btn-myteam">🪖 My Team</button>
-    <button class="nav-btn" id="btn-upgrades">⚙️ Upgrades</button>
-    <button class="nav-btn" id="btn-leaderboard">🏆 Leaderboard</button>
-    <button class="nav-btn" id="btn-referrals">🔗 Invited Friends</button>
+    <button class="nav-btn active" id="btn-home" data-i18n="navHome">🏠 Home</button>
+    <button class="nav-btn" id="btn-myteam" data-i18n="navMyTeam">🪖 My Team</button>
+    <button class="nav-btn" id="btn-upgrades" data-i18n="navUpgrades">⚙️ Upgrades</button>
+    <button class="nav-btn" id="btn-leaderboard" data-i18n="navLeaderboard">🏆 Leaderboard</button>
+    <button class="nav-btn" id="btn-referrals" data-i18n="navReferrals">🔗 Invited Friends</button>
   </div>
 </nav>
 
