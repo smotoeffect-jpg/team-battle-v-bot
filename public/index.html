@@ -16,8 +16,8 @@
   <div id="app" class="wrap">
     <div id="double-xp" class="doublexp-line" aria-live="polite"></div>
 
-    <!-- 🏠 HOME PANEL (wrapped in container) -->
-    <div id="homePanel" class="panel">
+    <!-- 🏠 HOME PANEL -->
+    <section id="homePanel" class="panel">
       <header class="title">
         <div class="brand">TeamBattle</div>
         <div class="subtitle">Israel Vs Gaza</div>
@@ -31,121 +31,110 @@
         </div>
       </div>
 
-      <!-- ✅ TB_V15: Live Battle/Income strip -->
       <div id="battle-stats" class="battle-stats">
         <span id="battleShort" data-i18n="battleShort">$Battle</span>:
         <span id="incomeShort">⚡ 0.00/sec</span>
       </div>
-      
-      <!-- === Team Selection Area === -->
+
       <div class="team-hint" data-i18n="chooseTeam">בחר את הקבוצה שלך</div>
       <section class="scores-row">
         <div class="score-card team-card" id="flag-israel">
           <div class="score-label" data-i18n="israel">🇮🇱 ישראל</div>
           <div class="score-value" id="score-israel-value">0</div>
         </div>
-
         <div class="score-card team-card" id="flag-gaza">
           <div class="score-label" data-i18n="gaza">🇵🇸 עזה</div>
           <div class="score-value" id="score-gaza-value">0</div>
         </div>
       </section>
 
-      <!-- === Main Action Buttons === -->
       <div class="action-row">
         <button id="btn-tap" data-i18n="tap">Tap (+1)</button>
         <button id="btn-super" style="display:none" data-i18n="superBoost">Super Boost (+25)</button>
         <button id="btn-switch" style="display:none" data-i18n="switchTeam">Switch Team</button>
       </div>
 
-      <!-- === Extra Tap Section === -->
       <div class="extra-row">
         <input id="stars-input" type="number" min="1" max="1000" value="10">
         <button id="btn-extra" data-i18n="extraTap">Extra Tap</button>
       </div>
-
-      <!-- Referral Program -->
-      <div id="partner" class="partner-box hidden">
-        <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
-        <div class="partner-row">
-          <input id="refLink" class="partner-input" readonly />
-          <button id="copyRef" class="btn small" data-i18n="copy">העתק קישור</button>
-          <button id="shareRef" class="btn small share" aria-label="Share on Telegram"></button>
-        </div>
-      </div>
-    </div>
+    </section>
     <!-- 🏠 END HOME PANEL -->
 
-    <!-- === Main Grid === -->
     <main class="main-grid">
-      <!-- 🪖 My Team -->
-      <section class="panel hidden" id="my-board">
-        <div class="panel-title" data-i18n="myBoard">הלוח שלי</div>
-        <div class="kv">
-          <div class="k" data-i18n="stars">Stars / Extra Tap</div>
-          <div class="v" id="me-stars"></div>
-
-          <div class="k">$BATTLE</div>
-          <div class="v" id="me-battle">0</div>
-
-          <div class="k">XP</div>
-          <div class="v" id="me-xp">0</div>
-
-          <div class="k" data-i18n="playerLevel">Player Level</div>
-          <div class="v" id="me-level"></div>
-
-          <div class="k" data-i18n="referrals">Invited Friends</div>
-          <div class="v" id="me-referrals">–</div>
-
-          <div class="k" data-i18n="tapsToday">Taps today</div>
-          <div class="v" id="me-taps">0/300</div>
-        </div>
-
-        <!-- ✅ Ton Wallet Connect -->
-        <div class="ton-wallet">
-          <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
-          <div id="ton-address" class="wallet-address"></div>
-        </div>
+      <!-- 🪖 My Team (שמור לשלב עתידי) -->
+      <section class="panel hidden" id="my-team">
+        <div class="panel-title">🪖 My Team (Coming Soon)</div>
       </section>
 
       <!-- ⚙️ Upgrades Panel -->
       <section class="panel hidden" id="upgradesPanel">
         <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
-
         <div class="upgrade-card">
           <div class="upgrade-info">
             <div class="upgrade-row">
               🔋 <span data-i18n="batteryLevel">Battery Level</span>:
               <span id="batteryLevel" class="upgrade-value">1</span>
             </div>
-
             <div class="upgrade-row">
               ⚡ <span data-i18n="batteryCap">Capacity</span>:
               <span id="batteryCap" class="upgrade-value">300</span>
             </div>
-
             <div class="upgrade-row">
               💰 <span data-i18n="batteryCost">Cost</span>:
               <span id="batteryCost" class="upgrade-value">100</span> $Battle
             </div>
           </div>
-
           <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">
             🔼 Upgrade Battery
           </button>
-
           <div id="batteryMsg" class="upgrade-msg"></div>
         </div>
-
         <div class="comingsoon" style="margin-top:20px;opacity:.6;">
           <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
         </div>
       </section>
 
-      <!-- 🏆 Top 20 -->
-      <section class="panel hidden" id="top20">
-        <div class="panel-title">Top 20</div>
-        <ol id="top20-list" class="top-list" aria-live="polite"></ol>
+      <!-- 🏆 Leaderboard + My Board Combined -->
+      <section class="panel hidden" id="leaderboard">
+        <div class="panel-title">🏆 Leaderboard</div>
+
+        <div class="leaderboard-container">
+          <!-- 🧍‍♂️ My Board -->
+          <div class="my-board-box">
+            <div class="panel-subtitle" data-i18n="myBoard">הלוח שלי</div>
+            <div class="kv">
+              <div class="k" data-i18n="stars">Stars / Extra Tap</div>
+              <div class="v" id="me-stars"></div>
+              <div class="k">$BATTLE</div>
+              <div class="v" id="me-battle">0</div>
+              <div class="k">XP</div>
+              <div class="v" id="me-xp">0</div>
+              <div class="k" data-i18n="playerLevel">Player Level</div>
+              <div class="v" id="me-level"></div>
+              <div class="k" data-i18n="referrals">Invited Friends</div>
+              <div class="v" id="me-referrals">–</div>
+              <div class="k" data-i18n="tapsToday">Taps today</div>
+              <div class="v" id="me-taps">0/300</div>
+            </div>
+          </div>
+
+          <!-- 🏅 Top 20 -->
+          <div class="top20-box">
+            <div class="panel-subtitle">Top 20</div>
+            <ol id="top20-list" class="top-list" aria-live="polite"></ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- 🔗 Referrals Panel -->
+      <section class="panel hidden" id="partner">
+        <div class="partner-title" data-i18n="partnerTitle">תוכנית שותפים</div>
+        <div class="partner-row">
+          <input id="refLink" class="partner-input" readonly />
+          <button id="copyRef" class="btn small" data-i18n="copy">העתק קישור</button>
+          <button id="shareRef" class="btn small share" aria-label="Share on Telegram"></button>
+        </div>
       </section>
     </main>
 
@@ -154,7 +143,7 @@
     </footer>
   </div>
 
-  <!-- === TB_V15 — Bottom Navigation Bar === -->
+  <!-- === Bottom Navigation Bar === -->
   <nav class="bottom-nav">
     <div class="nav-scroll">
       <button class="nav-btn active" id="btn-home">🏠 Home</button>
