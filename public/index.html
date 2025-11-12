@@ -96,32 +96,26 @@
           <div class="k" data-i18n="tapsToday">Taps today</div>
           <div class="v" id="me-taps">0/300</div>
         </div>
-
-        <!-- ✅ Ton Wallet Connect -->
-        <div class="ton-wallet">
-          <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
-          <div id="ton-address" class="wallet-address"></div>
-        </div>
       </section>
 
-<!-- ⚙️ Upgrades Panel -->
-<section class="panel hidden" id="upgradesPanel">
-  <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
+      <!-- ⚙️ Upgrades Panel -->
+      <section class="panel hidden" id="upgradesPanel">
+        <div class="panel-title" data-i18n="upgradesTitle">⚙️ Upgrades</div>
 
-  <div class="upgrade-card">
-    <div class="upgrade-info">
-      <div>🔋 <span data-i18n="batteryLevel">Battery Level</span>: <span id="batteryLevel">1</span></div>
-      <div>⚡ <span data-i18n="batteryCap">Capacity</span>: <span id="batteryCap">300</span></div>
-      <div>💰 <span data-i18n="batteryCost">Cost</span>: <span id="batteryCost">100</span> $Battle</div>
-    </div>
-    <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">Upgrade Battery</button>
-    <div id="batteryMsg" class="upgrade-msg"></div>
-  </div>
+        <div class="upgrade-card">
+          <div class="upgrade-info">
+            <div>🔋 <span data-i18n="batteryLevel">Battery Level</span>: <span id="batteryLevel">1</span></div>
+            <div>⚡ <span data-i18n="batteryCap">Capacity</span>: <span id="batteryCap">300</span></div>
+            <div>💰 <span data-i18n="batteryCost">Cost</span>: <span id="batteryCost">100</span> $Battle</div>
+          </div>
+          <button id="btn-upgrade-battery" class="btn btn-gold" data-i18n="upgradeBattery">Upgrade Battery</button>
+          <div id="batteryMsg" class="upgrade-msg"></div>
+        </div>
 
-  <div class="comingsoon" style="margin-top:20px;opacity:.6;">
-    <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
-  </div>
-</section>
+        <div class="comingsoon" style="margin-top:20px;opacity:.6;">
+          <span data-i18n="comingSoon">⚙️ Upgrade your power, energy and rewards!</span>
+        </div>
+      </section>
 
       <!-- 🏆 Top 20 -->
       <section class="panel" id="top20">
@@ -129,6 +123,12 @@
         <ol id="top20-list" class="top-list" aria-live="polite"></ol>
       </section>
     </main>
+
+    <!-- ✅ Ton Wallet Connect -->
+    <div class="ton-wallet">
+      <button id="connect-ton" class="btn btn-pink">💎 Connect TON Wallet</button>
+      <div id="ton-address" class="wallet-address"></div>
+    </div>
 
     <footer class="foot">
       <span id="status-line"></span>
