@@ -119,8 +119,23 @@ const i18n = {
     copy: "Copy Link",
     chooseTeam: "Choose your team",
     battleShort: "$Battle",
-    incomeShort: "Income"
+    incomeShort: "Income",
+
+    // ⚙️ Upgrades + Battery
+    upgradesTitle: "Upgrades",
+    batteryLevel: "Battery Level",
+    batteryCap: "Capacity",
+    batteryCost: "Cost",
+    upgradeBattery: "Upgrade Battery",
+
+    // 🧭 Bottom Navigation
+    navHome: "Home",
+    navMyTeam: "My Team",
+    navUpgrades: "Upgrades",
+    navLeaderboard: "Leaderboard",
+    navReferrals: "Referrals"
   },
+
   he: {
     israel: "ישראל",
     gaza: "עזה",
@@ -140,8 +155,23 @@ const i18n = {
     copy: "העתק קישור",
     chooseTeam: "בחר את הקבוצה שלך",
     battleShort: "$Battle",
-    incomeShort: "הכנסה"
+    incomeShort: "הכנסה",
+
+    // ⚙️ Upgrades + Battery
+    upgradesTitle: "שדרוגים",
+    batteryLevel: "רמת בטרייה",
+    batteryCap: "קיבולת",
+    batteryCost: "עלות",
+    upgradeBattery: "שדרג בטרייה",
+
+    // 🧭 Bottom Navigation
+    navHome: "בית",
+    navMyTeam: "הקבוצה שלי",
+    navUpgrades: "שדרוגים",
+    navLeaderboard: "לוח מובילים",
+    navReferrals: "שותפים"
   },
+
   ar: {
     israel: "إسرائيل",
     gaza: "غزة",
@@ -161,7 +191,21 @@ const i18n = {
     copy: "انسخ الرابط",
     chooseTeam: "اختر فريقك",
     battleShort: "$Battle",
-    incomeShort: "الدخل"
+    incomeShort: "الدخل",
+
+    // ⚙️ Upgrades + Battery
+    upgradesTitle: "الترقيات",
+    batteryLevel: "مستوى البطارية",
+    batteryCap: "السعة",
+    batteryCost: "التكلفة",
+    upgradeBattery: "ترقية البطارية",
+
+    // 🧭 Bottom Navigation
+    navHome: "الرئيسية",
+    navMyTeam: "فريقي",
+    navUpgrades: "الترقيات",
+    navLeaderboard: "المتصدرون",
+    navReferrals: "الإحالات"
   }
 };
 
