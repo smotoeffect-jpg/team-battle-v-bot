@@ -464,6 +464,12 @@ body{
   font-size: 0.9em;
   color: #ccc;
 }
+/* === TB_V15: Hidden Panel Utility === */
+.hidden {
+  display: none !important;
+  visibility: hidden;
+  opacity: 0;
+}
 
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
