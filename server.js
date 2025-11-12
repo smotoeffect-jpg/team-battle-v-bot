@@ -610,40 +610,43 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
-// ====== Battery Upgrade (using $Battle) ======
+// ====== Upgrade Battery (POST /api/upgrade/battery) ======
 app.post("/api/upgrade/battery", (req, res) => {
   try {
     const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
-    if (!userId) return res.status(400).json({ ok:false, error:"Missing userId" });
+    if (!userId) return res.status(400).json({ ok: false, error: "Missing userId" });
 
     const u = ensureUser(userId);
-    if (!u.battleBalance) u.battleBalance = 0;
-    if (!u.batteryLevel) u.batteryLevel = 1;
-    if (!u.batteryCapacity) u.batteryCapacity = 300;
 
-    const cost = Math.floor(100 * Math.pow(1.25, u.batteryLevel - 1));
+    // נתוני בסיס
+    u.batteryLevel = u.batteryLevel || 1;
+    u.batteryCap = u.batteryCap || 300;
+    u.batteryCost = u.batteryCost || 100;
+    u.battleBalance = u.battleBalance || 0;
 
-    if (u.battleBalance < cost) {
-      return res.json({ ok:false, error:"not_enough_battle", need: cost });
+    // בדיקת יתרה
+    if (u.battleBalance < u.batteryCost) {
+      return res.json({ ok: false, error: "not_enough_battle", need: u.batteryCost });
     }
 
-    // מנכה ומעלה רמה
-    u.battleBalance -= cost;
-    u.batteryLevel++;
-    u.batteryCapacity = Math.round(u.batteryCapacity * 1.15); // +15% קיבולת
+    // שדרוג
+    u.battleBalance -= u.batteryCost;
+    u.batteryLevel += 1;
+    u.batteryCap = Math.round(u.batteryCap * 1.15);
+    u.batteryCost = Math.round(u.batteryCost * 1.5);
 
     writeJSON(USERS_FILE, users);
 
-    res.json({
+    return res.json({
       ok: true,
       newLevel: u.batteryLevel,
-      newCapacity: u.batteryCapacity,
-      cost,
+      newCap: u.batteryCap,
+      newCost: u.batteryCost,
       balance: u.battleBalance
     });
   } catch (e) {
     console.error("❌ Battery upgrade error:", e);
-    res.status(500).json({ ok:false, error:"server_error" });
+    return res.status(500).json({ ok: false, error: "server_error" });
   }
 });
 
