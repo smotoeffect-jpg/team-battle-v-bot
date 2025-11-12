@@ -606,7 +606,7 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
-// ===== TB_V17 — Battery Upgrade API (Persistent Fix) =====
+// ===== TB_V18 — Battery Upgrade API (Persistent Fix) =====
 app.post("/api/upgrade/battery", (req, res) => {
   try {
     const { userId } = req.body;
@@ -631,7 +631,7 @@ app.post("/api/upgrade/battery", (req, res) => {
       battle: 0,
       battleBalance: 0,
       batteryLevel: 1,
-      batteryCap: 300
+      batteryCap: 300,
     };
 
     // ⚙️ פרמטרים של מערכת השדרוג
@@ -651,7 +651,7 @@ app.post("/api/upgrade/battery", (req, res) => {
       return res.json({ ok: false, error: "max_level" });
     }
 
-    // 💰 בדיקה שיש מספיק Battle balance (נבדוק גם battleBalance וגם battle)
+    // 💰 בדיקה שיש מספיק Battle balance (battle או battleBalance)
     const balance = user.battleBalance ?? user.battle ?? 0;
     if (balance < upgradeCost) {
       console.log(`❌ User ${userId} has insufficient balance (${balance} < ${upgradeCost})`);
@@ -663,9 +663,9 @@ app.post("/api/upgrade/battery", (req, res) => {
     user.batteryLevel = nextLevel;
     user.batteryCap = Math.floor(user.batteryCap * capacityMultiplier);
 
-    // 💾 שמירת נתונים גם בזיכרון וגם לקובץ
+    // 💾 שמירה עקבית לקובץ users.json
     users[userId] = user;
-    writeJSON(USERS_FILE, users);
+    fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
 
     // 🟢 תשובת הצלחה ללקוח
     console.log(`✅ User ${userId} upgraded to level ${user.batteryLevel}, new cap ${user.batteryCap}`);
@@ -673,7 +673,7 @@ app.post("/api/upgrade/battery", (req, res) => {
       ok: true,
       newLevel: user.batteryLevel,
       newCap: user.batteryCap,
-      newCost: Math.floor(baseCost * Math.pow(costMultiplier, nextLevel - 1))
+      newCost: Math.floor(baseCost * Math.pow(costMultiplier, nextLevel - 1)),
     });
 
   } catch (err) {
@@ -682,7 +682,7 @@ app.post("/api/upgrade/battery", (req, res) => {
   }
 });
 
-// ===== TB_V17 — VIP Activation after Payment =====
+// ===== TB_V18 — VIP Activation after Payment (Persistent Save) =====
 app.post("/api/upgrade/vip", async (req, res) => {
   try {
     const { userId } = req.body;
@@ -693,19 +693,29 @@ app.post("/api/upgrade/vip", async (req, res) => {
       ? JSON.parse(fs.readFileSync(usersPath, "utf8"))
       : {};
 
-    const user = users[userId] || {};
+    // ✅ טוען את המשתמש הקיים או יוצר חדש
+    const user = users[userId] || {
+      battle: 0,
+      stars: 0,
+      level: 1,
+      batteryLevel: 1,
+      batteryCap: 300,
+    };
+
     const now = Date.now();
-    const vipDuration = 7 * 24 * 60 * 60 * 1000;
+    const vipDuration = 7 * 24 * 60 * 60 * 1000; // 7 ימים
 
-    // בודק אם כבר פעיל
-    if (user.perkExpiry && now < user.perkExpiry)
+    // ⚠️ אם כבר יש VIP פעיל — לא מאפשר להפעיל שוב
+    if (user.perkExpiry && now < user.perkExpiry) {
       return res.json({ ok: false, error: "already_vip" });
+    }
 
-    // מפעיל VIP ל־7 ימים
-    user.perkExpiry = now + vipDuration;
+    // ✅ הפעלת VIP
+    user.isVIP = true;
     user.vipActive = true;
+    user.perkExpiry = now + vipDuration;
 
-    // מעניק בונוסים
+    // 🎁 מעניק בונוסים של VIP (יישמרו בקובץ)
     user.vipBoosts = {
       tapBonus: 1.25,
       incomeMult: 5,
@@ -713,12 +723,20 @@ app.post("/api/upgrade/vip", async (req, res) => {
       costReduction: 0.75,
     };
 
+    // 💾 שומר את הנתונים בקובץ users.json
     users[userId] = user;
     fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
 
-    return res.json({ ok: true, activeUntil: user.perkExpiry });
+    // 🟢 תשובת הצלחה
+    console.log(`✅ VIP activated for ${userId} until ${new Date(user.perkExpiry).toISOString()}`);
+    return res.json({
+      ok: true,
+      isVIP: true,
+      activeUntil: user.perkExpiry,
+      message: "VIP activated and saved successfully",
+    });
   } catch (err) {
-    console.error("VIP activation error:", err);
+    console.error("❌ VIP activation error:", err);
     return res.json({ ok: false, error: "server_error" });
   }
 });
