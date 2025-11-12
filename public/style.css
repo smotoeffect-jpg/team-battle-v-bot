@@ -419,5 +419,58 @@ body{
     padding: 10px 16px;
   }
 }
+/* === Upgrades Panel Styles (Battery Section) === */
+#upgradesPanel {
+  display: none;
+  padding: 18px;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 0 12px rgba(255,77,196,.15);
+}
+
+#upgradesPanel.active {
+  display: block;
+}
+
+.upgrade-card {
+  background: var(--panel-2);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+  text-align: left;
+  color: var(--text);
+  box-shadow: 0 0 10px rgba(255,77,196,.1);
+}
+
+.upgrade-info {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.upgrade-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(255,255,255,.06);
+}
+
+.upgrade-row:last-child {
+  border-bottom: none;
+}
+
+.upgrade-value {
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.upgrade-msg {
+  margin-top: 8px;
+  font-size: 14px;
+  text-align: center;
+  color: var(--muted);
+}
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
