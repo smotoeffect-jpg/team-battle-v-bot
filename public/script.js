@@ -1,12 +1,8 @@
-// ✅ Global Telegram User ID
-let telegramUserId = null;
-
 // ===== Auto-detect API base (Render / local / Telegram) =====
 const API_BASE = window.location.origin || "";
-
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
-function waitForWebApp(maxWait = 2500) {
+function waitForWebApp(maxWait = 2000) {
   return new Promise(resolve => {
     let waited = 0;
     const iv = setInterval(() => {
@@ -18,67 +14,80 @@ function waitForWebApp(maxWait = 2500) {
       waited += 100;
       if (waited >= maxWait) {
         clearInterval(iv);
-        console.warn("⚠️ Telegram WebApp not detected — using fallback.");
+        console.warn("⚠️ Telegram WebApp not detected after wait — using fallback.");
         resolve(null);
       }
     }, 100);
   });
 }
-
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
-
-  // ===== Try to extract Telegram user info =====
+  console.log("🔑 initData:", WebApp?.initData);
+ // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
+if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
+  const params = new URLSearchParams(window.location.search);
+  const data = params.get("tgWebAppData");
+  if (data) {
+    console.log("🧩 Injecting initData manually from URL (early)!");
+    if (!window.Telegram) window.Telegram = {};
+    if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+    window.Telegram.WebApp.initData = decodeURIComponent(data);
+  }
+}
+  if (window.Telegram?.WebApp?.initData) {
+  WebApp.initData = window.Telegram.WebApp.initData;
+}
+  // ====== FORCE Telegram InitData Injection (for some Android/iOS/Desktop issues) ======
+if (!window.Telegram?.WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   try {
-    const tUser = WebApp?.initDataUnsafe?.user;
-    if (tUser?.id) {
-      telegramUserId = String(tUser.id);
-      console.log("✅ Telegram User ID:", telegramUserId);
-    } else {
-      console.warn("⚠️ Telegram user ID not found in initDataUnsafe");
+    const params = new URLSearchParams(window.location.search);
+    const data = params.get("tgWebAppData");
+    if (data) {
+      if (!window.Telegram) window.Telegram = {};
+      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+      window.Telegram.WebApp.initData = decodeURIComponent(data);
+      window.Telegram.WebApp.initDataUnsafe = JSON.parse(Object.fromEntries(new URLSearchParams(data)).user || "{}");
+      console.log("🧩 Fixed Telegram initData from URL!");
     }
-  } catch (err) {
-    console.error("Telegram initData error:", err);
+  } catch (e) {
+    console.warn("InitData fix failed:", e);
   }
+}
+  // ====== Desktop & WebApp fallback ======
+if (!window.Telegram?.WebApp?.initData && window.location.hash.includes("tgWebAppData=")) {
+  try {
+    const hash = window.location.hash.split("tgWebAppData=")[1];
+    const data = decodeURIComponent(hash.split("&")[0]);
+    if (data) {
+      if (!window.Telegram) window.Telegram = {};
+      if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
+      window.Telegram.WebApp.initData = data;
+      window.Telegram.WebApp.initDataUnsafe = JSON.parse(Object.fromEntries(new URLSearchParams(data)).user || "{}");
+      console.log("🧩 Fixed Telegram initData from hash fragment!");
+    }
+  } catch (e) {
+    console.warn("InitData hash fix failed:", e);
+  }
+}
+// ✅ אם הצלחנו לשחזר את initData - ודא שהאובייקט הראשי מעודכן
+if (window.Telegram?.WebApp?.initData) {
+  WebApp.initData = window.Telegram.WebApp.initData;
+}
 
-  // ====== Fallback for Android/iOS/Desktop ======
-  if (!telegramUserId && window.location.search.includes("tgWebAppData=")) {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const data = params.get("tgWebAppData");
-      if (data) {
-        if (!window.Telegram) window.Telegram = {};
-        if (!window.Telegram.WebApp) window.Telegram.WebApp = {};
-        window.Telegram.WebApp.initData = decodeURIComponent(data);
-        const parsed = Object.fromEntries(new URLSearchParams(data));
-        if (parsed.user) {
-          window.Telegram.WebApp.initDataUnsafe = { user: JSON.parse(parsed.user) };
-          telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user?.id || "");
-          console.log("✅ Recovered Telegram User ID from URL:", telegramUserId);
-        }
+  // ===== Detect Telegram user or create fallback ID =====
+  let telegramUserId = null;
+    async function waitForTelegramUser() {
+    for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
+      if (WebApp?.initDataUnsafe?.user?.id) {
+        return WebApp.initDataUnsafe.user.id;
       }
-    } catch (e) {
-      console.warn("InitData fix (URL) failed:", e);
+      await new Promise(r => setTimeout(r, 100));
     }
+    return null;
   }
 
-  // ===== Hash fallback (desktop web) =====
-  if (!telegramUserId && window.location.hash.includes("tgWebAppData=")) {
-    try {
-      const hash = window.location.hash.split("tgWebAppData=")[1];
-      const data = decodeURIComponent(hash.split("&")[0]);
-      const parsed = Object.fromEntries(new URLSearchParams(data));
-      if (parsed.user) {
-        window.Telegram.WebApp.initDataUnsafe = { user: JSON.parse(parsed.user) };
-        telegramUserId = String(window.Telegram.WebApp.initDataUnsafe.user?.id || "");
-        console.log("✅ Recovered Telegram User ID from hash:", telegramUserId);
-      }
-    } catch (e) {
-      console.warn("InitData hash fix failed:", e);
-    }
-  }
+  telegramUserId = await waitForTelegramUser();
 
-  // ===== If still no ID, create fallback guest =====
   if (!telegramUserId) {
     console.warn("⚠️ Telegram userId not found — using fallback guest ID");
     telegramUserId = localStorage.getItem("tb_fallback_id");
@@ -89,8 +98,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   console.log("✅ Active userId:", telegramUserId);
-  console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
-});
+console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
 // ====== Translations (Full Multilingual Map) ======
 const i18n = {
@@ -855,7 +863,65 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== TB_V17 — Buy VIP via Telegram Stars (Unified) =====
+// ===== TB_V17 — VIP Upgrade (Client Logic) =====
+document.addEventListener("DOMContentLoaded", () => {
+  const vipBtn = document.getElementById("btn-activate-vip");
+  const vipMsg = document.getElementById("vipMsg");
+
+  if (!vipBtn) return;
+
+  vipBtn.addEventListener("click", async () => {
+    vipMsg.textContent = "⏳ Processing...";
+    vipMsg.style.color = "#ccc";
+
+    try {
+      const res = await fetch("/api/upgrade/vip", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: telegramUserId })
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        const lang = document.documentElement.getAttribute("data-lang") || "en";
+        const messages = {
+          en: "✅ VIP activated for 7 days!",
+          he: "✅ VIP הופעל ל־7 ימים!",
+          ar: "✅ تم تفعيل VIP لمدة 7 أيام!"
+        };
+        vipMsg.textContent = messages[lang];
+        vipMsg.style.color = "#00ff99";
+      } else if (data.error === "not_enough_stars") {
+        const lang = document.documentElement.getAttribute("data-lang") || "en";
+        const messages = {
+          en: "❌ Not enough Stars!",
+          he: "❌ אין מספיק כוכבים!",
+          ar: "❌ لا يوجد نجوم كافية!"
+        };
+        vipMsg.textContent = messages[lang];
+        vipMsg.style.color = "#ff4d4d";
+      } else if (data.error === "already_vip") {
+        const lang = document.documentElement.getAttribute("data-lang") || "en";
+        const messages = {
+          en: "⚠️ VIP already active!",
+          he: "⚠️ VIP כבר פעיל!",
+          ar: "⚠️ VIP مفعل بالفعل!"
+        };
+        vipMsg.textContent = messages[lang];
+        vipMsg.style.color = "#ffcc00";
+      } else {
+        vipMsg.textContent = "⚠️ Something went wrong.";
+        vipMsg.style.color = "#ffcc00";
+      }
+    } catch (err) {
+      console.error("VIP error:", err);
+      vipMsg.textContent = "⚠️ Connection error.";
+      vipMsg.style.color = "#ffcc00";
+    }
+  });
+});
+// ===== TB_V17 — Buy VIP via Telegram Stars =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -870,30 +936,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // שליחת בקשה לשרת ליצירת חשבונית VIP
+      // פתיחת חשבון תשלום בכוכבים (כמו Extra Tap)
+      const payload = { t: "vip", userId, team };
       const res = await fetch("/api/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId,
-          team,
-          t: "vip",
-          stars: 300, // ⭐️ מחיר VIP
+          title: "Buy VIP – TeamBattle",
+          description: "7-Day VIP access with bonuses",
+          payload,
+          currency: "XTR",
+          amount: 300, // ⭐️ 300 כוכבים
         }),
       });
 
       const data = await res.json();
-      if (data.ok && data.url) {
-        if (window.Telegram?.WebApp?.openInvoice) {
-          Telegram.WebApp.openInvoice(data.url, () => {
-            vipMsg.textContent = "💫 Waiting for payment confirmation...";
-            setTimeout(() => location.reload(), 3000);
-          });
-        } else {
-          window.location.href = data.url;
-        }
+      if (data.ok && data.invoiceLink) {
+        // פותח את חלון התשלום
+        openInvoice(data.invoiceLink);
+        vipMsg.textContent = "💫 Waiting for payment...";
       } else {
-        vipMsg.textContent = "⚠️ Failed to create VIP invoice.";
+        vipMsg.textContent = "⚠️ Failed to create invoice.";
         vipMsg.style.color = "#ffcc00";
       }
     } catch (err) {
