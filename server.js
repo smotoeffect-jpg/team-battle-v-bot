@@ -951,18 +951,17 @@ app.get("/api/me", (req, res) => {
 
   const now = Date.now();
 
-  // ✅ ודא שמשתמש קיים בזיכרון
+  // ✅ ודא שמשתמש קיים ומסונכרן
   const u = ensureUser(userId);
+  normalizeUserUpgrades(u);
 
-  // 🔧 ודא שכל שדות הבטרייה קיימים
-  if (u.batteryLevel == null) u.batteryLevel = 1;
-  if (u.batteryCap == null)   u.batteryCap   = 300;
+  // 🎖 בדיקת תוקף VIP – תואם לכל מבני הנתונים (ישן / חדש)
+  const vipObj = u.upgrades.vip || {};
+  const expires = vipObj.expiresAt || u.perkExpiry || 0;
+  const vipActive = Boolean(expires && now < expires);
 
-  // 🎖 בדיקת תוקף VIP
-  const vipActive = !!(u.perkExpiry && now < u.perkExpiry);
-
-  // סנכרון FLAG ישן/חדש
-  u.vipActive = vipActive;
+  u.upgrades.vip.active = vipActive; // סנכרון מלא
+  u.vipActive = vipActive;           // תאימות אחורה
 
   // 🔁 ריסט טאפ יומי
   const today = todayStr();
@@ -971,32 +970,39 @@ app.get("/api/me", (req, res) => {
     u.tapsToday = 0;
   }
 
-  // 👥 הפניות
+  // 👥 Referral System
   const start = req.query.start || req.query.ref || null;
   if (start && String(start) !== userId && !u.referrer) {
     u.referrer = String(start);
     const inviter = ensureUser(String(start));
-    inviter.referrals = (inviter.referrals || 0) + 1;
 
+    inviter.referrals = (inviter.referrals || 0) + 1;
     inviter.referralsList = Array.isArray(inviter.referralsList)
       ? inviter.referralsList
       : [];
 
-    if (!inviter.referralsList.includes(userId))
+    if (!inviter.referralsList.includes(userId)) {
       inviter.referralsList.push(userId);
+    }
   }
 
   u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
   u.referrals = u.referralsList.length;
 
-  // 🎁 בונוס יומי
+  // 🎁 Daily Bonus
   let justGotDailyBonus = false;
-  if (u.team && (!u.lastDailyBonus || now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)) {
+  if (
+    u.team &&
+    (!u.lastDailyBonus ||
+      now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)
+  ) {
     scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
+
     u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
     addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
 
     u.lastDailyBonus = now;
+
     u.history = u.history || [];
     u.history.push({
       ts: now,
@@ -1005,9 +1011,10 @@ app.get("/api/me", (req, res) => {
       team: u.team,
       xp: DAILY_BONUS_XP,
     });
-    if (u.history.length > 200) u.history.shift();
 
+    if (u.history.length > 200) u.history.shift();
     justGotDailyBonus = true;
+
     writeJSON(SCORES_FILE, scores);
   }
 
@@ -1015,21 +1022,21 @@ app.get("/api/me", (req, res) => {
   users[userId] = u;
   writeJSON(USERS_FILE, users);
 
-  // 🧮 עלות שדרוג הבטרייה הבאה (לתצוגה)
+  // 🧮 Battery Next Cost
   const baseCost = 100;
   const costMultiplier = 1.8;
   const batteryNextCost = Math.floor(
     baseCost * Math.pow(costMultiplier, (u.batteryLevel || 1) - 1)
   );
 
-  // 🔋 ===== Battery ×3 for VIP =====
+  // 🔋 Battery ×3 (VIP)
   const baseCap = u.batteryCap || 300;
   const effectiveCap = vipActive ? baseCap * 3 : baseCap;
 
-  // 🔗 קישור אישי
+  // 🔗 Referral Link
   const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
 
-  // 📤 שליחה למיני-אפליקציה
+  // 📤 Response
   res.json({
     ok: true,
     me: {
@@ -1037,17 +1044,17 @@ app.get("/api/me", (req, res) => {
       team: u.team,
       tapsToday: u.tapsToday || 0,
 
-      // 💠 מגבלת טאפ (עם VIP ×3)
+      // 💠 DAILY TAP LIMIT = Battery Effective
       tapsLimit: effectiveCap,
 
       superUsed: u.superUsed || 0,
 
-      // 💰 יתרות
+      // 💰 Balances
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
       battleBalance: u.battleBalance || 0,
 
-      // 🧍 פרופיל
+      // 🧍 Profile
       displayName: u.displayName || null,
       username: u.username || null,
       xp: u.xp || 0,
@@ -1055,7 +1062,7 @@ app.get("/api/me", (req, res) => {
       lastDailyBonus: u.lastDailyBonus || 0,
       justGotDailyBonus,
 
-      // 🔋 בטרייה
+      // 🔋 Battery
       batteryLevel: u.batteryLevel || 1,
       batteryCap: baseCap,
       batteryCapEffective: effectiveCap,
@@ -1064,15 +1071,15 @@ app.get("/api/me", (req, res) => {
       // 💎 VIP
       isVIP: vipActive,
       vipActive,
-      perkExpiry: u.perkExpiry || 0,
+      perkExpiry: expires,
 
-      // 👥 הזמנות
+      // 👥 Referrals
       preferredLang: u.preferredLang || "he",
       referrals: u.referrals || 0,
       referrer: u.referrer || null,
       referralsList: u.referralsList,
 
-      // 🔗 לינק אישי
+      // 🔗 Link
       refLink,
     },
 
