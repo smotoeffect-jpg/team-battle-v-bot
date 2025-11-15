@@ -256,6 +256,85 @@ if (!textsFileIsValid(PANEL_TEXTS)) {
   console.log("texts.json invalid → replaced with defaults (with functions).");
 }
 
+// ===== TB_V18 — Upgrades Config (Modular) =====
+
+// קונפיג מרכזי לכל השדרוגים
+const UPGRADE_CONFIG = {
+  battery: {
+    maxLevel: 10,
+    baseCost: 100,
+    costMultiplier: 1.8,      // קושי בינוני-קשה
+    capacityMultiplier: 1.15, // +15% כל שדרוג
+    baseCap: 300
+  },
+  vip: {
+    starsCost: 300,
+    durationMs: 7 * 24 * 60 * 60 * 1000, // 7 ימים
+    tapBonus: 1.25,
+    incomeMult: 5,
+    batteryMult: 3,
+    costReduction: 0.75
+  },
+  autoClicker: {
+    starsCost: 50,
+    durationMs: 24 * 60 * 60 * 1000 // 24 שעות
+  },
+  offline: {
+    starsCost: 75,
+    durationMs: 72 * 60 * 60 * 1000, // 72 שעות
+    freeOfflineMs: 3 * 60 * 60 * 1000 // 3 שעות בחינם
+  }
+};
+
+// דואג שלכל משתמש יהיה מבנה Upgrades תקין
+function normalizeUserUpgrades(user) {
+  if (!user) user = {};
+
+  // בסיס לבטרייה – אם אין, תן ברירת מחדל
+  if (typeof user.batteryLevel !== "number" || user.batteryLevel < 1) {
+    user.batteryLevel = 1;
+  }
+  if (typeof user.batteryCap !== "number" || user.batteryCap < 1) {
+    user.batteryCap = UPGRADE_CONFIG.battery.baseCap;
+  }
+
+  // אובייקט upgrades כללי
+  if (!user.upgrades || typeof user.upgrades !== "object") {
+    user.upgrades = {};
+  }
+
+  // VIP
+  if (!user.upgrades.vip || typeof user.upgrades.vip !== "object") {
+    user.upgrades.vip = {
+      active: false,
+      expiresAt: 0
+    };
+  }
+
+  // שמירה על תאימות אחורה – אם יש perkExpiry ישן, נעתיק
+  if (user.perkExpiry && !user.upgrades.vip.expiresAt) {
+    user.upgrades.vip.expiresAt = user.perkExpiry;
+    user.upgrades.vip.active = Date.now() < user.perkExpiry;
+  }
+
+  // Auto Clicker
+  if (!user.upgrades.autoClicker || typeof user.upgrades.autoClicker !== "object") {
+    user.upgrades.autoClicker = {
+      expiresAt: 0
+    };
+  }
+
+  // Offline Mode
+  if (!user.upgrades.offline || typeof user.upgrades.offline !== "object") {
+    user.upgrades.offline = {
+      expiresAt: 0,
+      freeOfflineUntil: 0
+    };
+  }
+
+  return user;
+}
+
 // ====== Helpers ======
 function ensureUser(userId) {
   if (!users[userId]) {
