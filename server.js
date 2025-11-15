@@ -335,6 +335,33 @@ function normalizeUserUpgrades(user) {
   return user;
 }
 
+// ===== VIP BOOSTS ENGINE — apply full VIP bonuses in backend =====
+function applyVipBonuses(u) {
+  const vip = u.upgrades?.vip || {};
+  const now = Date.now();
+  const active = vip.active && vip.expiresAt && now < vip.expiresAt;
+
+  if (!active) {
+    // When not VIP, return defaults
+    return {
+      isVip: false,
+      tapBonus: 1.0,        // No tap boost
+      incomeMult: 1.0,      // Normal income
+      batteryMult: 1.0,     // No increase
+      costMult: 1.0         // No discount
+    };
+  }
+
+  // When VIP is active → apply boosts
+  return {
+    isVip: true,
+    tapBonus: 1.25,         // +25% taps
+    incomeMult: 5,          // ×5 passive income
+    batteryMult: 3,         // ×3 battery
+    costMult: 0.75          // -25% cost → 75% price
+  };
+}
+
 // ====== Helpers ======
 function ensureUser(userId) {
   if (!users[userId]) {
@@ -711,51 +738,75 @@ app.post("/api/user/:id/team", (req, res) => {
   }
 });
 
-// ====== Tap endpoint – Tap strength equals player level ======
+// ====== Tap endpoint – Tap strength = player level (with VIP boost) ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok: false, error: "no userId" });
 
-  // חייבים את המשתמש לפני כל שימוש ב-u
+  // טוען משתמש
   const u = ensureUser(userId);
 
-  // חייב קבוצה מוגדרת – אין ברירת מחדל לישראל
+  // חייב שיהיה מוגדר team
   if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
 
-  // ריסט יומי של מונה טאפים
+  // ===== ריסט יומי =====
   const today = todayStr();
   if (u.tapsDate !== today) {
     u.tapsDate = today;
     u.tapsToday = 0;
   }
 
-  // מגבלת טאפים יומית
+  // ===== מגבלת טאפים =====
   if (u.tapsToday >= DAILY_TAPS) {
     return res.json({ ok: false, error: "limit", limit: DAILY_TAPS });
   }
 
-  // עוצמת הטאפ = רמת השחקן (מינימום 1)
-  const tapPoints = Math.max(1, u.level || 1);
+  // ===== VIP Boost =====
+  const now = Date.now();
+  let vipActive = false;
 
-  // הקבוצה שמקבלת את הניקוד = הקבוצה של המשתמש כרגע
-  const team = u.team; // אין דיפולטים
+  // תומך גם בשדות הישנים וגם ב-upgrades.vip
+  const vipObj = u.upgrades?.vip || {};
 
-  // עדכונים
-  scores[team] = (scores[team] || 0) + tapPoints;       // ניקוד לקבוצה
-  u.tapsToday += 1;                                     // מונה יומי
-  u.xp = (u.xp || 0) + tapPoints;                       // XP לפי עוצמה
-  u.battle = (u.battle || 0) + tapPoints;               // מונה פנימי (אם בשימוש)
-  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0); // יתרת $BATTLE
+  if (
+    (vipObj.active && vipObj.expiresAt > now) ||
+    (u.vipActive && u.perkExpiry > now) ||
+    (u.isVIP && u.perkExpiry > now)
+  ) {
+    vipActive = true;
+  }
 
-  // שמירה לקבצים
+  // עוצמת טאפ רגילה = level, מינימום 1
+  let tapPower = Math.max(1, u.level || 1);
+
+  // אם VIP פעיל – מוסיף בוסט +25%
+  if (vipActive) {
+    tapPower = tapPower * 1.25;
+  }
+
+  tapPower = Number(tapPower.toFixed(2)); // עיגול עדין
+
+  // ===== עדכון ניקוד =====
+  const team = u.team;
+
+  scores[team] = (scores[team] || 0) + tapPower;
+  u.tapsToday += 1;
+  u.xp = (u.xp || 0) + tapPower;
+  u.battle = (u.battle || 0) + tapPower;
+
+  // ❗ זה נשאר שלך — לא נוגעים בו
+  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0);
+
+  // שמירה
   writeJSON(SCORES_FILE, scores);
   writeJSON(USERS_FILE, users);
 
-  // תגובה לקליינט
+  // תגובה ללקוח
   res.json({
     ok: true,
     team,
-    tapPoints,
+    tapPoints: tapPower,
+    vipActive,
     tapsToday: u.tapsToday,
     battleBalance: u.battleBalance,
     xp: u.xp,
