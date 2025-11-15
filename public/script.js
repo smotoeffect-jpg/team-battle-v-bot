@@ -423,7 +423,31 @@ function formatNumber(num) {
   if (num >= 1_000) return (num / 1_000).toFixed(2) + "K";
   return num.toFixed(2);
 }
+  
+// ========== VIP TIME LEFT DISPLAY ==========
+function updateVipTimer(expiry) {
+  const row = document.getElementById("vipTimeRow");
+  const out = document.getElementById("vipTimeLeft");
+  if (!row || !out) return;
 
+  const now = Date.now();
+
+  if (!expiry || expiry <= now) {
+    row.style.display = "none";
+    return;
+  }
+
+  row.style.display = "flex";
+
+  const left = expiry - now;
+
+  const days = Math.floor(left / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((left / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((left / (1000 * 60)) % 60);
+
+  out.textContent = `${days}d ${hours}h ${minutes}m`;
+}
+  
 // ===== Refresh Game Data (Real-time 0.5s) =====
 async function refreshAll() {
   try {
@@ -447,6 +471,12 @@ async function refreshAll() {
     GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
     GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
+
+    // ⭐⭐⭐⭐⭐ ADD — VIP TIMER UPDATE ⭐⭐⭐⭐⭐
+    if (M.perkExpiry || M.vipExpiry) {
+      updateVipTimer(M.perkExpiry || M.vipExpiry);
+    }
+    // ⭐⭐⭐⭐⭐ END ADD ⭐⭐⭐⭐⭐
 
     // --- נתוני שותפים ---
     let partner = {};
@@ -835,7 +865,8 @@ async function syncPanels(panelKey) {
 
     // === עמוד שדרוגים (Upgrades) ===
     if (panelKey === "upgrades" || panelKey === "home") {
-      // 🔋 בטרייה – נשאר כמו שהיה (נסמך על הנתונים שהשרת מחזיר)
+
+      // 🔋 בטרייה
       const lvlEl = document.getElementById("batteryLevel");
       const capEl = document.getElementById("batteryCap");
       const costEl = document.getElementById("batteryCost");
@@ -844,17 +875,17 @@ async function syncPanels(panelKey) {
       if (capEl) capEl.textContent  = u.batteryCap   ?? 300;
       if (costEl) costEl.textContent = u.batteryCost ?? 100;
 
-      // 💎 VIP – סטטוס + זמן שנשאר
+      // 💎 VIP — סטטוס + זמן שנשאר
       const vipStatus = document.getElementById("vipStatus");
       const vipMsg    = document.getElementById("vipMsg");
 
       if (vipStatus) {
         const now = Date.now();
 
-        // תומך גם בשדות הישנים (vipActive/perkExpiry) וגם בעתיד ב-upgrades.vip
-        const vipObj   = u.upgrades?.vip || {};
-        const expires  = vipObj.expiresAt || u.perkExpiry || 0;
-        const active   =
+        // תומך גם במודל החדש וגם הקודם
+        const vipObj  = u.upgrades?.vip || {};
+        const expires = vipObj.expiresAt || u.perkExpiry || 0;
+        const active =
           (vipObj.active && expires && now < expires) ||
           (u.vipActive   && expires && now < expires) ||
           (u.isVIP       && expires && now < expires);
@@ -862,65 +893,48 @@ async function syncPanels(panelKey) {
         const lang = getLang();
         const dict = i18n[lang] || i18n.he;
 
-        // כותרת הסטטוס (Active / Inactive)
         vipStatus.textContent = active ? dict.vipActive : dict.vipInactive;
         vipStatus.style.color = active ? "#00ff99" : "#ff4d4d";
 
-        // זמן שנשאר – רק אם באמת Active
+        // זמן שנותר — רק כאשר VIP פעיל
         if (vipMsg && active && expires) {
-          const diffMs        = expires - now;
-          const totalMinutes  = Math.max(0, Math.floor(diffMs / 60000));
-          const days          = Math.floor(totalMinutes / (60 * 24));
-          const hours         = Math.floor((totalMinutes % (60 * 24)) / 60);
-          const minutes       = totalMinutes % 60;
+          const diffMs       = expires - now;
+          const totalMinutes = Math.max(0, Math.floor(diffMs / 60000));
+          const days         = Math.floor(totalMinutes / (60 * 24));
+          const hours        = Math.floor((totalMinutes % (60 * 24)) / 60);
+          const minutes      = totalMinutes % 60;
 
           let text;
           if (days > 0) {
-            // ימים + שעות
-            if (lang === "he") {
-              text = `✅ VIP פעיל – נשארו ${days} ימים ו-${hours} שעות`;
-            } else if (lang === "ar") {
-              text = `✅ VIP نشط – متبقٍ ${days} يوم و ${hours} ساعة`;
-            } else {
-              text = `✅ VIP active – ${days}d ${hours}h left`;
-            }
+            if (lang === "he")      text = `✅ VIP פעיל – נשארו ${days} ימים ו-${hours} שעות`;
+            else if (lang === "ar") text = `✅ VIP نشط – متبقٍ ${days} يوم و ${hours} ساعة`;
+            else                    text = `✅ VIP active – ${days}d ${hours}h left`;
           } else if (hours > 0) {
-            // שעות + דקות
-            if (lang === "he") {
-              text = `✅ VIP פעיל – נשארו ${hours} שעות ו-${minutes} דקות`;
-            } else if (lang === "ar") {
-              text = `✅ VIP نشط – متبقٍ ${hours} ساعة و ${minutes} دقيقة`;
-            } else {
-              text = `✅ VIP active – ${hours}h ${minutes}m left`;
-            }
+            if (lang === "he")      text = `✅ VIP פעיל – נשארו ${hours} שעות ו-${minutes} דקות`;
+            else if (lang === "ar") text = `✅ VIP نشط – متبقٍ ${hours} ساعة و ${minutes} دقيقة`;
+            else                    text = `✅ VIP active – ${hours}h ${minutes}m left`;
           } else {
-            // רק דקות
-            if (lang === "he") {
-              text = `✅ VIP פעיל – נשארו ${minutes} דקות`;
-            } else if (lang === "ar") {
-              text = `✅ VIP نشط – متبقٍ ${minutes} دقيقة`;
-            } else {
-              text = `✅ VIP active – ${minutes}m left`;
-            }
+            if (lang === "he")      text = `✅ VIP פעיל – נשארו ${minutes} דקות`;
+            else if (lang === "ar") text = `✅ VIP نشط – متبقٍ ${minutes} دقيقة`;
+            else                    text = `✅ VIP active – ${minutes}m left`;
           }
 
           vipMsg.textContent = text;
           vipMsg.style.color = "#ffd76b";
         }
-        // אם VIP לא פעיל – לא נוגעים ב-vipMsg כדי שלא נדרוס הודעות שגיאה קיימות
       }
     }
 
-    // === עמוד הלוח שלי (My Board) ===
+    // === עמוד "הקבוצה שלי" (My Board) ===
     if (panelKey === "myteam") {
-      const starsEl      = document.getElementById("me-stars");
-      const battleEl     = document.getElementById("me-battle");
-      const xpEl         = document.getElementById("me-xp");
-      const refsEl       = document.getElementById("me-referrals");
+      const starsEl  = document.getElementById("me-stars");
+      const battleEl = document.getElementById("me-battle");
+      const xpEl     = document.getElementById("me-xp");
+      const refsEl   = document.getElementById("me-referrals");
 
-      if (starsEl)  starsEl.textContent  = u.stars    ?? u.starsDonated ?? 0;
-      if (battleEl) battleEl.textContent = u.battle   ?? u.battleBalance ?? 0;
-      if (xpEl)     xpEl.textContent     = u.xp       ?? 0;
+      if (starsEl)  starsEl.textContent  = u.stars ?? u.starsDonated ?? 0;
+      if (battleEl) battleEl.textContent = u.battle ?? u.battleBalance ?? 0;
+      if (xpEl)     xpEl.textContent     = u.xp ?? 0;
       if (refsEl)   refsEl.textContent   = u.referrals ?? 0;
     }
 
