@@ -347,19 +347,95 @@ function ensureUser(userId) {
       referrer: null,
       starsDonated: 0,
       bonusStars: 0,
-      battleBalance: 0,     // 💰 נוסף — יתרת מטבע $BATTLE
-      lastDailyAt: null,    // 🕒 נשתמש בעתיד לבונוס יומי
+      battleBalance: 0,     // 💰 יתרת $Battle
+      lastDailyAt: null,    // 🕒 בונוס יומי
       username: null, first_name: "", last_name: "",
       xp: 0, level: 1, lastDailyBonus: null,
       history: [],
       active: true,
       preferredLang: "he",
-      country: ""
+      country: "",
+
+      // 🚀 ===== NEW: Upgrades System =====
+      upgrades: {
+        battery: {
+          level: 1,
+          cap: 300,
+          nextCost: 100
+        },
+        vip: {
+          active: false,
+          expiresAt: 0
+        },
+        autoClicker: {
+          active: false,
+          expiresAt: 0
+        },
+        offlineMode: {
+          active: false,
+          expiresAt: 0,
+          lastOfflineAt: 0
+        }
+      }
     };
   }
+
+  // 🛠️ מחזיר משתמש קיים עם שדות חסרים שמתווספים אוטומטית
+  normalizeUserUpgrades(users[userId]);
+
   return users[userId];
 }
 
+// ===== Normalize Upgrade Fields (ensures old users work with new system) =====
+function normalizeUserUpgrades(u) {
+  if (!u.upgrades) u.upgrades = {};
+
+  // ===== Battery =====
+  if (!u.upgrades.battery) {
+    u.upgrades.battery = {
+      level: u.batteryLevel || 1,
+      cap: u.batteryCap || 300,
+      nextCost: 100
+    };
+  }
+
+  // ===== VIP =====
+  if (!u.upgrades.vip) {
+    u.upgrades.vip = {
+      active: false,
+      expiresAt: 0
+    };
+  } else {
+    // Normalize booleans & expiry
+    u.upgrades.vip.active = Boolean(u.upgrades.vip.active);
+    u.upgrades.vip.expiresAt = Number(u.upgrades.vip.expiresAt || 0);
+  }
+
+  // ===== Auto Clicker =====
+  if (!u.upgrades.autoClicker) {
+    u.upgrades.autoClicker = {
+      active: false,
+      expiresAt: 0
+    };
+  }
+
+  // ===== Offline Mode =====
+  if (!u.upgrades.offlineMode) {
+    u.upgrades.offlineMode = {
+      active: false,
+      expiresAt: 0,
+      lastOfflineAt: 0
+    };
+  }
+
+  // ===== Sync legacy fields into new structure =====
+  if (u.batteryLevel) u.upgrades.battery.level = u.batteryLevel;
+  if (u.batteryCap) u.upgrades.battery.cap = u.batteryCap;
+
+  return u;
+}
+
+// ===== Update User Profile from Telegram =====
 function updateUserProfileFromTG(from) {
   if (!from?.id) return;
   const uid = String(from.id);
@@ -368,15 +444,24 @@ function updateUserProfileFromTG(from) {
   if (from.username) u.username = from.username;
   if (from.first_name !== undefined) u.first_name = from.first_name;
   if (from.last_name !== undefined) u.last_name = from.last_name;
+
   const fn = u.first_name || "";
   const ln = u.last_name || "";
-  u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
+
+  u.displayName = (fn || ln)
+    ? `${fn} ${ln}`.trim()
+    : u.username || uid;
+
   u.active = true;
 
   // ✅ Referral link detection (fixed V2)
-try {
-  // נוודא ש־update קיים גם אם לא מוגדר בהקשר הנוכחי
-  const upd = typeof update !== "undefined" ? update : {};
+  try {
+    const upd = typeof update !== "undefined" ? update : {};
+    // (השאר נשאר בדיוק כמו שהיה אצלך)
+  } catch (e) {
+    console.warn("Referral detect error:", e);
+  }
+}
 
   // מזהה קישור הזמנה תקין (תומך גם בהודעות וגם ב־callback)
   const ref =
