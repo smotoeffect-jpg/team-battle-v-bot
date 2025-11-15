@@ -544,5 +544,32 @@ body{
   margin-top: 0;
 }
 
+.vip-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.vip-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: transparent;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.vip-info-icon:hover {
+  background: rgba(255,255,255,0.08);
+}
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
