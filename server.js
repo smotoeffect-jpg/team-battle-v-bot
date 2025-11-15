@@ -2155,7 +2155,7 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ====== Combined Battle Earnings (debug + safe version) ======
+// ====== Combined Battle Earnings (VIP support + safe) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
     const userId = String(
@@ -2171,7 +2171,7 @@ app.get("/api/earnings/:id", (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing userId" });
     }
 
-    // טוען את קובץ המשתמשים ובודק אם המשתמש קיים
+    // טוען משתמשים
     const users = readJSON(USERS_FILE, {});
     const u = users[userId];
 
@@ -2180,33 +2180,58 @@ app.get("/api/earnings/:id", (req, res) => {
       return res.json({ ok: false, error: "User not found", totalBattle: 0 });
     }
 
-    // 🧠 הדפסת בדיקה ללוג (נראה בזמן אמת אם יש נתונים)
+    // 🧠 Debug log
     console.log("💾 Earnings debug for", userId, {
       battleBalance: u.battleBalance || 0,
       xp: u.xp || 0,
       partners: Array.isArray(u.partners) ? u.partners.length : 0,
+      vip: u.upgrades?.vip || {}
     });
 
-    // 🟦 רווח מלחיצות (Tap Earnings)
+    // 🟦 רווחים מלחיצות
     const tapEarnings = Number(u.battleBalance || 0);
 
     // 🟨 רווחים מתוכנית שותפים
     const partners = Array.isArray(u.partners) ? u.partners : [];
-    const partnerEarnings = partners.reduce((sum, p) => sum + (p.earnedBattle || 0), 0);
+    const partnerEarnings = partners.reduce(
+      (sum, p) => sum + (p.earnedBattle || 0),
+      0
+    );
 
-    // 🟩 רווחים פסיביים לשנייה
-    const passivePerSec = partners.reduce((sum, p) => sum + (p.incomePerSec || 0), 0);
+    // 🟩 רווחים פסיביים בסיסיים
+    let passivePerSec = partners.reduce(
+      (sum, p) => sum + (p.incomePerSec || 0),
+      0
+    );
 
-    // 🟪 רווחים מבונוסים ו־XP
-    const bonusEarnings = Number(u.bonusBattle || 0) + (Number(u.xp || 0) * 0.1);
+    // 💎 בדיקת VIP
+    let vipActive = false;
+    const now = Date.now();
 
-    // 💎 סיכום כולל
+    const vipObj = u.upgrades?.vip || {};
+    const expires = vipObj.expiresAt || u.perkExpiry || 0;
+
+    if (
+      (vipObj.active && expires > now) ||
+      (u.vipActive && expires > now) ||
+      (u.isVIP && expires > now)
+    ) {
+      vipActive = true;
+      passivePerSec = passivePerSec * 5; // ⭐ בונוס VIP פי 5
+    }
+
+    // 🟪 בונוסי XP
+    const bonusEarnings =
+      Number(u.bonusBattle || 0) + Number(u.xp || 0) * 0.1;
+
+    // 💰 סכום סופי
     const totalBattle = tapEarnings + partnerEarnings + bonusEarnings;
 
-    // החזרת תשובה מסודרת
+    // תשובה ללקוח
     return res.json({
       ok: true,
       userId,
+      vipActive,
       totalBattle,
       breakdown: {
         tapEarnings,
