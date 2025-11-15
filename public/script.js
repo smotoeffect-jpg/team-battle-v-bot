@@ -824,59 +824,106 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// ===== TB_V17 — Panels Real-Time Sync (FIXED userId) =====
+// ===== TB_V18 — Panels Real-Time Sync (VIP status + time left) =====
 async function syncPanels(panelKey) {
   try {
-    // ⚠️ אל תסמוך רק על window.telegramUserId
-    const uid =
-      window.telegramUserId ||
-      (window.Telegram?.WebApp?.initDataUnsafe?.user?.id
-        ? String(window.Telegram.WebApp.initDataUnsafe.user.id)
-        : null) ||
-      localStorage.getItem("telegram_userId") ||
-      "guest";
-
-    // נוודא שגם window יתעדכן אם היה ריק
-    if (!window.telegramUserId && uid) window.telegramUserId = uid;
-
-    const res = await fetch(`/api/user/${uid}`);
+    const res = await fetch("/api/user/" + window.telegramUserId);
     const data = await res.json();
-    if (!data || !data.ok || !data.user) return;
+    if (!data.ok || !data.user) return;
+
+    const u = data.user;
 
     // === עמוד שדרוגים (Upgrades) ===
     if (panelKey === "upgrades" || panelKey === "home") {
-      const u = data.user || {};
+      // 🔋 בטרייה – נשאר כמו שהיה (נסמך על הנתונים שהשרת מחזיר)
       const lvlEl = document.getElementById("batteryLevel");
       const capEl = document.getElementById("batteryCap");
       const costEl = document.getElementById("batteryCost");
 
-      if (lvlEl) lvlEl.textContent = u.batteryLevel ?? 1;
-      if (capEl) capEl.textContent = u.batteryCap ?? 300;
+      if (lvlEl) lvlEl.textContent  = u.batteryLevel ?? 1;
+      if (capEl) capEl.textContent  = u.batteryCap   ?? 300;
       if (costEl) costEl.textContent = u.batteryCost ?? 100;
 
+      // 💎 VIP – סטטוס + זמן שנשאר
       const vipStatus = document.getElementById("vipStatus");
+      const vipMsg    = document.getElementById("vipMsg");
+
       if (vipStatus) {
-        const active = !!(u.isVIP && u.perkExpiry && Date.now() < u.perkExpiry);
-        const lang = (document.documentElement.getAttribute("data-lang") || "he");
-        vipStatus.textContent = active
-          ? (i18n[lang]?.vipActive || "Active")
-          : (i18n[lang]?.vipInactive || "Inactive");
+        const now = Date.now();
+
+        // תומך גם בשדות הישנים (vipActive/perkExpiry) וגם בעתיד ב-upgrades.vip
+        const vipObj   = u.upgrades?.vip || {};
+        const expires  = vipObj.expiresAt || u.perkExpiry || 0;
+        const active   =
+          (vipObj.active && expires && now < expires) ||
+          (u.vipActive   && expires && now < expires) ||
+          (u.isVIP       && expires && now < expires);
+
+        const lang = getLang();
+        const dict = i18n[lang] || i18n.he;
+
+        // כותרת הסטטוס (Active / Inactive)
+        vipStatus.textContent = active ? dict.vipActive : dict.vipInactive;
         vipStatus.style.color = active ? "#00ff99" : "#ff4d4d";
+
+        // זמן שנשאר – רק אם באמת Active
+        if (vipMsg && active && expires) {
+          const diffMs        = expires - now;
+          const totalMinutes  = Math.max(0, Math.floor(diffMs / 60000));
+          const days          = Math.floor(totalMinutes / (60 * 24));
+          const hours         = Math.floor((totalMinutes % (60 * 24)) / 60);
+          const minutes       = totalMinutes % 60;
+
+          let text;
+          if (days > 0) {
+            // ימים + שעות
+            if (lang === "he") {
+              text = `✅ VIP פעיל – נשארו ${days} ימים ו-${hours} שעות`;
+            } else if (lang === "ar") {
+              text = `✅ VIP نشط – متبقٍ ${days} يوم و ${hours} ساعة`;
+            } else {
+              text = `✅ VIP active – ${days}d ${hours}h left`;
+            }
+          } else if (hours > 0) {
+            // שעות + דקות
+            if (lang === "he") {
+              text = `✅ VIP פעיל – נשארו ${hours} שעות ו-${minutes} דקות`;
+            } else if (lang === "ar") {
+              text = `✅ VIP نشط – متبقٍ ${hours} ساعة و ${minutes} دقيقة`;
+            } else {
+              text = `✅ VIP active – ${hours}h ${minutes}m left`;
+            }
+          } else {
+            // רק דקות
+            if (lang === "he") {
+              text = `✅ VIP פעיל – נשארו ${minutes} דקות`;
+            } else if (lang === "ar") {
+              text = `✅ VIP نشط – متبقٍ ${minutes} دقيقة`;
+            } else {
+              text = `✅ VIP active – ${minutes}m left`;
+            }
+          }
+
+          vipMsg.textContent = text;
+          vipMsg.style.color = "#ffd76b";
+        }
+        // אם VIP לא פעיל – לא נוגעים ב-vipMsg כדי שלא נדרוס הודעות שגיאה קיימות
       }
     }
 
     // === עמוד הלוח שלי (My Board) ===
     if (panelKey === "myteam") {
-      const u = data.user || {};
-      const set = (id, v) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = v ?? 0;
-      };
-      set("me-stars", u.stars);
-      set("me-battle", (typeof u.battle === "number") ? u.battle.toFixed(2) : (u.battle ?? 0));
-      set("me-xp", u.xp);
-      set("me-referrals", u.referrals);
+      const starsEl      = document.getElementById("me-stars");
+      const battleEl     = document.getElementById("me-battle");
+      const xpEl         = document.getElementById("me-xp");
+      const refsEl       = document.getElementById("me-referrals");
+
+      if (starsEl)  starsEl.textContent  = u.stars    ?? u.starsDonated ?? 0;
+      if (battleEl) battleEl.textContent = u.battle   ?? u.battleBalance ?? 0;
+      if (xpEl)     xpEl.textContent     = u.xp       ?? 0;
+      if (refsEl)   refsEl.textContent   = u.referrals ?? 0;
     }
+
   } catch (err) {
     console.warn("⚠️ syncPanels failed:", err);
   }
