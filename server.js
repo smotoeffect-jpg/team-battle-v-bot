@@ -718,7 +718,7 @@ app.post("/api/tap", (req, res) => {
   });
 });
 
-// ===== TB_V17 — Battery Upgrade API (Persistent Fix) =====
+// ===== TB_V17 — Battery Upgrade API (Persistent Fix + VIP Discount) =====
 app.post("/api/upgrade/battery", (req, res) => {
   try {
     const { userId } = req.body;
@@ -747,10 +747,23 @@ app.post("/api/upgrade/battery", (req, res) => {
     const costMultiplier = 1.8;       // קושי בינוני-קשה
     const capacityMultiplier = 1.25;  // כל רמה מוסיפה 25%
 
-    // 🧮 חישוב עלות השדרוג הנוכחי
+    // 🧮 חישוב עלות השדרוג הנוכחי (לפני VIP)
     const currentLevel = user.batteryLevel || 1;
     const nextLevel = currentLevel + 1;
-    const upgradeCost = Math.floor(baseCost * Math.pow(costMultiplier, currentLevel - 1));
+    let upgradeCost = Math.floor(baseCost * Math.pow(costMultiplier, currentLevel - 1));
+
+    // 💎 בדיקת VIP (הנחה 25%)
+    const now = Date.now();
+    const vipObj = user.upgrades?.vip;
+    const vipActive =
+      vipObj &&
+      vipObj.active &&
+      vipObj.expiresAt &&
+      vipObj.expiresAt > now;
+
+    if (vipActive) {
+      upgradeCost = Math.floor(upgradeCost * 0.75); // שלם 75%
+    }
 
     // 🔒 בדיקה שלא חרג מהמקסימום
     if (currentLevel >= maxLevel) {
@@ -770,7 +783,7 @@ app.post("/api/upgrade/battery", (req, res) => {
     user.batteryLevel  = nextLevel;
     user.batteryCap    = Math.floor(user.batteryCap * capacityMultiplier);
 
-    // 💾 שמירת נתונים גם בזיכרון וגם לקובץ
+    // 💾 שמירת נתונים
     writeJSON(USERS_FILE, users);
 
     console.log(`✅ User ${uid} upgraded to level ${user.batteryLevel}, new cap ${user.batteryCap}`);
@@ -778,6 +791,8 @@ app.post("/api/upgrade/battery", (req, res) => {
     // 🟢 תשובת הצלחה ללקוח
     res.json({
       ok: true,
+      vipDiscount: vipActive ? true : false,
+      paid: upgradeCost,
       newLevel: user.batteryLevel,
       newCap: user.batteryCap,
       newCost: Math.floor(baseCost * Math.pow(costMultiplier, nextLevel - 1))
