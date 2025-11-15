@@ -436,7 +436,7 @@ function normalizeUserUpgrades(u) {
 }
 
 // ===== Update User Profile from Telegram =====
-function updateUserProfileFromTG(from) {
+function updateUserProfileFromTG(from, updateObj = {}) {
   if (!from?.id) return;
   const uid = String(from.id);
   const u = ensureUser(uid);
@@ -447,43 +447,36 @@ function updateUserProfileFromTG(from) {
 
   const fn = u.first_name || "";
   const ln = u.last_name || "";
-
-  u.displayName = (fn || ln)
-    ? `${fn} ${ln}`.trim()
-    : u.username || uid;
-
+  u.displayName = (fn || ln) ? `${fn} ${ln}`.trim() : u.username || uid;
   u.active = true;
 
-  // ✅ Referral link detection (fixed V2)
+  // ===== Referral detection (Fixed, safe) =====
   try {
-    const upd = typeof update !== "undefined" ? update : {};
-    // (השאר נשאר בדיוק כמו שהיה אצלך)
-  } catch (e) {
-    console.warn("Referral detect error:", e);
-  }
-}
+    const msg = updateObj.message?.text || "";
+    const data = updateObj.callback_query?.data || "";
+    const startParam =
+      msg.includes("start=") ? msg.split("start=")[1] :
+      data.includes("start=") ? data.split("start=")[1] :
+      from.start_param ||
+      from.referrer ||
+      null;
 
-  // מזהה קישור הזמנה תקין (תומך גם בהודעות וגם ב־callback)
-  const ref =
-    upd.message?.text?.split("start=")[1] ||
-    upd.callback_query?.data?.split("start=")[1] ||
-    from?.start_param ||
-    from?.referrer;
+    if (startParam && users[startParam] && !u.referrer) {
+      u.referrer = startParam;
 
-  if (ref && users[ref] && !u.referrer) {
-    u.referrer = ref;
+      if (!Array.isArray(users[startParam].referrals))
+        users[startParam].referrals = [];
 
-    // מוסיף לרשימת ההפניות של המשתמש המזמין
-    if (!users[ref].referrals) users[ref].referrals = [];
-    if (!users[ref].referrals.includes(uid)) {
-      users[ref].referrals.push(uid);
-      console.log(`👥 Referral registered: ${ref} invited ${uid}`);
-      addReferralEarning(ref, uid);
+      if (!users[startParam].referrals.includes(uid)) {
+        users[startParam].referrals.push(uid);
+        addReferralEarning(startParam, uid);
+        console.log(`👥 Referral registered: ${startParam} invited ${uid}`);
+      }
     }
+
+  } catch (err) {
+    console.error("Referral tracking error:", err);
   }
-} catch (err) {
-  console.error("Referral tracking error:", err.message);
-}
 
   writeJSON(USERS_FILE, users);
 }
