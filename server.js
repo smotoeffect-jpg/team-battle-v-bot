@@ -1039,7 +1039,7 @@ app.post("/api/successful_payment", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
-// ====== Me (referrals + stats + daily bonus + VIP + Battery) ======
+// ====== Me (referrals + stats + daily bonus + VIP + Battery ×3) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
@@ -1050,76 +1050,100 @@ app.get("/api/me", (req, res) => {
   // ✅ ודא שמשתמש קיים בזיכרון
   const u = ensureUser(userId);
 
-  // ✅ אתחול שדות קבועים אם חסרים (כדי שישמרו לקובץ)
+  // 🔧 ודא שכל שדות הבטרייה קיימים
   if (u.batteryLevel == null) u.batteryLevel = 1;
   if (u.batteryCap == null)   u.batteryCap   = 300;
 
-  // VIP מחושב לפי תוקף בפועל
+  // 🎖 בדיקת תוקף VIP
   const vipActive = !!(u.perkExpiry && now < u.perkExpiry);
-  if (vipActive && !u.vipActive) u.vipActive = true;
-  if (!vipActive && u.vipActive) u.vipActive = false;
 
-  // ✅ אפס טאפ יומי אם עבר יום
+  // סנכרון FLAG ישן/חדש
+  u.vipActive = vipActive;
+
+  // 🔁 ריסט טאפ יומי
   const today = todayStr();
   if (u.tapsDate !== today) {
     u.tapsDate = today;
     u.tapsToday = 0;
   }
 
-  // ✅ Referral tracking (real-time unified)
+  // 👥 הפניות
   const start = req.query.start || req.query.ref || null;
   if (start && String(start) !== userId && !u.referrer) {
     u.referrer = String(start);
     const inviter = ensureUser(String(start));
     inviter.referrals = (inviter.referrals || 0) + 1;
-    inviter.referralsList = Array.isArray(inviter.referralsList) ? inviter.referralsList : [];
-    if (!inviter.referralsList.includes(userId)) inviter.referralsList.push(userId);
+
+    inviter.referralsList = Array.isArray(inviter.referralsList)
+      ? inviter.referralsList
+      : [];
+
+    if (!inviter.referralsList.includes(userId))
+      inviter.referralsList.push(userId);
   }
 
-  // ✅ נרמול רשימת הזמנות
   u.referralsList = Array.isArray(u.referralsList) ? u.referralsList : [];
   u.referrals = u.referralsList.length;
 
-  // ✅ בונוס יומי
+  // 🎁 בונוס יומי
   let justGotDailyBonus = false;
   if (u.team && (!u.lastDailyBonus || now - u.lastDailyBonus >= DAILY_BONUS_INTERVAL_MS)) {
     scores[u.team] = (scores[u.team] || 0) + DAILY_BONUS_POINTS;
     u.battleBalance = (u.battleBalance || 0) + BATTLE_RULES.DAILY_BONUS;
     addXpAndMaybeLevelUp(u, DAILY_BONUS_XP);
+
     u.lastDailyBonus = now;
     u.history = u.history || [];
-    u.history.push({ ts: now, type: "daily_bonus", points: DAILY_BONUS_POINTS, team: u.team, xp: DAILY_BONUS_XP });
+    u.history.push({
+      ts: now,
+      type: "daily_bonus",
+      points: DAILY_BONUS_POINTS,
+      team: u.team,
+      xp: DAILY_BONUS_XP,
+    });
     if (u.history.length > 200) u.history.shift();
+
     justGotDailyBonus = true;
     writeJSON(SCORES_FILE, scores);
   }
 
-  // ✅ שמירה אחידה
+  // 💾 שמירה
   users[userId] = u;
   writeJSON(USERS_FILE, users);
 
-  // 🧮 חישוב עלות השדרוג הבא של הבטרייה (לתצוגה בלבד)
+  // 🧮 עלות שדרוג הבטרייה הבאה (לתצוגה)
   const baseCost = 100;
   const costMultiplier = 1.8;
-  const batteryNextCost = Math.floor(baseCost * Math.pow(costMultiplier, (u.batteryLevel || 1) - 1));
+  const batteryNextCost = Math.floor(
+    baseCost * Math.pow(costMultiplier, (u.batteryLevel || 1) - 1)
+  );
 
+  // 🔋 ===== Battery ×3 for VIP =====
+  const baseCap = u.batteryCap || 300;
+  const effectiveCap = vipActive ? baseCap * 3 : baseCap;
+
+  // 🔗 קישור אישי
   const refLink = `https://t.me/TeamBattle_vBot/app?start=${userId}`;
 
-  // ✅ שליחה חזרה למיני-אפליקציה
+  // 📤 שליחה למיני-אפליקציה
   res.json({
     ok: true,
     me: {
       userId,
       team: u.team,
       tapsToday: u.tapsToday || 0,
+
+      // 💠 מגבלת טאפ (עם VIP ×3)
+      tapsLimit: effectiveCap,
+
       superUsed: u.superUsed || 0,
 
-      // 💎 תשלומים/יתרות
+      // 💰 יתרות
       starsDonated: u.starsDonated || 0,
       bonusStars: u.bonusStars || 0,
       battleBalance: u.battleBalance || 0,
 
-      // 🎮 שחקן
+      // 🧍 פרופיל
       displayName: u.displayName || null,
       username: u.username || null,
       xp: u.xp || 0,
@@ -1129,23 +1153,25 @@ app.get("/api/me", (req, res) => {
 
       // 🔋 בטרייה
       batteryLevel: u.batteryLevel || 1,
-      batteryCap: u.batteryCap || 300,
+      batteryCap: baseCap,
+      batteryCapEffective: effectiveCap,
       batteryNextCost,
 
-      // 💠 VIP
+      // 💎 VIP
       isVIP: vipActive,
       vipActive,
       perkExpiry: u.perkExpiry || 0,
 
-      // 👥 שותפים
+      // 👥 הזמנות
       preferredLang: u.preferredLang || "he",
       referrals: u.referrals || 0,
       referrer: u.referrer || null,
       referralsList: u.referralsList,
 
-      // 🔗 קישור אישי
+      // 🔗 לינק אישי
       refLink,
     },
+
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs },
   });
