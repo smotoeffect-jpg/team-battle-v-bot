@@ -493,6 +493,60 @@ async function refreshAll() {
 
 setInterval(refreshAll, 500);
 refreshAll();
+
+// ===== FIX: Force UI sync immediately after loading user data =====
+async function syncUserUI() {
+  try {
+    const userId = telegramUserId;
+    const res = await fetch(`/api/me?userId=${userId}`);
+    const data = await res.json();
+
+    if (!data.ok) return;
+
+    const u = data.me;
+
+    // === Battery UI ===
+    if (document.getElementById("batteryLevel"))
+      document.getElementById("batteryLevel").textContent = u.batteryLevel;
+
+    if (document.getElementById("batteryCap"))
+      document.getElementById("batteryCap").textContent = u.batteryCap;
+
+    if (document.getElementById("batteryCost"))
+      document.getElementById("batteryCost").textContent = u.batteryNextCost || 100;
+
+    // === VIP UI ===
+    const now = Date.now();
+    const isVip = u.perkExpiry && now < u.perkExpiry;
+
+    const vipStatus = document.getElementById("vipStatus");
+    if (vipStatus) {
+      vipStatus.textContent = isVip ? i18n[getLang()].vipActive : i18n[getLang()].vipInactive;
+      vipStatus.style.color = isVip ? "#00ff99" : "#ff4d4d";
+    }
+
+    // 🔒 Disable VIP button if VIP active
+    const vipBtn = document.getElementById("btn-activate-vip");
+    if (vipBtn) {
+      if (isVip) {
+        vipBtn.disabled = true;
+        vipBtn.style.opacity = "0.5";
+      } else {
+        vipBtn.disabled = false;
+        vipBtn.style.opacity = "1";
+      }
+    }
+
+  } catch (err) {
+    console.warn("syncUserUI failed:", err);
+  }
+}
+
+// הרצה מיד אחרי שהמשחק נטען
+setTimeout(syncUserUI, 300);
+
+// ריענון UI קבוע
+setInterval(syncUserUI, 1500);
   
   // ===== Status Bar =====
   const statusLine=document.getElementById('status-line');
