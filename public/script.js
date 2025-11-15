@@ -577,6 +577,26 @@ if (btnExtra) btnExtra.addEventListener('click', async () => {
   }
 });  // ← ← ← זה הסוגר האחרון של האירוע של כפתור Extra
 
+// ===== Unified Invoice Handler (Extra Tap + VIP) =====
+function openInvoice(invoiceLink) {
+  try {
+    if (window.Telegram?.WebApp?.openInvoice) {
+      window.Telegram.WebApp.openInvoice(invoiceLink, (status) => {
+        console.log("💸 Invoice Status:", status);
+
+        if (status === "paid") {
+          console.log("🎉 Payment completed!");
+          refreshAll(); 
+        }
+      });
+    } else {
+      window.location.href = invoiceLink;
+    }
+  } catch (err) {
+    console.error("openInvoice error:", err);
+  }
+}
+  
 // === TON Wallet Connect ===
 console.log("💎 Initializing TON Connect...");
 try {
