@@ -345,6 +345,79 @@ function normalizeUserUpgrades(u) {
   return u;
 }
 
+// ====== Ensure User (Creates + Normalizes Every Field) ======
+function ensureUser(userId) {
+  const uid = String(userId);
+
+  // אם המשתמש לא קיים בכלל — ניצור מאפס
+  if (!users[uid]) {
+    users[uid] = {
+      team: null,
+      tapsDate: null,
+      tapsToday: 0,
+      superDate: null,
+      superUsed: 0,
+
+      // הפניות
+      refBy: null,
+      referrer: null,
+      referrals: 0,
+      referralsList: [],
+
+      // כוכבים ו־Battle
+      starsDonated: 0,
+      bonusStars: 0,
+      battleBalance: 0,
+
+      // פרופיל
+      username: null,
+      first_name: "",
+      last_name: "",
+      displayName: "",
+      active: true,
+      preferredLang: "he",
+      country: "",
+
+      // XP + Level
+      xp: 0,
+      level: 1,
+      lastDailyBonus: null,
+      history: [],
+
+      // בטרייה (ישנים)
+      batteryLevel: 1,
+      batteryCap: 300,
+
+      // ===== NEW: Upgrades System =====
+      upgrades: {
+        battery: {
+          level: 1,
+          cap: 300,
+          nextCost: 100
+        },
+        vip: {
+          active: false,
+          expiresAt: 0
+        },
+        autoClicker: {
+          active: false,
+          expiresAt: 0
+        },
+        offlineMode: {
+          active: false,
+          expiresAt: 0,
+          lastOfflineAt: 0
+        }
+      }
+    };
+  }
+
+  // נוודא שהמבנה תקין תמיד
+  normalizeUserUpgrades(users[uid]);
+
+  return users[uid];
+}
+
 // ===== VIP BOOSTS ENGINE — apply full VIP bonuses in backend =====
 function applyVipBonuses(u) {
   const vip = u.upgrades?.vip || {};
