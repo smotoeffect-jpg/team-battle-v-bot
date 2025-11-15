@@ -451,7 +451,8 @@ function updateVipTimer(expiry) {
 // ===== Refresh Game Data (Real-time 0.5s) =====
 async function refreshAll() {
   try {
-    const userId = telegramUserId || localStorage.getItem("telegram_userId") || "guest";
+    const userId =
+      telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
     // --- מצב כללי ---
     const state = await getJSON("/api/state");
@@ -465,11 +466,23 @@ async function refreshAll() {
 
     GAME.me.id = M.userId ?? M.id ?? telegramUserId;
     GAME.me.team = M.team ?? GAME.me.team ?? null;
-    GAME.me.tapsToday = Math.max(GAME.me.tapsToday || 0, M.tapsToday ?? M.taps_today ?? M.taps ?? 0);
+    GAME.me.tapsToday = Math.max(
+      GAME.me.tapsToday || 0,
+      M.tapsToday ?? M.taps_today ?? M.taps ?? 0
+    );
     GAME.me.level = Math.max(GAME.me.level || 1, M.level ?? 1);
-    GAME.me.referrals = Math.max(GAME.me.referrals || 0, M.referrals ?? M.invited ?? 0);
-    GAME.me.stars = Math.max(GAME.me.stars || 0, M.starsDonated ?? M.stars ?? M.balance ?? 0);
-    GAME.me.battle = Math.max(GAME.me.battle || 0, M.battleBalance ?? 0);
+    GAME.me.referrals = Math.max(
+      GAME.me.referrals || 0,
+      M.referrals ?? M.invited ?? 0
+    );
+    GAME.me.stars = Math.max(
+      GAME.me.stars || 0,
+      M.starsDonated ?? M.stars ?? M.balance ?? 0
+    );
+    GAME.me.battle = Math.max(
+      GAME.me.battle || 0,
+      M.battleBalance ?? 0
+    );
     GAME.me.xp = Math.max(GAME.me.xp || 0, M.xp ?? 0);
 
     // ⭐⭐⭐⭐⭐ ADD — VIP TIMER UPDATE ⭐⭐⭐⭐⭐
@@ -1177,4 +1190,51 @@ document.addEventListener("DOMContentLoaded", () => {
       vipMsg.style.color = "#ffcc00";
     }
   });
-});
+});  // ← <-- השורה האחרונה שלך (1194)
+
+// =========================
+// VIP TIMER FUNCTION INSERT
+// =========================
+function updateVipTimer(expiryTs) {
+  const vipMsg = document.getElementById("vipMsg");
+  if (!vipMsg) return;
+
+  function render() {
+    const now = Date.now();
+    const diff = expiryTs - now;
+
+    if (diff <= 0) {
+      vipMsg.textContent = "";
+      return;
+    }
+
+    const totalMinutes = Math.floor(diff / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const lang = getLang();
+
+    let text;
+
+    if (days > 0) {
+      if (lang === "he") text = `⏳ VIP פעיל – נשארו ${days} ימים ו-${hours} שעות`;
+      else if (lang === "ar") text = `⏳ VIP نشط – متبقٍ ${days} يوم و ${hours} ساعة`;
+      else text = `⏳ VIP active – ${days}d ${hours}h left`;
+    } else if (hours > 0) {
+      if (lang === "he") text = `⏳ VIP פעיל – נשארו ${hours} שעות ו-${minutes} דקות`;
+      else if (lang === "ar") text = `⏳ VIP نشط – متبقٍ ${hours} ساعة و ${minutes} دقيقة`;
+      else text = `⏳ VIP active – ${hours}h ${minutes}m left`;
+    } else {
+      if (lang === "he") text = `⏳ VIP פעיל – נשארו ${minutes} דקות`;
+      else if (lang === "ar") text = `⏳ VIP نشط – ${minutes} دقيقة متبقية`;
+      else text = `⏳ VIP active – ${minutes}m left`;
+    }
+
+    vipMsg.textContent = text;
+    vipMsg.style.color = "#ffd76b";
+  }
+
+  render();
+  setInterval(render, 60 * 1000); // עדכון כל דקה
+}
