@@ -261,26 +261,36 @@ const i18n = {
   }
 };
 
-  function getLang(){ return document.documentElement.getAttribute('data-lang') || 'he'; }
-  function setLang(l) {
+function getLang() {
+  return document.documentElement.getAttribute("data-lang") || "he";
+}
 
-    document.documentElement.setAttribute('data-lang', l);
-    localStorage.setItem('tb_lang', l);
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const k = el.getAttribute('data-i18n');
-      el.textContent = i18n[l]?.[k] || k;
-    });
+function setLang(l) {
+  document.documentElement.setAttribute("data-lang", l);
+  localStorage.setItem("tb_lang", l);
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const k = el.getAttribute("data-i18n");
+    el.textContent = i18n[l]?.[k] || k;
+  });
+}
+
+const langBtns = document.querySelectorAll(".lang-switch [data-lang]");
+if (langBtns && langBtns.length) {
+  langBtns.forEach(btn =>
+    btn.addEventListener("click", () => setLang(btn.dataset.lang))
+  );
+}
+
+(function () {
+  const s = localStorage.getItem("tb_lang");
+  if (s) {
+    setLang(s);
+  } else {
+    const t = (navigator.language || "he").slice(0, 2);
+    setLang(["he", "en", "ar"].includes(t) ? t : "he");
   }
-
-  const langBtns = document.querySelectorAll('.lang-switch [data-lang]');
-  if (langBtns && langBtns.length) {
-    langBtns.forEach(btn => btn.addEventListener('click',()=>setLang(btn.dataset.lang)));
-  }
-
-  (function(){
-    const s=localStorage.getItem('tb_lang');
-    if(s) setLang(s); else { const t=(navigator.language||'he').slice(0,2); setLang(['he','en','ar'].includes(t)?t:'he'); }
-  })();
+})();
 // שמירת הדגשה מהבחירה הקודמת
 const savedTeam = localStorage.getItem("tb_team");
 if (savedTeam) {
