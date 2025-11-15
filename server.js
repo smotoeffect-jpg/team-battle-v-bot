@@ -286,139 +286,17 @@ const UPGRADE_CONFIG = {
   }
 };
 
-// דואג שלכל משתמש יהיה מבנה Upgrades תקין
-function normalizeUserUpgrades(user) {
-  if (!user) user = {};
-
-  // בסיס לבטרייה – אם אין, תן ברירת מחדל
-  if (typeof user.batteryLevel !== "number" || user.batteryLevel < 1) {
-    user.batteryLevel = 1;
-  }
-  if (typeof user.batteryCap !== "number" || user.batteryCap < 1) {
-    user.batteryCap = UPGRADE_CONFIG.battery.baseCap;
-  }
-
-  // אובייקט upgrades כללי
-  if (!user.upgrades || typeof user.upgrades !== "object") {
-    user.upgrades = {};
-  }
-
-  // VIP
-  if (!user.upgrades.vip || typeof user.upgrades.vip !== "object") {
-    user.upgrades.vip = {
-      active: false,
-      expiresAt: 0
-    };
-  }
-
-  // שמירה על תאימות אחורה – אם יש perkExpiry ישן, נעתיק
-  if (user.perkExpiry && !user.upgrades.vip.expiresAt) {
-    user.upgrades.vip.expiresAt = user.perkExpiry;
-    user.upgrades.vip.active = Date.now() < user.perkExpiry;
-  }
-
-  // Auto Clicker
-  if (!user.upgrades.autoClicker || typeof user.upgrades.autoClicker !== "object") {
-    user.upgrades.autoClicker = {
-      expiresAt: 0
-    };
-  }
-
-  // Offline Mode
-  if (!user.upgrades.offline || typeof user.upgrades.offline !== "object") {
-    user.upgrades.offline = {
-      expiresAt: 0,
-      freeOfflineUntil: 0
-    };
-  }
-
-  return user;
-}
-
-// ===== VIP BOOSTS ENGINE — apply full VIP bonuses in backend =====
-function applyVipBonuses(u) {
-  const vip = u.upgrades?.vip || {};
-  const now = Date.now();
-  const active = vip.active && vip.expiresAt && now < vip.expiresAt;
-
-  if (!active) {
-    // When not VIP, return defaults
-    return {
-      isVip: false,
-      tapBonus: 1.0,        // No tap boost
-      incomeMult: 1.0,      // Normal income
-      batteryMult: 1.0,     // No increase
-      costMult: 1.0         // No discount
-    };
-  }
-
-  // When VIP is active → apply boosts
-  return {
-    isVip: true,
-    tapBonus: 1.25,         // +25% taps
-    incomeMult: 5,          // ×5 passive income
-    batteryMult: 3,         // ×3 battery
-    costMult: 0.75          // -25% cost → 75% price
-  };
-}
-
-// ====== Helpers ======
-function ensureUser(userId) {
-  if (!users[userId]) {
-    users[userId] = {
-      team: null,
-      tapsDate: null, tapsToday: 0,
-      superDate: null, superUsed: 0,
-      refBy: null,
-      referrals: 0,
-      referrer: null,
-      starsDonated: 0,
-      bonusStars: 0,
-      battleBalance: 0,     // 💰 יתרת $Battle
-      lastDailyAt: null,    // 🕒 בונוס יומי
-      username: null, first_name: "", last_name: "",
-      xp: 0, level: 1, lastDailyBonus: null,
-      history: [],
-      active: true,
-      preferredLang: "he",
-      country: "",
-
-      // 🚀 ===== NEW: Upgrades System =====
-      upgrades: {
-        battery: {
-          level: 1,
-          cap: 300,
-          nextCost: 100
-        },
-        vip: {
-          active: false,
-          expiresAt: 0
-        },
-        autoClicker: {
-          active: false,
-          expiresAt: 0
-        },
-        offlineMode: {
-          active: false,
-          expiresAt: 0,
-          lastOfflineAt: 0
-        }
-      }
-    };
-  }
-
-  // 🛠️ מחזיר משתמש קיים עם שדות חסרים שמתווספים אוטומטית
-  normalizeUserUpgrades(users[userId]);
-
-  return users[userId];
-}
-
 // ===== Normalize Upgrade Fields (ensures old users work with new system) =====
 function normalizeUserUpgrades(u) {
-  if (!u.upgrades) u.upgrades = {};
+  if (!u) u = {};
+
+  // Create upgrades object if missing
+  if (!u.upgrades || typeof u.upgrades !== "object") {
+    u.upgrades = {};
+  }
 
   // ===== Battery =====
-  if (!u.upgrades.battery) {
+  if (!u.upgrades.battery || typeof u.upgrades.battery !== "object") {
     u.upgrades.battery = {
       level: u.batteryLevel || 1,
       cap: u.batteryCap || 300,
@@ -427,15 +305,20 @@ function normalizeUserUpgrades(u) {
   }
 
   // ===== VIP =====
-  if (!u.upgrades.vip) {
+  if (!u.upgrades.vip || typeof u.upgrades.vip !== "object") {
     u.upgrades.vip = {
       active: false,
       expiresAt: 0
     };
   } else {
-    // Normalize booleans & expiry
     u.upgrades.vip.active = Boolean(u.upgrades.vip.active);
     u.upgrades.vip.expiresAt = Number(u.upgrades.vip.expiresAt || 0);
+  }
+
+  // Legacy migration (old perkExpiry → new VIP)
+  if (u.perkExpiry && !u.upgrades.vip.expiresAt) {
+    u.upgrades.vip.expiresAt = u.perkExpiry;
+    u.upgrades.vip.active = Date.now() < u.perkExpiry;
   }
 
   // ===== Auto Clicker =====
@@ -455,11 +338,36 @@ function normalizeUserUpgrades(u) {
     };
   }
 
-  // ===== Sync legacy fields into new structure =====
+  // Sync legacy battery fields
   if (u.batteryLevel) u.upgrades.battery.level = u.batteryLevel;
   if (u.batteryCap) u.upgrades.battery.cap = u.batteryCap;
 
   return u;
+}
+
+// ===== VIP BOOSTS ENGINE — apply full VIP bonuses in backend =====
+function applyVipBonuses(u) {
+  const vip = u.upgrades?.vip || {};
+  const now = Date.now();
+  const active = vip.active && vip.expiresAt && now < vip.expiresAt;
+
+  if (!active) {
+    return {
+      isVip: false,
+      tapBonus: 1.0,
+      incomeMult: 1.0,
+      batteryMult: 1.0,
+      costMult: 1.0
+    };
+  }
+
+  return {
+    isVip: true,
+    tapBonus: 1.25,     // +25% per tap
+    incomeMult: 5,      // ×5 passive income
+    batteryMult: 3,     // ×3 battery capacity
+    costMult: 0.75      // -25% discount
+  };
 }
 
 // ===== Update User Profile from Telegram =====
@@ -738,7 +646,7 @@ app.post("/api/user/:id/team", (req, res) => {
   }
 });
 
-// ====== Tap endpoint – Tap strength = player level (with VIP boost) ======
+// ====== Tap endpoint – Full VIP Engine ======
 app.post("/api/tap", (req, res) => {
   const userId = getUserIdFromReq(req) || String(req.body?.userId || "");
   if (!userId) return res.status(400).json({ ok: false, error: "no userId" });
@@ -746,7 +654,7 @@ app.post("/api/tap", (req, res) => {
   // טוען משתמש
   const u = ensureUser(userId);
 
-  // חייב שיהיה מוגדר team
+  // חייב קבוצה
   if (!u.team) return res.status(400).json({ ok: false, error: "no team" });
 
   // ===== ריסט יומי =====
@@ -761,32 +669,29 @@ app.post("/api/tap", (req, res) => {
     return res.json({ ok: false, error: "limit", limit: DAILY_TAPS });
   }
 
-  // ===== VIP Boost =====
+  // ===== VIP Boosts =====
   const now = Date.now();
-  let vipActive = false;
-
-  // תומך גם בשדות הישנים וגם ב-upgrades.vip
   const vipObj = u.upgrades?.vip || {};
-
-  if (
+  const vipActive =
     (vipObj.active && vipObj.expiresAt > now) ||
     (u.vipActive && u.perkExpiry > now) ||
-    (u.isVIP && u.perkExpiry > now)
-  ) {
-    vipActive = true;
-  }
+    (u.isVIP && u.perkExpiry > now);
 
-  // עוצמת טאפ רגילה = level, מינימום 1
+  // tapPower בסיסי = רמת השחקן
   let tapPower = Math.max(1, u.level || 1);
 
-  // אם VIP פעיל – מוסיף בוסט +25%
+  // טאפ ×1.25 אם VIP פעיל
+  if (vipActive) tapPower *= 1.25;
+
+  tapPower = Number(tapPower.toFixed(2));
+
+  // ===== Battery Boost =====
+  // (משפיע על התקרה של הבטרייה, לא על הטאפ)
   if (vipActive) {
-    tapPower = tapPower * 1.25;
+    u.batteryCap = Math.floor((u.batteryCap || 300) * 3);
   }
 
-  tapPower = Number(tapPower.toFixed(2)); // עיגול עדין
-
-  // ===== עדכון ניקוד =====
+  // ===== חישוב ניקוד =====
   const team = u.team;
 
   scores[team] = (scores[team] || 0) + tapPower;
@@ -794,14 +699,13 @@ app.post("/api/tap", (req, res) => {
   u.xp = (u.xp || 0) + tapPower;
   u.battle = (u.battle || 0) + tapPower;
 
-  // ❗ זה נשאר שלך — לא נוגעים בו
+  // ❗ לא נוגעים — חלק מהמערכת המקורית
   u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0);
 
-  // שמירה
+  // ===== שמירה =====
   writeJSON(SCORES_FILE, scores);
   writeJSON(USERS_FILE, users);
 
-  // תגובה ללקוח
   res.json({
     ok: true,
     team,
@@ -2181,7 +2085,7 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ====== Combined Battle Earnings (VIP support + safe) ======
+// ====== Combined Battle Earnings (VIP support + fixed total) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
     const userId = String(
@@ -2214,7 +2118,7 @@ app.get("/api/earnings/:id", (req, res) => {
       vip: u.upgrades?.vip || {}
     });
 
-    // 🟦 רווחים מלחיצות
+    // 🟦 רווחים מלחיצות (Tap Earnings)
     const tapEarnings = Number(u.battleBalance || 0);
 
     // 🟨 רווחים מתוכנית שותפים
@@ -2230,9 +2134,9 @@ app.get("/api/earnings/:id", (req, res) => {
       0
     );
 
-    // 💎 בדיקת VIP
-    let vipActive = false;
+    // 💎 VIP check
     const now = Date.now();
+    let vipActive = false;
 
     const vipObj = u.upgrades?.vip || {};
     const expires = vipObj.expiresAt || u.perkExpiry || 0;
@@ -2243,17 +2147,22 @@ app.get("/api/earnings/:id", (req, res) => {
       (u.isVIP && expires > now)
     ) {
       vipActive = true;
-      passivePerSec = passivePerSec * 5; // ⭐ בונוס VIP פי 5
+      passivePerSec = passivePerSec * 5;   // ⭐ VIP Passive ×5
     }
 
     // 🟪 בונוסי XP
     const bonusEarnings =
       Number(u.bonusBattle || 0) + Number(u.xp || 0) * 0.1;
 
-    // 💰 סכום סופי
-    const totalBattle = tapEarnings + partnerEarnings + bonusEarnings;
+    // ⭐⭐⭐ תיקון קריטי ⭐⭐⭐
+    // totalBattle חייב לכלול passivePerSec!
+    const totalBattle =
+      tapEarnings +
+      partnerEarnings +
+      bonusEarnings +
+      passivePerSec;
 
-    // תשובה ללקוח
+    // 📤 תשובה ללקוח
     return res.json({
       ok: true,
       userId,
