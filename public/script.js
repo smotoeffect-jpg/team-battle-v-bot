@@ -144,6 +144,11 @@ const i18n = {
     buyVip: "Buy VIP",
     vipActive: "Active",
     vipInactive: "Inactive",
+    vipTimeLeft: "Time Left",
+
+    // ❗ VIP info popup
+    vipInfoText:
+      "🔥 VIP Benefits:\n\n• +25% Tap Power\n• Passive income ×5\n• Battery ×3\n• 25% Battle discount\n• Duration: 7 days",
 
     // 🧭 Bottom Navigation
     navHome: "Home",
@@ -190,6 +195,11 @@ const i18n = {
     buyVip: "קנה VIP",
     vipActive: "פעיל",
     vipInactive: "לא פעיל",
+    vipTimeLeft: "זמן שנותר",
+
+    // ❗ VIP info popup
+    vipInfoText:
+      "🔥 יתרונות VIP:\n\n• ‎+25% כוח לטאפ\n• הכנסה פסיבית ×5\n• בטרייה ×3\n• ‎25% הנחה בשדרוגים\n• תוקף: 7 ימים",
 
     // 🧭 סרגל תחתון
     navHome: "בית",
@@ -236,6 +246,11 @@ const i18n = {
     buyVip: "شراء VIP",
     vipActive: "نشط",
     vipInactive: "غير نشط",
+    vipTimeLeft: "الوقت المتبقي",
+
+    // ❗ VIP info popup
+    vipInfoText:
+      "🔥 مزايا VIP:\n\n• ‎+25% قوة النقرة\n• دخل سلبي ×5\n• بطارية ×3\n• خصم 25%\n• مدة: 7 أيام",
 
     // 🧭 شريط التنقل السفلي
     navHome: "الرئيسية",
