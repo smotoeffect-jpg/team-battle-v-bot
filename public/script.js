@@ -1207,6 +1207,21 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });  // ← <-- השורה האחרונה שלך (1194)
 
+// ===== VIP Info Popup =====
+const btnVipInfo = document.getElementById("vip-info-btn");
+if (btnVipInfo) {
+  btnVipInfo.addEventListener("click", () => {
+    const lang = getLang();
+    const msg = i18n[lang]?.vipInfoText || i18n.he.vipInfoText;
+
+    if (window.Telegram?.WebApp?.showAlert) {
+      Telegram.WebApp.showAlert(msg);
+    } else {
+      alert(msg.replace(/\n/g, "\n"));
+    }
+  });
+}
+
 // =========================
 // VIP TIMER FUNCTION INSERT
 // =========================
