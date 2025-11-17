@@ -1174,7 +1174,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// ===== TB_V17 — Buy VIP via Telegram Stars (Final + Working) =====
+// ===== TB_V17 — Buy VIP via Telegram Stars (Final + Only Handler) =====
 document.addEventListener("DOMContentLoaded", () => {
   const btnVip = document.getElementById("btn-activate-vip");
   const vipMsg = document.getElementById("vipMsg");
@@ -1189,14 +1189,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const userId = telegramUserId;
       const team = localStorage.getItem("tb_team") || "unknown";
 
-      // ✅ שולחים בקשה אמיתית לשרת כדי ליצור חשבונית
+      // ✅ מבקשים מהשרת ליצור חשבונית אמיתית לכוכבים
       const res = await fetch("/api/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
           team,
-          stars: 300, // ⭐️ עלות VIP
+          stars: 300,  // ⭐ עלות VIP
           t: "vip"
         })
       });
@@ -1208,6 +1208,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const invoiceUrl = data.url || data.invoiceLink;
         console.log("🧾 Opening Telegram Stars invoice:", invoiceUrl);
 
+        // 🔥 פתיחת חלון התשלום
         if (window.Telegram?.WebApp?.openInvoice) {
           Telegram.WebApp.openInvoice(invoiceUrl, () => {
             console.log("📲 VIP invoice closed or paid.");
@@ -1227,8 +1228,7 @@ document.addEventListener("DOMContentLoaded", () => {
       vipMsg.style.color = "#ffcc00";
     }
   });
-});  // ← <-- השורה האחרונה שלך (1194)
-
+});
 // ===== VIP Info Popup =====
 const btnVipInfo = document.getElementById("vip-info-btn");
 if (btnVipInfo) {
