@@ -999,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
     home: document.getElementById("homePanel"),
     myteam: document.getElementById("my-board"),
     upgrades: document.getElementById("upgradesPanel"),
-    leaderboard: document.getElementById("leaderboard"),
+    leaderboard: document.getElementById("top20"),
     referrals: document.getElementById("partner")
   };
 
