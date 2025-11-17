@@ -23,6 +23,14 @@ function waitForWebApp(maxWait = 2000) {
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
   console.log("🔑 initData:", WebApp?.initData);
+
+  // === INITIALIZE TELEGRAM WEBAPP ===
+  WebApp?.ready?.();
+
+  // === INITIALIZE TELEGRAM ANALYTICS ===
+  Telegram.WebApp.analytics.init({
+      apiKey: "eyJhcHBfbmFtZSI6InRlYW1iYXR0bGUiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1RlYW1CYXR0bGVfdkJvdCIsImFwcF9kb21haW4iOiJodHRwczovL3RlYW0tYmF0dGxlLXYtYm90Lm9ucmVuZGVyLmNvbS8ifQ==!20kwbjUvrZeEhWCXsAnFawdEev+nI2EkcQUH1IShjIA="
+  });
  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
 if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   const params = new URLSearchParams(window.location.search);
