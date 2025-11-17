@@ -76,14 +76,6 @@ if (window.Telegram?.WebApp?.initData) {
   WebApp.initData = window.Telegram.WebApp.initData;
 }
 
-  // === INITIALIZE TELEGRAM WEBAPP ===
-  WebApp?.ready?.();
-
-  // === INITIALIZE TELEGRAM ANALYTICS ===
-  Telegram.WebApp.analytics.init({
-      apiKey: "eyJhcHBfbmFtZSI6InRlYW1iYXR0bGUiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1RlYW1CYXR0bGVfdkJvdCIsImFwcF9kb21haW4iOiJodHRwczovL3RlYW0tYmF0dGxlLXYtYm90Lm9ucmVuZGVyLmNvbS8ifQ==!20kwbjUvrZeEhWCXsAnFawdEev+nI2EkcQUH1IShjIA="
-  });
-  
   // ===== Detect Telegram user or create fallback ID =====
   let telegramUserId = null;
     async function waitForTelegramUser() {
@@ -115,6 +107,16 @@ localStorage.setItem("telegram_userId", telegramUserId);
 
 console.log("🔍 FULL initDataUnsafe dump:", WebApp?.initDataUnsafe);
 
+// === INITIALIZE TELEGRAM WEBAPP ===
+WebApp?.ready?.();
+
+// === INITIALIZE TELEGRAM ANALYTICS ===
+if (Telegram?.WebApp?.analytics?.init) {
+  Telegram.WebApp.analytics.init({
+    apiKey: "eyJhcHBfbmFtZSI6InRlYW1iYXR0bGUiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1RlYW1CYXR0bGVfdkJvdCIsImFwcF9kb21haW4iOiJodHRwczovL3RlYW0tYmF0dGxlLXYtYm90Lm9ucmVuZGVyLmNvbS8ifQ==!20kwbjUvrZeEhWCXsAnFawdEev+nI2EkcQUH1IShjIA="
+  });
+}
+  
 // ====== Translations (Full Multilingual Map) ======
 const i18n = {
   en: {
