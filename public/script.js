@@ -234,7 +234,7 @@ const i18n = {
     playerLevel: "مستوى اللاعب",
     referrals: "الأصدقاء المدعوون",
     tapsToday: "نقرات اليوم",
-    top20: "أفضل 20",
+    : "أفضل 20",
     copied: "تم النسخ!",
     err: "حدث خطأ ما",
     partnerTitle: "برنامج الإحالة",
@@ -999,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
     home: document.getElementById("homePanel"),
     myteam: document.getElementById("my-board"),
     upgrades: document.getElementById("upgradesPanel"),
-    leaderboard: document.getElementById("top20"),
+    leaderboard: document.getElementById("leaderboard"),
     referrals: document.getElementById("partner")
   };
 
