@@ -234,7 +234,7 @@ const i18n = {
     playerLevel: "مستوى اللاعب",
     referrals: "الأصدقاء المدعوون",
     tapsToday: "نقرات اليوم",
-    : "أفضل 20",
+    top20: "أفضل 20",
     copied: "تم النسخ!",
     err: "حدث خطأ ما",
     partnerTitle: "برنامج الإحالة",
