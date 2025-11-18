@@ -56,19 +56,24 @@ const DAILY_BONUS_XP     = 10;
 const LEVEL_STEP         = 100;
 
 // ====== Storage (/data) ======
-
-// ❗ SAFETY CHECK: Prevent running if the Render disk did NOT mount
+// 🚫 אם הדיסק לא עלה → עצור מיד
 if (!fs.existsSync(DATA_DIR)) {
-  console.error("❌ DATA_DIR is missing! Persistent Disk FAILED to mount. Aborting startup.");
-  process.exit(1); // Prevent accidental creation of new empty /data
+  console.error("❌ DATA_DIR missing — disk not mounted. Stopping.");
+  process.exit(1);
+}
+
+// 🚫 אם הקובץ users.json לא קיים או ריק → עצור מיד
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+if (!fs.existsSync(USERS_FILE) || fs.statSync(USERS_FILE).size < 10) {
+  console.error("❌ users.json missing/empty — stopping to prevent reset.");
+  process.exit(1);
 }
 
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
-const USERS_FILE  = path.join(DATA_DIR, "users.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
-const AMETA_FILE  = path.join(DATA_DIR, "admin_meta.json"); // per-admin prefs (e.g. lang, awaiting)
-const TEXTS_FILE  = path.join(DATA_DIR, "texts.json");      // panel i18n texts
-const DXP_FILE    = path.join(DATA_DIR, "doublexp.json");   // double xp // === NEW SETTINGS FILE ===
+const AMETA_FILE = path.join(DATA_DIR, "admin_meta.json");
+const TEXTS_FILE = path.join(DATA_DIR, "texts.json");
+const DXP_FILE = path.join(DATA_DIR, "doublexp.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
 
 // === REFERRALS FILE ===
