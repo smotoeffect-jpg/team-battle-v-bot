@@ -35,7 +35,10 @@ const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
 const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
 const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
-
+const ENV            = process.env.ENV            || "development";
+const API_BASE       = process.env.API_BASE       || "";
+const MINIAPP_PATH   = process.env.MINIAPP_PATH   || "/app";
+const USE_ANALYTICS  = process.env.USE_ANALYTICS === "true";
 // משחק
 const STAR_TO_POINTS  = 2;
 const SUPER_POINTS    = 25;
