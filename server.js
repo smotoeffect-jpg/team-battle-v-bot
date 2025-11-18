@@ -29,6 +29,15 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ===== Inject ENV for Frontend =====
+app.get(process.env.MINIAPP_PATH || "/app", (req, res) => {
+  const html = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8")
+    .replace("</head>", `<script>window.API_BASE_FROM_SERVER="${process.env.API_BASE}"</script></head>`);
+  res.send(html);
+});
+
+
 // ====== CONFIG ======
 const BOT_TOKEN      = process.env.BOT_TOKEN      || "REPLACE_ME_BOT_TOKEN";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
