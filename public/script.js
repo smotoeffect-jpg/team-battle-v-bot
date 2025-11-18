@@ -443,7 +443,7 @@ try {
 }
 
 try {
-  const lb = await getJSON('/api/leaderboard');
+  const lb = await getJSON(`${API_BASE}/api/leaderboard`);
   if (Array.isArray(lb)) GAME.leaderboard = lb.slice(0, 20);
   else if (Array.isArray(lb?.leaders)) GAME.leaderboard = lb.leaders.slice(0, 20);
   else if (Array.isArray(lb?.top)) GAME.leaderboard = lb.top.slice(0, 20);
@@ -492,12 +492,12 @@ async function refreshAll() {
       telegramUserId || localStorage.getItem("telegram_userId") || "guest";
 
     // --- מצב כללי ---
-    const state = await getJSON("/api/state");
+    const state = await getJSON(`${API_BASE}/api/state`);
     if (state?.scores) GAME.scores = state.scores;
     paintScores();
 
     // --- נתוני משתמש ---
-    const meResp = await getJSON(`/api/me?userId=${userId}`);
+    const meResp = await getJSON(`${API_BASE}/api/me?userId=${userId}`);
     const M = meResp?.me || meResp || {};
     if (!GAME.me) GAME.me = {};
 
@@ -531,7 +531,7 @@ async function refreshAll() {
     // --- נתוני שותפים ---
     let partner = {};
     try {
-      const partnerResp = await getJSON(`/api/partner/${userId}`);
+      const partnerResp = await getJSON(`${API_BASE}/api/partner/${userId}`);
       if (partnerResp?.ok || partnerResp?.earnedBattle) partner = partnerResp;
     } catch {
       console.warn("ℹ️ Partner API unavailable, fallback to empty data");
@@ -543,7 +543,7 @@ async function refreshAll() {
     let incomePerSec = 0;
 
     try {
-      const earnResp = await getJSON(`/api/earnings/${userId}`);
+      const earnResp = await getJSON(`${API_BASE}/api/earnings/${userId}`);
       if (earnResp?.ok) {
         totalBattle = Number(earnResp.totalBattle || 0);
         const bd = earnResp.breakdown || {};
@@ -578,7 +578,7 @@ refreshAll();
 async function syncUserUI() {
   try {
     const userId = telegramUserId;
-    const res = await fetch(`/api/me?userId=${userId}`);
+    const res = await fetch(`${API_BASE}/api/me?userId=${userId}`);
     const data = await res.json();
 
     if (!data.ok) return;
