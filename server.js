@@ -56,7 +56,13 @@ const DAILY_BONUS_XP     = 10;
 const LEVEL_STEP         = 100;
 
 // ====== Storage (/data) ======
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// ❗ SAFETY CHECK: Prevent running if the Render disk did NOT mount
+if (!fs.existsSync(DATA_DIR)) {
+  console.error("❌ DATA_DIR is missing! Persistent Disk FAILED to mount. Aborting startup.");
+  process.exit(1); // Prevent accidental creation of new empty /data
+}
+
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const USERS_FILE  = path.join(DATA_DIR, "users.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
