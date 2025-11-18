@@ -1,5 +1,5 @@
 // ===== Auto-detect API base (Render / local / Telegram) =====
-const API_BASE = window.location.origin || "";
+const API_BASE = window.API_BASE_FROM_SERVER || window.location.origin;
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
 function waitForWebApp(maxWait = 2000) {
