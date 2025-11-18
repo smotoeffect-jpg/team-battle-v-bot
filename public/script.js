@@ -674,7 +674,7 @@ if (btnSwitch) btnSwitch.addEventListener('click', async () => {
   try {
     const to = (GAME.me.team === 'israel') ? 'gaza' : 'israel';
     console.log("➡️ [SWITCH] Sending switch request to:", to);
-    const res = await postJSON('/api/switch-team', { userId: GAME.me.id, newTeam: to });
+    const res = await postJSON(`${API_BASE}/api/switch-team`, { userId: GAME.me.id, newTeam: to });
     console.log("✅ [SWITCH] Response from server:", res);
     await refreshAll();
   } catch (err) {
@@ -907,7 +907,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // ===== TB_V18 — Panels Real-Time Sync (VIP status + time left) =====
 async function syncPanels(panelKey) {
   try {
-    const res = await fetch("/api/user/" + window.telegramUserId);
+    const res = await fetch(`${API_BASE}/api/user/` + window.telegramUserId);
     const data = await res.json();
     if (!data.ok || !data.user) return;
 
@@ -1131,7 +1131,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const team = localStorage.getItem("tb_team") || "unknown";
 
       // ✅ מבקשים מהשרת ליצור חשבונית אמיתית לכוכבים
-      const res = await fetch("/api/create-invoice", {
+      const res = await fetch(`${API_BASE}/api/create-invoice`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
