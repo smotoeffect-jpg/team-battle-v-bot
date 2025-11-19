@@ -975,22 +975,22 @@ async function syncPanels(panelKey) {
       }
     }
 
-    // === עמוד "הקבוצה שלי" (My Board) ===
-    if (panelKey === "myteam") {
-      const starsEl  = document.getElementById("me-stars");
-      const battleEl = document.getElementById("me-battle");
-      const xpEl     = document.getElementById("me-xp");
-      const refsEl   = document.getElementById("me-referrals");
+   // === עמוד "הקבוצה שלי" (My Board) ===
+if (panelKey === "myteam") {
+  const starsEl  = document.getElementById("me-stars");
+  const battleEl = document.getElementById("me-battle");
+  const xpEl     = document.getElementById("me-xp");
+  const refsEl   = document.getElementById("me-referrals");
 
-      if (starsEl)  starsEl.textContent  = u.stars ?? u.starsDonated ?? 0;
-      if (battleEl) battleEl.textContent = u.battle ?? u.battleBalance ?? 0;
-      if (xpEl)     xpEl.textContent     = u.xp ?? 0;
-      if (refsEl)   refsEl.textContent   = u.referrals ?? 0;
-    }
+  if (starsEl)  starsEl.textContent  = u.stars ?? u.starsDonated ?? 0;
+  if (battleEl) battleEl.textContent = u.battle ?? u.battleBalance ?? 0;
+  if (xpEl)     xpEl.textContent     = u.xp ?? 0;
+  if (refsEl)   refsEl.textContent   = u.referrals ?? 0;
+}
 
-  } catch (err) {
-    console.warn("⚠️ syncPanels failed:", err);
-  }
+} catch (err) {
+  console.warn("⚠️ syncPanels failed:", err);
+}
 }
 
 // === TB_V15 — Bottom Navigation Logic (Clean & Fixed) ===
@@ -1020,6 +1020,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (panels[panelKey]) panels[panelKey].classList.remove("hidden");
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
+
+    // 🪖 TB_V19 — MyTeam: טוען קטגוריות בעת פתיחת הפאנל
+    if (panelKey === "myteam" || panelKey === "my-team") {
+      loadMyTeamCategories();
+    }
   }
 
   // מאזין לכל כפתור
@@ -1035,6 +1040,7 @@ document.addEventListener("DOMContentLoaded", () => {
   showPanel("home");
   syncPanels("home");
 });
+
 
 // ===== TB_V17 — Battery Upgrade Client Logic (Multilingual) =====
 document.addEventListener("DOMContentLoaded", () => {
@@ -1249,6 +1255,54 @@ async function buyMyTeamItem(itemId) {
   } catch (err) {
     console.error("❌ MyTeam Buy Error:", err);
     return { ok: false, error: "NETWORK_ERROR" };
+  }
+}
+
+// ===== TB_V19 — Step 3.3.2: Load MyTeam Categories Grid =====
+function loadMyTeamCategories() {
+  try {
+    const container = document.getElementById("myteam-categories");
+    if (!container) return;
+
+    container.innerHTML = ""; // ניקוי
+
+    const lang = currentLanguage || "en";
+
+    Object.values(MYTEAM_CATEGORIES).forEach(cat => {
+      const div = document.createElement("div");
+      div.className = "btn btn-secondary"; // שימוש בעיצוב קיים בלבד
+
+      div.style.display = "flex";
+      div.style.flexDirection = "column";
+      div.style.alignItems = "center";
+      div.style.justifyContent = "center";
+      div.style.padding = "10px";
+      div.style.margin = "5px";
+
+      // אייקון
+      const img = document.createElement("img");
+      img.src = cat.icon;
+      img.alt = cat.labels[lang];
+      img.style.width = "40px";
+      img.style.height = "40px";
+      img.style.objectFit = "contain";
+      img.style.marginBottom = "6px";
+
+      // טקסט
+      const span = document.createElement("span");
+      span.textContent = cat.labels[lang];
+
+      div.appendChild(img);
+      div.appendChild(span);
+
+      div.onclick = () => {
+        loadMyTeamItems(cat.id); // בשלב הבא (3.3.3)
+      };
+
+      container.appendChild(div);
+    });
+  } catch (err) {
+    console.error("❌ loadMyTeamCategories error:", err);
   }
 }
 
