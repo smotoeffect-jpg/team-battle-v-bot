@@ -72,25 +72,38 @@ const DAILY_BONUS_XP     = 10;
 const LEVEL_STEP         = 100;
 
 // ====== Storage (/data) ======
-// 🚫 אם הדיסק לא עלה → עצור מיד
-if (!fs.existsSync(DATA_DIR)) {
-  console.error("❌ DATA_DIR missing — disk not mounted. Stopping.");
-  process.exit(1);
-}
-
-// 🚫 אם הקובץ users.json לא קיים או ריק → עצור מיד
 const USERS_FILE = path.join(DATA_DIR, "users.json");
-if (!fs.existsSync(USERS_FILE) || fs.statSync(USERS_FILE).size < 10) {
-  console.error("❌ users.json missing/empty — stopping to prevent reset.");
-  process.exit(1);
-}
-
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
 const ADMINS_FILE = path.join(DATA_DIR, "admins.json");
 const AMETA_FILE = path.join(DATA_DIR, "admin_meta.json");
 const TEXTS_FILE = path.join(DATA_DIR, "texts.json");
 const DXP_FILE = path.join(DATA_DIR, "doublexp.json");
 const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
+
+// === DATA DIRECTORY PROTECTION ===
+if (process.env.NODE_ENV === "production") {
+  // 🔒 PRODUCTION — עצור אם חסרים קבצים כדי למנוע נזק לנתונים אמיתיים
+  if (!fs.existsSync(DATA_DIR)) {
+    console.error("❌ DATA_DIR missing — disk not mounted. Stopping.");
+    process.exit(1);
+  }
+  if (!fs.existsSync(USERS_FILE) || fs.statSync(USERS_FILE).size < 10) {
+    console.error("❌ users.json missing/empty — stopping to prevent reset.");
+    process.exit(1);
+  }
+} else {
+  // 🧩 DEVELOPMENT — צור קבצים ריקים אם חסרים כדי לאפשר בדיקות מקומיות
+  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+  if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "{}");
+  if (!fs.existsSync(SCORES_FILE)) fs.writeFileSync(SCORES_FILE, "{}");
+  if (!fs.existsSync(ADMINS_FILE)) fs.writeFileSync(ADMINS_FILE, "[]");
+  if (!fs.existsSync(AMETA_FILE)) fs.writeFileSync(AMETA_FILE, "{}");
+  if (!fs.existsSync(TEXTS_FILE)) fs.writeFileSync(TEXTS_FILE, "{}");
+  if (!fs.existsSync(DXP_FILE)) fs.writeFileSync(DXP_FILE, "{}");
+  if (!fs.existsSync(SETTINGS_FILE)) fs.writeFileSync(SETTINGS_FILE, "{}");
+}
+
 
 // === REFERRALS FILE ===
 const REFERRALS_FILE = path.join(DATA_DIR, "referrals.json");
