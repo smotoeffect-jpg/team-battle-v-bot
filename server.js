@@ -1291,7 +1291,7 @@ async function editToMainPanel(msg, lang="en") {
 }
 
 // ====== Webhook ======
-app.post("/webhook", async (req, res) => {
+app.post(process.env.WEBHOOK_PATH, async (req, res) => {
   try {
     const update = req.body;
 
