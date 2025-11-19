@@ -2366,7 +2366,7 @@ app.get("/setup-webhook", async (_, res) => {
   }
 });
 
-// ====== Combined Battle Earnings (VIP support + fixed total) ======
+// ====== Combined Battle Earnings (VIP support + fixed total + MyTeam integration) ======
 app.get("/api/earnings/:id", (req, res) => {
   try {
     const userId = String(
@@ -2409,11 +2409,15 @@ app.get("/api/earnings/:id", (req, res) => {
       0
     );
 
-    // 🟩 רווחים פסיביים בסיסיים
-    let passivePerSec = partners.reduce(
+    // 🟩 רווחים פסיביים בסיסיים משותפים
+    let passiveFromPartners = partners.reduce(
       (sum, p) => sum + (p.incomePerSec || 0),
       0
     );
+
+    // 🟪 רווחים פסיביים מה־MyTeam
+    const myteamIncome = myTeamIncomeCalc(u.myteam || {});
+    let passiveFromMyTeam = Number(myteamIncome || 0);
 
     // 💎 VIP check
     const now = Date.now();
@@ -2428,22 +2432,28 @@ app.get("/api/earnings/:id", (req, res) => {
       (u.isVIP && expires > now)
     ) {
       vipActive = true;
-      passivePerSec = passivePerSec * 5;   // ⭐ VIP Passive ×5
+      // ⭐ VIP Passive ×5
+      passiveFromPartners *= 5;
+      passiveFromMyTeam *= 5;
     }
 
-    // 🟪 בונוסי XP
+    // 🟪 חיבור סך כל הפסיביים
+    const passiveTotal = Number(
+      (passiveFromPartners + passiveFromMyTeam).toFixed(3)
+    );
+
+    // 🟧 בונוסי XP
     const bonusEarnings =
       Number(u.bonusBattle || 0) + Number(u.xp || 0) * 0.1;
 
-    // ⭐⭐⭐ תיקון קריטי ⭐⭐⭐
-    // totalBattle חייב לכלול passivePerSec!
+    // ⭐⭐⭐ חישוב כולל ⭐⭐⭐
     const totalBattle =
       tapEarnings +
       partnerEarnings +
       bonusEarnings +
-      passivePerSec;
+      passiveTotal;
 
-    // 📤 תשובה ללקוח
+    // 📤 תשובה ללקוח (פירוט מלא)
     return res.json({
       ok: true,
       userId,
@@ -2452,7 +2462,9 @@ app.get("/api/earnings/:id", (req, res) => {
       breakdown: {
         tapEarnings,
         partnerEarnings,
-        passivePerSec,
+        passiveFromPartners,
+        passiveFromMyTeam,
+        passiveTotal,
         bonusEarnings,
       },
     });
@@ -2461,6 +2473,119 @@ app.get("/api/earnings/:id", (req, res) => {
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
+
+// ===== TB_V19 — MyTeam Buy API (Step 3.1) =====
+app.post("/api/user/:id/myteam/buy", (req, res) => {
+  try {
+    const userId = String(req.params.id || "").trim();
+    const { itemId } = req.body || {};
+
+    if (!userId || !itemId) {
+      return res.status(400).json({ ok: false, error: "Missing userId or itemId" });
+    }
+
+    // טוען את המשתמש
+    const users = readJSON(USERS_FILE, {});
+    ensureUser(userId);
+    const user = users[userId];
+
+    if (!user) {
+      return res.status(404).json({ ok: false, error: "User not found" });
+    }
+
+    // בדיקה שהפריט קיים בקונפיג השרת
+    const item = MYTEAM_SERVER_ITEMS[itemId];
+    if (!item) {
+      return res.status(400).json({ ok: false, error: "Unknown itemId" });
+    }
+
+    // לוודא שיש MyTeam
+    if (!user.myteam) {
+      user.myteam = initMyTeam();
+    }
+    const currentLevel = user.myteam[itemId]?.level || 0;
+
+    // מחשבים מחיר לרמה הבאה
+    const nextCost = Math.floor(
+      item.baseCost * Math.pow(item.costMultiplier, currentLevel)
+    );
+
+    // בדיקת מספיק Battle$
+    const balance = Number(user.battleBalance || 0);
+    if (balance < nextCost) {
+      return res.json({
+        ok: false,
+        error: "NOT_ENOUGH_BATTLE",
+        needed: nextCost,
+        have: balance
+      });
+    }
+
+    // חיוב
+    user.battleBalance = Number((balance - nextCost).toFixed(3));
+
+    // העלאת רמה
+    const newLevel = currentLevel + 1;
+    user.myteam[itemId].level = newLevel;
+
+    // חישוב הכנסה של הפריט אחרי העלאה
+    const newIncome = Number(
+      (item.baseIncome * Math.pow(item.incomeMultiplier, newLevel - 1)).toFixed(3)
+    );
+
+    // חישוב הכנסה כוללת מהצבא
+    const passiveFromMyTeam = myTeamIncomeCalc(user.myteam);
+
+    // חישוב הכנסה משותפים
+    const partners = Array.isArray(user.partners) ? user.partners : [];
+    let passiveFromPartners = partners.reduce(
+      (sum, p) => sum + (p.incomePerSec || 0),
+      0
+    );
+
+    // VIP?
+    const now = Date.now();
+    const vipObj = user.upgrades?.vip || {};
+    const expires = vipObj.expiresAt || user.perkExpiry || 0;
+    let vipActive = false;
+
+    if (
+      (vipObj.active && expires > now) ||
+      (user.vipActive && expires > now) ||
+      (user.isVIP && expires > now)
+    ) {
+      vipActive = true;
+      passiveFromPartners *= 5;
+      passiveFromMyTeam *= 5;
+    }
+
+    const passiveTotal = Number(
+      (passiveFromPartners + passiveFromMyTeam).toFixed(3)
+    );
+
+    // שמירה
+    writeJSON(USERS_FILE, users);
+
+    // החזרה ללקוח
+    return res.json({
+      ok: true,
+      itemId,
+      newLevel,
+      costPaid: nextCost,
+      newIncome,
+      passiveFromMyTeam,
+      passiveFromPartners,
+      passiveTotal,
+      newBalance: user.battleBalance,
+      vipActive
+    });
+
+  } catch (e) {
+    console.error("❌ MyTeam Buy API Error:", e);
+    return res.status(500).json({ ok: false, error: "Server error" });
+  }
+});
+
 
 // ====== Static fallback ======
 // ✅ חשוב: נרשום את זה אחרי כל נתיבי ה־API,
