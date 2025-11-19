@@ -30,6 +30,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// ====== Static Mini-App ======
+app.use(express.static(path.join(__dirname, "public")));
+
 // ===== Inject ENV for Frontend =====
 app.get(process.env.MINIAPP_PATH || "/app", (req, res) => {
   const html = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8")
@@ -41,8 +44,9 @@ app.get(process.env.MINIAPP_PATH || "/app", (req, res) => {
 // ====== CONFIG ======
 const BOT_TOKEN      = process.env.BOT_TOKEN      || "REPLACE_ME_BOT_TOKEN";
 const TG_API         = `https://api.telegram.org/bot${BOT_TOKEN}`;
-const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN || "https://team-battle-v-bot.onrender.com";
-const MINI_APP_URL   = process.env.MINI_APP_URL   || "https://team-battle-v-bot.onrender.com/";
+const BOT_USERNAME = process.env.BOT_USERNAME;
+const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN;
+const MINI_APP_URL   = process.env.MINI_APP_URL;
 const DATA_DIR       = process.env.DATA_DIR       || "/data"; // Render Disk
 const ENV            = process.env.ENV            || "development";
 const API_BASE       = process.env.API_BASE       || "";
@@ -1215,9 +1219,6 @@ app.get("/api/leaderboard", (req, res) => {
   arr.sort((a, b) => b.points - a.points);
   res.json({ ok: true, top: arr.slice(0, 20) });
 });
-
-// ====== Static Mini-App ======
-app.use(express.static(path.join(__dirname, "public")));
 
 // ====== Deep Debug: Telegram Init Data & Headers ======
 app.use((req, res, next) => {
