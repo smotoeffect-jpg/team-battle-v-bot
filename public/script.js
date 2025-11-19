@@ -1231,3 +1231,25 @@ function updateVipTimer(expiryTs) {
   render();
   setInterval(render, 60 * 1000); // עדכון כל דקה
 }
+
+// ===== TB_V19 — Step 3.2: MyTeam Buy Function =====
+async function buyMyTeamItem(itemId) {
+  try {
+    const res = await fetch(`/api/user/${telegramUserId}/myteam/buy`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ itemId })
+    });
+
+    const data = await res.json();
+    return data;
+
+  } catch (err) {
+    console.error("❌ MyTeam Buy Error:", err);
+    return { ok: false, error: "NETWORK_ERROR" };
+  }
+}
+
+
