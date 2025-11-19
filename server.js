@@ -385,6 +385,145 @@ function normalizeUserUpgrades(u) {
   return u;
 }
 
+// ===== TB_V19 — MyTeam Init (Step 2.1) =====
+function initMyTeam() {
+  return {
+    ak47: { level: 0 },
+    m4a1: { level: 0 },
+    glock17: { level: 0 },
+    desert_eagle: { level: 0 },
+    uzi: { level: 0 },
+    m249: { level: 0 },
+    barrett_m82: { level: 0 },
+    rpg7: { level: 0 },
+    tavor_x95: { level: 0 },
+
+    infantry_basic: { level: 0 },
+    infantry_elite: { level: 0 },
+    commando_squad: { level: 0 },
+    sniper_team: { level: 0 },
+    anti_tank_team: { level: 0 },
+    commander_team: { level: 0 },
+
+    armored_jeep: { level: 0 },
+    humvee: { level: 0 },
+    namer_apc: { level: 0 },
+    mrap: { level: 0 },
+    supply_truck: { level: 0 },
+    armored_column: { level: 0 },
+
+    merkava_mk2: { level: 0 },
+    merkava_mk3: { level: 0 },
+    merkava_mk4: { level: 0 },
+    t72: { level: 0 },
+    t90: { level: 0 },
+
+    mortar_120mm: { level: 0 },
+    howitzer_m109: { level: 0 },
+    grad_launcher: { level: 0 },
+    iron_dome: { level: 0 },
+    anti_ship_missile: { level: 0 },
+
+    patrol_boat: { level: 0 },
+    saar_4: { level: 0 },
+    saar_5: { level: 0 },
+    destroyer: { level: 0 },
+
+    heron_drone: { level: 0 },
+    reaper_drone: { level: 0 },
+    apache_ah64: { level: 0 },
+    f16: { level: 0 },
+    f35: { level: 0 },
+
+    usa_support: { level: 0 },
+    uk_support: { level: 0 },
+    eu_support: { level: 0 },
+    nato_support: { level: 0 },
+    un_peacekeepers: { level: 0 }
+  };
+}
+
+// ===== TB_V19 — MyTeam Income Calculator (Step 2.4) =====
+function myTeamIncomeCalc(myteam) {
+  if (!myteam) return 0;
+
+  let total = 0;
+
+  for (const itemId in myteam) {
+    const level = myteam[itemId]?.level || 0;
+    if (level <= 0) continue;
+
+    // נוודא שיש לנו נתוני פריט (נמקם אותם בשרת בשלב הבא)
+    const item = MYTEAM_SERVER_ITEMS[itemId];
+    if (!item) continue;
+
+    const income =
+      item.baseIncome * Math.pow(item.incomeMultiplier, level - 1);
+
+    total += income;
+  }
+
+  return Number(total.toFixed(3));
+}
+
+// ===== TB_V19 — MyTeam Server Config (Step 2.5) =====
+const MYTEAM_SERVER_ITEMS = {
+  ak47: { baseCost: 50, costMultiplier: 1.30, baseIncome: 0.10, incomeMultiplier: 1.12 },
+  m4a1: { baseCost: 80, costMultiplier: 1.32, baseIncome: 0.18, incomeMultiplier: 1.13 },
+  glock17: { baseCost: 30, costMultiplier: 1.28, baseIncome: 0.06, incomeMultiplier: 1.10 },
+  desert_eagle: { baseCost: 120, costMultiplier: 1.35, baseIncome: 0.30, incomeMultiplier: 1.15 },
+  uzi: { baseCost: 70, costMultiplier: 1.31, baseIncome: 0.16, incomeMultiplier: 1.13 },
+  m249: { baseCost: 150, costMultiplier: 1.36, baseIncome: 0.40, incomeMultiplier: 1.16 },
+  barrett_m82: { baseCost: 220, costMultiplier: 1.38, baseIncome: 0.70, incomeMultiplier: 1.18 },
+  rpg7: { baseCost: 260, costMultiplier: 1.40, baseIncome: 0.90, incomeMultiplier: 1.18 },
+  tavor_x95: { baseCost: 130, costMultiplier: 1.33, baseIncome: 0.28, incomeMultiplier: 1.14 },
+
+  infantry_basic: { baseCost: 40, costMultiplier: 1.28, baseIncome: 0.12, incomeMultiplier: 1.13 },
+  infantry_elite: { baseCost: 180, costMultiplier: 1.32, baseIncome: 0.60, incomeMultiplier: 1.15 },
+  commando_squad: { baseCost: 520, costMultiplier: 1.35, baseIncome: 1.80, incomeMultiplier: 1.18 },
+  sniper_team: { baseCost: 260, costMultiplier: 1.33, baseIncome: 0.85, incomeMultiplier: 1.16 },
+  anti_tank_team: { baseCost: 420, costMultiplier: 1.36, baseIncome: 1.40, incomeMultiplier: 1.18 },
+  commander_team: { baseCost: 900, costMultiplier: 1.38, baseIncome: 3.20, incomeMultiplier: 1.20 },
+
+  armored_jeep: { baseCost: 200, costMultiplier: 1.32, baseIncome: 0.50, incomeMultiplier: 1.15 },
+  humvee: { baseCost: 260, costMultiplier: 1.33, baseIncome: 0.70, incomeMultiplier: 1.16 },
+  namer_apc: { baseCost: 550, costMultiplier: 1.35, baseIncome: 1.40, incomeMultiplier: 1.17 },
+  mrap: { baseCost: 480, costMultiplier: 1.34, baseIncome: 1.20, incomeMultiplier: 1.17 },
+  supply_truck: { baseCost: 900, costMultiplier: 1.37, baseIncome: 2.50, incomeMultiplier: 1.18 },
+  armored_column: { baseCost: 1600, costMultiplier: 1.40, baseIncome: 4.00, incomeMultiplier: 1.20 },
+
+  merkava_mk2: { baseCost: 600, costMultiplier: 1.35, baseIncome: 2.20, incomeMultiplier: 1.18 },
+  merkava_mk3: { baseCost: 1200, costMultiplier: 1.38, baseIncome: 3.80, incomeMultiplier: 1.20 },
+  merkava_mk4: { baseCost: 3200, costMultiplier: 1.42, baseIncome: 9.00, incomeMultiplier: 1.22 },
+  t72: { baseCost: 2100, costMultiplier: 1.40, baseIncome: 6.00, incomeMultiplier: 1.21 },
+  t90: { baseCost: 3800, costMultiplier: 1.44, baseIncome: 11.00, incomeMultiplier: 1.24 },
+
+  mortar_120mm: { baseCost: 900, costMultiplier: 1.35, baseIncome: 3.00, incomeMultiplier: 1.18 },
+  howitzer_m109: { baseCost: 1900, costMultiplier: 1.38, baseIncome: 6.50, incomeMultiplier: 1.21 },
+  grad_launcher: { baseCost: 2600, costMultiplier: 1.40, baseIncome: 9.00, incomeMultiplier: 1.22 },
+  iron_dome: { baseCost: 4800, costMultiplier: 1.45, baseIncome: 15.00, incomeMultiplier: 1.25 },
+  anti_ship_missile: { baseCost: 5200, costMultiplier: 1.46, baseIncome: 17.00, incomeMultiplier: 1.25 },
+
+  patrol_boat: { baseCost: 1300, costMultiplier: 1.34, baseIncome: 4.00, incomeMultiplier: 1.18 },
+  saar_4: { baseCost: 3200, costMultiplier: 1.38, baseIncome: 9.00, incomeMultiplier: 1.22 },
+  saar_5: { baseCost: 5200, costMultiplier: 1.42, baseIncome: 14.00, incomeMultiplier: 1.24 },
+  destroyer: { baseCost: 8200, costMultiplier: 1.46, baseIncome: 22.00, incomeMultiplier: 1.26 },
+
+  heron_drone: { baseCost: 800, costMultiplier: 1.34, baseIncome: 2.80, incomeMultiplier: 1.18 },
+  reaper_drone: { baseCost: 2600, costMultiplier: 1.38, baseIncome: 8.00, incomeMultiplier: 1.22 },
+  apache_ah64: { baseCost: 4200, costMultiplier: 1.42, baseIncome: 14.00, incomeMultiplier: 1.24 },
+  f16: { baseCost: 7800, costMultiplier: 1.45, baseIncome: 22.00, incomeMultiplier: 1.25 },
+  f35: { baseCost: 12000, costMultiplier: 1.50, baseIncome: 35.00, incomeMultiplier: 1.28 },
+
+  usa_support: { baseCost: 9500, costMultiplier: 1.45, baseIncome: 26.00, incomeMultiplier: 1.25 },
+  uk_support: { baseCost: 7800, costMultiplier: 1.43, baseIncome: 21.00, incomeMultiplier: 1.24 },
+  eu_support: { baseCost: 11000, costMultiplier: 1.48, baseIncome: 32.00, incomeMultiplier: 1.27 },
+  nato_support: { baseCost: 15000, costMultiplier: 1.52, baseIncome: 45.00, incomeMultiplier: 1.30 },
+  un_peacekeepers: { baseCost: 6000, costMultiplier: 1.42, baseIncome: 15.00, incomeMultiplier: 1.24 }
+};
+
+
+
 // ====== Ensure User (Creates + Normalizes Every Field) ======
 function ensureUser(userId) {
   const uid = String(userId);
@@ -393,6 +532,7 @@ function ensureUser(userId) {
   if (!users[uid]) {
     users[uid] = {
       team: null,
+      myteam: null,
       tapsDate: null,
       tapsToday: 0,
       superDate: null,
@@ -450,6 +590,14 @@ function ensureUser(userId) {
         }
       }
     };
+
+    // === TB_V19 — Initialize MyTeam on First Creation ===
+    users[uid].myteam = initMyTeam();
+  }
+
+  // === TB_V19 — Auto-fix for existing users (adds myteam if missing) ===
+  if (!users[uid].myteam) {
+    users[uid].myteam = initMyTeam();
   }
 
   // נוודא שהמבנה תקין תמיד
@@ -457,6 +605,7 @@ function ensureUser(userId) {
 
   return users[uid];
 }
+
 
 // ===== VIP BOOSTS ENGINE — apply full VIP bonuses in backend =====
 function applyVipBonuses(u) {
