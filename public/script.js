@@ -1307,3 +1307,94 @@ function loadMyTeamCategories() {
 }
 
 
+// ===== TB_V19 — Step 3.3.3: Load Items for Selected Category =====
+async function loadMyTeamItems(categoryId) {
+  try {
+    const container = document.getElementById("myteam-items");
+    if (!container) return;
+
+    container.innerHTML = ""; // ניקוי
+
+    // שפה
+    const lang = currentLanguage || "en";
+
+    // טעינת נתוני משתמש מהשרת
+    const userRes = await fetch(`/api/user/${telegramUserId}`);
+    const userData = await userRes.json();
+    const myteam = userData.myteam || {};
+
+    // שליפת כל הפריטים של אותה קטגוריה
+    const items = MYTEAM_ITEMS.filter(i => i.category === categoryId);
+
+    items.forEach(item => {
+      const level = myteam[item.id]?.level || 0;
+
+      // חישוב מחיר לרמה הבאה
+      const nextCost = Math.floor(
+        item.baseCost * Math.pow(item.costMultiplier, level)
+      );
+
+      // חישוב הכנסה ברמה הנוכחית
+      const income = (
+        item.baseIncome * Math.pow(item.incomeMultiplier, Math.max(0, level - 1))
+      ).toFixed(3);
+
+      // === יצירת כרטיס קומפקטי ===
+      const card = document.createElement("div");
+      card.className = "upgrade-card"; // שימוש בעיצוב קיים
+
+      // אייקון
+      const img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.names[lang];
+      img.style.width = "50px";
+      img.style.height = "50px";
+      img.style.objectFit = "contain";
+      img.style.marginBottom = "6px";
+
+      // שם + רמה
+      const title = document.createElement("div");
+      title.className = "upgrade-row";
+      title.textContent = `${item.names[lang]} (Lvl ${level})`;
+
+      // הכנסה
+      const incRow = document.createElement("div");
+      incRow.className = "upgrade-row";
+      incRow.textContent = `+${income}/sec`;
+
+      // מחיר
+      const costRow = document.createElement("div");
+      costRow.className = "upgrade-row";
+      costRow.textContent = `Cost: ${nextCost} $Battle`;
+
+      // כפתור BUY
+      const btn = document.createElement("button");
+      btn.className = "btn btn-gold";
+      btn.textContent = "BUY";
+
+      btn.onclick = async () => {
+        const result = await buyMyTeamItem(item.id);
+        if (result.ok) {
+          loadMyTeamItems(categoryId); // רענון
+        } else {
+          console.warn("Buy failed:", result.error);
+        }
+      };
+
+      // הוספה לכרטיס
+      card.appendChild(img);
+      card.appendChild(title);
+      card.appendChild(incRow);
+      card.appendChild(costRow);
+      card.appendChild(btn);
+
+      // הוספה לרשימה
+      container.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("❌ loadMyTeamItems error:", err);
+  }
+}
+
+
