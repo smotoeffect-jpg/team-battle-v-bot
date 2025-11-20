@@ -1032,12 +1032,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (panels[panelKey]) panels[panelKey].classList.remove("hidden");
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
    
-    // 🪖 TB_V19 — MyTeam: טוען קטגוריות ופריטים בעת פתיחת הפאנל
+   // 🪖 TB_V19 — MyTeam: טוען קטגוריות ופריטים בעת פתיחת הפאנל
 if (panelKey === "myteam") {
   const lang = getLang();
   loadMyTeamCategories(lang);
-  loadMyTeamItems(null, lang);
+  loadMyTeamItems(null, lang); // טוען אזור ריק עד בחירת קטגוריה
 }
+
 
   }
 
@@ -1272,15 +1273,16 @@ async function buyMyTeamItem(itemId) {
   }
 }
 
-// ===== TB_V19 — Step 3.3.2: Load MyTeam Categories Grid =====
-function loadMyTeamCategories() {
+// ===== TB_V19 — Step 3.3.2: Load MyTeam Categories Grid (Fixed) =====
+function loadMyTeamCategories(lang) {
   try {
     const container = document.getElementById("myteam-categories");
     if (!container) return;
 
     container.innerHTML = ""; // ניקוי
 
-    const lang = currentLanguage || "en";
+    // שימוש בפונקציה הרשמית לשפה במקום currentLanguage
+    lang = lang || getLang();
 
     Object.values(MYTEAM_CATEGORIES).forEach(cat => {
       const div = document.createElement("div");
@@ -1310,7 +1312,7 @@ function loadMyTeamCategories() {
       div.appendChild(span);
 
       div.onclick = () => {
-        loadMyTeamItems(cat.id); // בשלב הבא (3.3.3)
+        loadMyTeamItems(cat.id, lang); // טעינת פריטים עם אותה שפה
       };
 
       container.appendChild(div);
@@ -1321,16 +1323,18 @@ function loadMyTeamCategories() {
 }
 
 
+
 // ===== TB_V19 — Step 3.3.3: Load Items for Selected Category =====
-async function loadMyTeamItems(categoryId) {
+async function loadMyTeamItems(categoryId, lang) {
   try {
     const container = document.getElementById("myteam-items");
     if (!container) return;
 
-    container.innerHTML = ""; // ניקוי
+    // ניקוי הרשימה הקודמת
+    container.innerHTML = "";
 
-    // שפה
-    const lang = currentLanguage || "en";
+    // שימוש בשפה תקינה
+    lang = lang || getLang();
 
     // טעינת נתוני משתמש מהשרת
     const userRes = await fetch(`/api/user/${telegramUserId}`);
@@ -1343,17 +1347,17 @@ async function loadMyTeamItems(categoryId) {
     items.forEach(item => {
       const level = myteam[item.id]?.level || 0;
 
-      // חישוב מחיר לרמה הבאה
+      // מחיר לרמה הבאה
       const nextCost = Math.floor(
         item.baseCost * Math.pow(item.costMultiplier, level)
       );
 
-      // חישוב הכנסה ברמה הנוכחית
+      // הכנסה לפי רמה
       const income = (
         item.baseIncome * Math.pow(item.incomeMultiplier, Math.max(0, level - 1))
       ).toFixed(3);
 
-      // === יצירת כרטיס קומפקטי ===
+      // === יצירת כרטיס פריט ===
       const card = document.createElement("div");
       card.className = "upgrade-card"; // שימוש בעיצוב קיים
 
@@ -1379,17 +1383,17 @@ async function loadMyTeamItems(categoryId) {
       // מחיר
       const costRow = document.createElement("div");
       costRow.className = "upgrade-row";
-      costRow.textContent = `Cost: ${nextCost} $Battle`;
+      costRow.textContent = `${i18n[lang].buy}: ${nextCost} $Battle`;
 
       // כפתור BUY
       const btn = document.createElement("button");
       btn.className = "btn btn-gold";
-      btn.textContent = "BUY";
+      btn.textContent = i18n[lang].buy;
 
       btn.onclick = async () => {
         const result = await buyMyTeamItem(item.id);
         if (result.ok) {
-          loadMyTeamItems(categoryId); // רענון
+          loadMyTeamItems(categoryId, lang); // רענון
         } else {
           console.warn("Buy failed:", result.error);
         }
@@ -1410,5 +1414,4 @@ async function loadMyTeamItems(categoryId) {
     console.error("❌ loadMyTeamItems error:", err);
   }
 }
-
 
