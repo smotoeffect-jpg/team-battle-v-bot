@@ -699,6 +699,44 @@ body{
   }
 }
 
+/* ===========================
+   MyTeam Slide Navigation
+=========================== */
+
+.slide-screen {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 100%;
+  height: 100%;
+  transition: all 0.35s ease-in-out;
+  overflow-y: auto;
+}
+
+.slide-screen.active {
+  left: 0;
+}
+
+.slide-screen.exit-left {
+  left: -100%;
+}
+
+/* Categories grid */
+.myteam-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 10px;
+}
+
+/* Items grid */
+.myteam-items-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 10px;
+}
+
 
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
