@@ -288,6 +288,13 @@ function setLang(l) {
     const k = el.getAttribute("data-i18n");
     el.textContent = i18n[l]?.[k] || k;
   });
+
+  // 🪖 TB_V19 — רענון MyTeam בעת שינוי שפה
+  const active = document.querySelector(".bottom-nav .active")?.dataset?.panel;
+  if (active === "myteam") {
+    loadMyTeamCategories(l);
+    loadMyTeamItems(null, l);
+  }
 }
 
 const langBtns = document.querySelectorAll(".lang-switch [data-lang]");
@@ -296,6 +303,7 @@ if (langBtns && langBtns.length) {
     btn.addEventListener("click", () => setLang(btn.dataset.lang))
   );
 }
+
 
 (function () {
   const s = localStorage.getItem("tb_lang");
