@@ -1031,13 +1031,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (panels[panelKey]) panels[panelKey].classList.remove("hidden");
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
-
+   
     // 🪖 TB_V19 — MyTeam: טוען קטגוריות ופריטים בעת פתיחת הפאנל
-if (panelKey === "myteam") {
-  const lang = getLang();   // ✔️ תוקן
+if (panelKey === "myteam" || panelKey === "my-team") {
+  const lang = getLang();
   loadMyTeamCategories(lang);
-  loadMyTeamItems(null, lang); // טוען אזור ריק עד בחירת קטגוריה
+  loadMyTeamItems(null, lang);
 }
+
   }
 
   // מאזין לכל כפתור
