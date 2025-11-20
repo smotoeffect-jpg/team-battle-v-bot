@@ -571,5 +571,134 @@ body{
   background: rgba(255,255,255,0.08);
 }
 
+/* ============================================
+   TB_V19 — My Team Panel (categories + items)
+   ============================================ */
+
+/* גריד קטגוריות */
+.myteam-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+
+/* כרטיס קטגוריה */
+.myteam-category {
+  background: var(--panel-2);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.myteam-category:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(255,77,196,.35);
+}
+
+.myteam-category-icon {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.myteam-category-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+
+/* גריד פריטים */
+.myteam-items-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+/* כרטיס פריט */
+.myteam-item-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 0 12px rgba(255,77,196,.15);
+}
+
+/* אייקון פריט */
+.myteam-item-icon {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: contain;
+  background: rgba(255,255,255,.04);
+  padding: 4px;
+}
+
+/* מידע פריט */
+.myteam-item-info {
+  flex: 1;
+}
+
+.myteam-item-name {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.myteam-item-level,
+.myteam-item-income,
+.myteam-item-cost {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+/* כפתור BUY */
+.myteam-buy-btn {
+  background: linear-gradient(180deg,#ffd76b,#c9a23b);
+  color: #000;
+  font-weight: 900;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.myteam-buy-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 14px rgba(255,215,107,.45);
+}
+
+
+/* === מובייל === */
+@media (max-width: 500px) {
+  .myteam-category {
+    padding: 12px 8px;
+  }
+
+  .myteam-item-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .myteam-item-icon {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+
 /* Keep legacy clickable score cards working too (if used) */
 .score-card[data-team]{ cursor: pointer; }
