@@ -1008,7 +1008,7 @@ if (panelKey === "myteam") {
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
     home: document.getElementById("homePanel"),
-    myteam: document.getElementById("my-board"),
+    myteam: document.getElementById("my-team"),
     upgrades: document.getElementById("upgradesPanel"),
     leaderboard: document.getElementById("leaderboard"),
     referrals: document.getElementById("partner")
