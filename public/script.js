@@ -140,6 +140,7 @@ const i18n = {
     chooseTeam: "Choose your team",
     battleShort: "$Battle",
     incomeShort: "Income",
+    buy: "BUY", // 🆕 Added
 
     // ⚙️ Upgrades + Battery
     upgradesTitle: "Upgrades",
@@ -191,6 +192,7 @@ const i18n = {
     chooseTeam: "בחר את הקבוצה שלך",
     battleShort: "$Battle",
     incomeShort: "הכנסה",
+    buy: "קנה", // 🆕 Added
 
     // ⚙️ שדרוגים + בטרייה
     upgradesTitle: "שדרוגים",
@@ -242,6 +244,7 @@ const i18n = {
     chooseTeam: "اختر فريقك",
     battleShort: "$Battle",
     incomeShort: "الدخل",
+    buy: "شراء", // 🆕 Added
 
     // ⚙️ الترقيات + البطارية
     upgradesTitle: "الترقيات",
