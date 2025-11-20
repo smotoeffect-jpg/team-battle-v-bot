@@ -434,14 +434,14 @@ body{
 }
 
 .upgrade-card {
-  background: var(--panel-2);
-  border: 1px solid rgba(255,255,255,.05);
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 14px;
-  text-align: left;
-  color: var(--text);
-  box-shadow: 0 0 10px rgba(255,77,196,.1);
+  background: rgba(20, 20, 30, 0.92); /* רקע אטום יפה */
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 15px;
+  margin: 10px 0;
+  position: relative;
+  z-index: 5; /* כדי לא לראות את My Team מאחורה */
 }
 
 .upgrade-info {
