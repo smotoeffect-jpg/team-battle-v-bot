@@ -1115,9 +1115,10 @@ function loadMyTeamCategories(lang) {
       div.appendChild(img);
       div.appendChild(span);
 
-      div.onclick = () => {
-        loadMyTeamItems(cat.id, lang); // טעינת פריטים עם אותה שפה
-      };
+     div.onclick = () => {
+  myteamOpenCategory(cat.id);
+};
+
 
       container.appendChild(div);
     });
@@ -1217,5 +1218,52 @@ async function loadMyTeamItems(categoryId, lang) {
   } catch (err) {
     console.error("❌ loadMyTeamItems error:", err);
   }
+}
+
+// =========================================
+// TB_V19 — MyTeam Slide Navigation (Categories <-> Items)
+// =========================================
+
+// אלמנטים של שני המסכים
+const myteamCategoriesScreen = document.getElementById("myteam-categories-screen");
+const myteamItemsScreen = document.getElementById("myteam-items-screen");
+const myteamBackBtn = document.getElementById("myteam-back");
+
+// --- מעבר מקטגוריות לפריטים ---
+function myteamShowItems() {
+  if (!myteamCategoriesScreen || !myteamItemsScreen) return;
+
+  // מסך קטגוריות יוצא שמאלה
+  myteamCategoriesScreen.classList.remove("active");
+  myteamCategoriesScreen.classList.add("exit-left");
+
+  // מסך פריטים נכנס מימין
+  myteamItemsScreen.classList.add("active");
+}
+
+// --- מעבר חזרה (פריטים -> קטגוריות) ---
+function myteamShowCategories() {
+  if (!myteamCategoriesScreen || !myteamItemsScreen) return;
+
+  // מסך פריטים יוצא ימינה → ע״י הסרת active
+  myteamItemsScreen.classList.remove("active");
+
+  // קטגוריות חוזרות למרכז
+  myteamCategoriesScreen.classList.remove("exit-left");
+  myteamCategoriesScreen.classList.add("active");
+}
+
+// --- כפתור Back ---
+if (myteamBackBtn) {
+  myteamBackBtn.addEventListener("click", () => {
+    myteamShowCategories();
+  });
+}
+
+// --- קריאה אוטומטית כשמשתמש לוחץ על קטגוריה ---
+function myteamOpenCategory(catId) {
+  const lang = getLang();
+  loadMyTeamItems(catId, lang);  // טוען פריטים
+  myteamShowItems();             // מפעיל אנימציה
 }
 
