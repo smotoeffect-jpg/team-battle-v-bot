@@ -762,3 +762,69 @@ function myTeamTotalIncomePerSec(myteamShape) {
   }
   return Number(total.toFixed(3));
 }
+
+function loadMyTeamCategories(lang = "en") {
+  const container = document.getElementById("myteam-categories");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  Object.values(MYTEAM_CATEGORIES).forEach(cat => {
+    const label = cat.labels?.[lang] || cat.labels.en;
+
+    const el = document.createElement("div");
+    el.className = "myteam-category";
+
+    el.innerHTML = `
+      <img src="${cat.icon}" class="myteam-category-icon" />
+      <div class="myteam-category-label">${label}</div>
+    `;
+
+    el.addEventListener("click", () => {
+      loadMyTeamItems(cat.id, lang);
+    });
+
+    container.appendChild(el);
+  });
+}
+
+function loadMyTeamItems(categoryId, lang = "en") {
+  const container = document.getElementById("myteam-items");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const items = MYTEAM_ITEMS.filter(i => i.category === categoryId);
+
+  items.forEach(item => {
+    const name = item.names?.[lang] || item.names.en;
+
+    const el = document.createElement("div");
+    el.className = "myteam-item-card";
+
+    const level = (window.user?.myteam?.[item.id]?.level) || 0;
+    const cost  = myTeamCostAtLevel(item.id, level + 1);
+    const income = myTeamIncomeAtLevel(item.id, level + 1);
+
+    el.innerHTML = `
+      <img src="${item.icon}" class="myteam-item-icon" />
+      <div class="myteam-item-info">
+        <div class="myteam-item-name">${name}</div>
+        <div class="myteam-item-level">${i18n[lang].level || "Level"}: ${level}</div>
+        <div class="myteam-item-income">${i18n[lang].incomeShort}: +${income}/sec</div>
+        <div class="myteam-item-cost">${i18n[lang].buy}: ${cost} $Battle</div>
+      </div>
+      <button class="myteam-buy-btn" data-id="${item.id}">
+        ${i18n[lang].buy}
+      </button>
+    `;
+
+    el.querySelector(".myteam-buy-btn").addEventListener("click", async () => {
+      await buyMyTeamItem(item.id);
+      loadMyTeamItems(categoryId, lang); // refresh after buying
+    });
+
+    container.appendChild(el);
+  });
+}
+
