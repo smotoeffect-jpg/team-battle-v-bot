@@ -489,12 +489,12 @@ body{
   display: block !important; /* רק הפאנל הנבחר יוצג */
 }
 
-.panel-title {
-  font-weight: 800;
-  font-size: 1.1em;
-  color: var(--pink);
-  text-align: center;
-  margin-bottom: 10px;
+#myteam .panel-title {
+    font-weight: 800;
+    font-size: 1.1em;
+    color: var(--pink);
+    text-align: center;
+    margin-bottom: 10px;
 }
 
 .upgrade-card {
