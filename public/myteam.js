@@ -788,6 +788,7 @@ function loadMyTeamCategories(lang = "en") {
   });
 }
 
+// ===== TB_V19 — MyTeam: טעינת פריטים לפי קטגוריה =====
 function loadMyTeamItems(categoryId, lang = "en") {
   const container = document.getElementById("myteam-items");
   if (!container) return;
@@ -803,7 +804,7 @@ function loadMyTeamItems(categoryId, lang = "en") {
     el.className = "myteam-item-card";
 
     const level = (window.user?.myteam?.[item.id]?.level) || 0;
-    const cost  = myTeamCostAtLevel(item.id, level + 1);
+    const cost = myTeamCostAtLevel(item.id, level + 1);
     const income = myTeamIncomeAtLevel(item.id, level + 1);
 
     el.innerHTML = `
@@ -819,9 +820,14 @@ function loadMyTeamItems(categoryId, lang = "en") {
       </button>
     `;
 
-    el.querySelector(".myteam-buy-btn").addEventListener("click", async () => {
-      await buyMyTeamItem(item.id);
-      loadMyTeamItems(categoryId, lang); // refresh after buying
+    // 🛒 חיבור כפתור BUY לפעולה אמיתית
+    const buyBtn = el.querySelector(".myteam-buy-btn");
+    buyBtn.addEventListener("click", async () => {
+      const ok = await buyMyTeamItem(item.id);
+      if (ok) {
+        // רענון רשימת הפריטים לאחר קנייה מוצלחת
+        loadMyTeamItems(categoryId, lang);
+      }
     });
 
     container.appendChild(el);
