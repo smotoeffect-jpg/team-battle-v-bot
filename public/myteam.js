@@ -327,7 +327,7 @@ const MYTEAM_ITEMS = [
     icon: "assets/myteam/vehicles/namer_apc.png",
     names: {
       en: "Namer APC",
-      he: "נגמ\"ש נמ"ר",
+      he: "נגמ\"ש נמ\"ר",
       ar: "ناقلة جنود نمر"
     },
     baseCost: 550,
