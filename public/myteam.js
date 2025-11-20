@@ -828,3 +828,39 @@ function loadMyTeamItems(categoryId, lang = "en") {
   });
 }
 
+
+// ===== TB_V19 — MyTeam: רכישת פריט =====
+async function buyMyTeamItem(itemId) {
+  try {
+    const userId = window.user?.id;
+    if (!userId) {
+      console.warn("⚠️ no userId found in window.user");
+      return false;
+    }
+
+    const res = await fetch(`/api/user/${userId}/myteam/buy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      console.warn("⚠️ buyMyTeamItem failed:", data.error);
+      return false;
+    }
+
+    // מעדכן את המשתמש המקומי (כולל myteam + הכנסות)
+    if (data.user) {
+      window.user = data.user;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("❌ buyMyTeamItem crashed:", err);
+    return false;
+  }
+}
+
+
