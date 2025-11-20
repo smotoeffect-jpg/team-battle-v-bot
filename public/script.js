@@ -280,6 +280,9 @@ function getLang() {
   return document.documentElement.getAttribute("data-lang") || "he";
 }
 
+// ⬅️ שורה חדשה – מחבר את הפונקציה ל-window
+window.getLang = getLang;
+
 function setLang(l) {
   document.documentElement.setAttribute("data-lang", l);
   localStorage.setItem("tb_lang", l);
@@ -296,6 +299,7 @@ function setLang(l) {
     loadMyTeamItems(null, l);
   }
 }
+
 
 const langBtns = document.querySelectorAll(".lang-switch [data-lang]");
 if (langBtns && langBtns.length) {
