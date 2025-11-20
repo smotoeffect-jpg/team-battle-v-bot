@@ -1034,7 +1034,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 🪖 TB_V19 — MyTeam: טוען קטגוריות ופריטים בעת פתיחת הפאנל
 if (panelKey === "myteam") {
-  const lang = currentLanguage || "en";
+  const lang = getLang();   // ✔️ תוקן
   loadMyTeamCategories(lang);
   loadMyTeamItems(null, lang); // טוען אזור ריק עד בחירת קטגוריה
 }
