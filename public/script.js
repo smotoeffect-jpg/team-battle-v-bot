@@ -1008,7 +1008,7 @@ if (panelKey === "myteam") {
 document.addEventListener("DOMContentLoaded", () => {
   const panels = {
     home: document.getElementById("homePanel"),
-    myteam: document.getElementById("my-team"),
+    myteam: document.getElementById("myteam"),
     upgrades: document.getElementById("upgradesPanel"),
     leaderboard: document.getElementById("leaderboard"),
     referrals: document.getElementById("partner")
@@ -1033,7 +1033,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buttons[panelKey]) buttons[panelKey].classList.add("active");
    
     // 🪖 TB_V19 — MyTeam: טוען קטגוריות ופריטים בעת פתיחת הפאנל
-if (panelKey === "myteam" || panelKey === "my-team") {
+if (panelKey === "myteam") {
   const lang = getLang();
   loadMyTeamCategories(lang);
   loadMyTeamItems(null, lang);
