@@ -1057,13 +1057,17 @@ function updateVipTimer(expiryTs) {
   setInterval(render, 60 * 1000); // עדכון כל דקה
 }
 
-// ===== TB_V19 — Step 3.2: MyTeam Buy Function =====
+// ===== TB_V19 — Step 3.2: MyTeam Buy Function (Exact ENV Version) =====
 async function buyMyTeamItem(itemId) {
   try {
-    const res = await fetch(`/api/user/${telegramUserId}/myteam/buy`, {
+    const url = `${API_BASE}/api/user/${telegramUserId}/myteam/buy`;
+
+    const res = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "X-Init-Data": Telegram.WebApp.initData || "",
+        "X-Telegram-UserId": String(telegramUserId)
       },
       body: JSON.stringify({ itemId })
     });
