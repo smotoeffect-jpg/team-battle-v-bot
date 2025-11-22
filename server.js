@@ -2485,9 +2485,8 @@ app.post("/api/user/:id/myteam/buy", (req, res) => {
     }
 
     // טוען את המשתמש
-    const users = readJSON(USERS_FILE, {});
-    ensureUser(userId);
-    const user = users[userId];
+    // משתמש מהזיכרון האמיתי — לא מטעינה מחדש!
+const user = ensureUser(userId);
 
     if (!user) {
       return res.status(404).json({ ok: false, error: "User not found" });
