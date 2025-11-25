@@ -959,10 +959,13 @@ app.post("/api/tap", (req, res) => {
   scores[team] = (scores[team] || 0) + tapPower;
   u.tapsToday += 1;
   u.xp = (u.xp || 0) + tapPower;
-  
-  // תגמול טאפס — הכול נכנס רק ל-battleBalance
-u.battleBalance = Number((u.battleBalance || 0) + (BATTLE_RULES.PER_TAP || 0));
 
+  // ===== תגמול טאפים — הכול נכנס *רק* ל-battleBalance =====
+  u.battleBalance = Number(
+    (u.battleBalance || 0) +
+    (BATTLE_RULES.PER_TAP || 0) +
+    (u.level || 0)
+  );
 
   // ===== שמירה =====
   writeJSON(SCORES_FILE, scores);
@@ -2382,7 +2385,7 @@ app.get("/api/earnings/:id", (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing userId" });
     }
 
-    // טוען משתמשים
+    // טוען משתמש
     const users = readJSON(USERS_FILE, {});
     const u = users[userId];
 
@@ -2399,27 +2402,27 @@ app.get("/api/earnings/:id", (req, res) => {
       vip: u.upgrades?.vip || {}
     });
 
-    // 🟦 רווחים מלחיצות (Tap Earnings)
+    // 🟦 Tap Earnings (היתרה האמיתית של המשחק)
     const tapEarnings = Number(u.battleBalance || 0);
 
-    // 🟨 רווחים מתוכנית שותפים
+    // 🟨 Partner Program Earnings
     const partners = Array.isArray(u.partners) ? u.partners : [];
     const partnerEarnings = partners.reduce(
       (sum, p) => sum + (p.earnedBattle || 0),
       0
     );
 
-    // 🟩 רווחים פסיביים בסיסיים משותפים
+    // 🟩 Passive from Partners (incomePerSec)
     let passiveFromPartners = partners.reduce(
       (sum, p) => sum + (p.incomePerSec || 0),
       0
     );
 
-    // 🟪 רווחים פסיביים מה־MyTeam
+    // 🟪 Passive from MyTeam
     const myteamIncome = myTeamIncomeCalc(u.myteam || {});
     let passiveFromMyTeam = Number(myteamIncome || 0);
 
-    // 💎 VIP check
+    // 💎 VIP BOOST
     const now = Date.now();
     let vipActive = false;
 
@@ -2432,28 +2435,29 @@ app.get("/api/earnings/:id", (req, res) => {
       (u.isVIP && expires > now)
     ) {
       vipActive = true;
-      // ⭐ VIP Passive ×5
+
+      // ⭐ VIP = פסיבי ×5
       passiveFromPartners *= 5;
       passiveFromMyTeam *= 5;
     }
 
-    // 🟪 חיבור סך כל הפסיביים
+    // סה״כ פסיבי
     const passiveTotal = Number(
       (passiveFromPartners + passiveFromMyTeam).toFixed(3)
     );
 
-    // 🟧 בונוסי XP
+    // 🟧 XP Bonus Earnings
     const bonusEarnings =
-      Number(u.bonusBattle || 0) + Number(u.xp || 0) * 0.1;
+      Number(u.bonusBattle || 0) + (Number(u.xp || 0) * 0.1);
 
-    // ⭐⭐⭐ חישוב כולל ⭐⭐⭐
+    // ⭐⭐⭐ TOTAL ⭐⭐⭐
     const totalBattle =
       tapEarnings +
       partnerEarnings +
       bonusEarnings +
       passiveTotal;
 
-    // 📤 תשובה ללקוח (פירוט מלא)
+    // 📤 תשובה מסודרת
     return res.json({
       ok: true,
       userId,
@@ -2465,9 +2469,10 @@ app.get("/api/earnings/:id", (req, res) => {
         passiveFromPartners,
         passiveFromMyTeam,
         passiveTotal,
-        bonusEarnings,
-      },
+        bonusEarnings
+      }
     });
+
   } catch (e) {
     console.error("❌ /api/earnings critical error:", e);
     res.status(500).json({ ok: false, error: "Server error" });
