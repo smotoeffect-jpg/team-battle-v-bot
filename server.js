@@ -2474,42 +2474,48 @@ app.get("/api/earnings/:id", (req, res) => {
   }
 });
 
-// ===== TB_V19 — MyTeam Buy API (Step 3.1) =====
+// ===== TB_V19 — MyTeam Buy API (Step 3.1 — FIXED ENV USER ID) =====
 app.post("/api/user/:id/myteam/buy", (req, res) => {
   try {
-    const userId = String(req.params.id || "").trim();
+    // 🟢 FIX: זיהוי userId בצורה נכונה (ENV + Headers + Params)
+    const userId = String(
+      req.params.id ||
+      req.headers["x-telegram-userid"] ||
+      getUserIdFromReq(req) || 
+      ""
+    ).trim();
+
     const { itemId } = req.body || {};
 
     if (!userId || !itemId) {
       return res.status(400).json({ ok: false, error: "Missing userId or itemId" });
     }
 
-    // טוען את המשתמש
-    // משתמש מהזיכרון האמיתי — לא מטעינה מחדש!
-const user = ensureUser(userId);
-
+    // 🧩 טעינת המשתמש מהקובץ / זיכרון
+    const user = ensureUser(userId);
     if (!user) {
       return res.status(404).json({ ok: false, error: "User not found" });
     }
 
-    // בדיקה שהפריט קיים בקונפיג השרת
+    // 🧩 בדיקה שהפריט קיים בקונפיג השרת
     const item = MYTEAM_SERVER_ITEMS[itemId];
     if (!item) {
       return res.status(400).json({ ok: false, error: "Unknown itemId" });
     }
 
-    // לוודא שיש MyTeam
+    // 🧩 יצירת אובייקט MyTeam אם חסר
     if (!user.myteam) {
       user.myteam = initMyTeam();
     }
+
     const currentLevel = user.myteam[itemId]?.level || 0;
 
-    // מחשבים מחיר לרמה הבאה
+    // 💰 מחשבים מחיר לרמה הבאה
     const nextCost = Math.floor(
       item.baseCost * Math.pow(item.costMultiplier, currentLevel)
     );
 
-    // בדיקת מספיק Battle$
+    // 💰 בדיקת יתרה
     const balance = Number(user.battleBalance || 0);
     if (balance < nextCost) {
       return res.json({
@@ -2520,34 +2526,34 @@ const user = ensureUser(userId);
       });
     }
 
-    // חיוב
+    // 💸 חיוב
     user.battleBalance = Number((balance - nextCost).toFixed(3));
 
-    // העלאת רמה
+    // ⬆️ העלאת רמה
     const newLevel = currentLevel + 1;
     user.myteam[itemId].level = newLevel;
 
-    // חישוב הכנסה של הפריט אחרי העלאה
+    // 💲 חישוב הכנסה חדשה של הפריט
     const newIncome = Number(
       (item.baseIncome * Math.pow(item.incomeMultiplier, newLevel - 1)).toFixed(3)
     );
 
-    // חישוב הכנסה כוללת מהצבא
+    // 💲 הכנסות MyTeam
     const passiveFromMyTeam = myTeamIncomeCalc(user.myteam);
 
-    // חישוב הכנסה משותפים
+    // 💲 הכנסות משותפים
     const partners = Array.isArray(user.partners) ? user.partners : [];
     let passiveFromPartners = partners.reduce(
       (sum, p) => sum + (p.incomePerSec || 0),
       0
     );
 
-    // VIP?
+    // 💎 VIP בונוס
     const now = Date.now();
     const vipObj = user.upgrades?.vip || {};
     const expires = vipObj.expiresAt || user.perkExpiry || 0;
-    let vipActive = false;
 
+    let vipActive = false;
     if (
       (vipObj.active && expires > now) ||
       (user.vipActive && expires > now) ||
@@ -2562,10 +2568,10 @@ const user = ensureUser(userId);
       (passiveFromPartners + passiveFromMyTeam).toFixed(3)
     );
 
-    // שמירה
+    // 💾 שמירה
     writeJSON(USERS_FILE, users);
 
-    // החזרה ללקוח
+    // 📤 תשובה ללקוח
     return res.json({
       ok: true,
       itemId,
