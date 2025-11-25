@@ -959,10 +959,10 @@ app.post("/api/tap", (req, res) => {
   scores[team] = (scores[team] || 0) + tapPower;
   u.tapsToday += 1;
   u.xp = (u.xp || 0) + tapPower;
-  u.battle = (u.battle || 0) + tapPower;
+  
+  // תגמול טאפס — הכול נכנס רק ל-battleBalance
+u.battleBalance = Number((u.battleBalance || 0) + (BATTLE_RULES.PER_TAP || 0));
 
-  // ❗ לא נוגעים — חלק מהמערכת המקורית
-  u.battleBalance = (u.battleBalance || 0) + (BATTLE_RULES?.PER_TAP || 0);
 
   // ===== שמירה =====
   writeJSON(SCORES_FILE, scores);
