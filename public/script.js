@@ -1059,7 +1059,6 @@ function updateVipTimer(expiryTs) {
   setInterval(render, 60 * 1000); // עדכון כל דקה
 }
 
-// ===== TB_V19 — Step 3.2: MyTeam Buy Function (Exact ENV Version) =====
 async function buyMyTeamItem(itemId) {
   try {
     const url = `${API_BASE}/api/user/${telegramUserId}/myteam/buy`;
@@ -1068,8 +1067,9 @@ async function buyMyTeamItem(itemId) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Init-Data": Telegram.WebApp.initData || "",
-        "X-Telegram-UserId": String(telegramUserId)
+        "X-Init-Data": window.TB_INIT_DATA,
+        "X-Telegram-UserId": String(telegramUserId),
+        "X-Api-Server": API_BASE
       },
       body: JSON.stringify({ itemId })
     });
@@ -1082,6 +1082,7 @@ async function buyMyTeamItem(itemId) {
     return { ok: false, error: "NETWORK_ERROR" };
   }
 }
+
 
 // ===== TB_V19 — Step 3.3.2: Load MyTeam Categories Grid (Fixed) =====
 function loadMyTeamCategories(lang) {
