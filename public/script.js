@@ -23,6 +23,8 @@ function waitForWebApp(maxWait = 2000) {
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
   console.log("🔑 initData:", WebApp?.initData);
+// ===== GLOBAL INIT-DATA (Fix for MyTeam & secure endpoints) =====
+window.TB_INIT_DATA = Telegram?.WebApp?.initData || "";
 
 
  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
