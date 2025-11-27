@@ -1059,15 +1059,21 @@ function updateVipTimer(expiryTs) {
   setInterval(render, 60 * 1000); // עדכון כל דקה
 }
 
+// ===== TB_V19 — MyTeam Buy (Client Handler — Fully Synced) =====
 async function buyMyTeamItem(itemId) {
   try {
+    if (!telegramUserId) {
+      console.warn("⚠️ Missing telegramUserId in buyMyTeamItem()");
+      return { ok: false, error: "MISSING_USER_ID" };
+    }
+
     const url = `${API_BASE}/api/user/${telegramUserId}/myteam/buy`;
 
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Init-Data": window.TB_INIT_DATA,
+        "X-Init-Data": window.TB_INIT_DATA || "",
         "X-Telegram-UserId": String(telegramUserId),
         "X-Api-Server": API_BASE
       },
@@ -1075,6 +1081,12 @@ async function buyMyTeamItem(itemId) {
     });
 
     const data = await res.json();
+
+    // 🔥 סנכרון משתמש מלא — אם השרת החזיר אובייקט משתמש
+    if (data.ok && data.user) {
+      window.user = data.user;
+    }
+
     return data;
 
   } catch (err) {
@@ -1148,16 +1160,18 @@ async function loadMyTeamItems(categoryId, lang) {
     // שימוש בשפה תקינה
     lang = lang || getLang();
 
-  // טעינת נתוני משתמש מהשרת (ENV תקין)
-const userRes = await fetch(`${API_BASE}/api/me`, {
-  headers: {
-    "X-Init-Data": Telegram.WebApp.initData || "",
-    "X-Telegram-UserId": String(telegramUserId)
-  }
-});
+    // 🔥 טעינת נתוני משתמש מהשרת (ENV תקין)
+    const userRes = await fetch(`${API_BASE}/api/me`, {
+      headers: {
+        "X-Init-Data": Telegram.WebApp.initData || "",
+        "X-Telegram-UserId": String(telegramUserId)
+      }
+    });
 
-const userData = await userRes.json();
-const myteam = userData.myteam || {};
+    const userData = await userRes.json();
+
+    // 🔥 התיקון הקריטי — משיכת המידע הנכון!!
+    const myteam = userData.user?.myteam || {};
 
     // שליפת כל הפריטים של אותה קטגוריה
     const items = MYTEAM_ITEMS.filter(i => i.category === categoryId);
@@ -1177,7 +1191,7 @@ const myteam = userData.myteam || {};
 
       // === יצירת כרטיס פריט ===
       const card = document.createElement("div");
-      card.className = "upgrade-card"; // שימוש בעיצוב קיים
+      card.className = "upgrade-card";
 
       // אייקון
       const img = document.createElement("img");
@@ -1217,14 +1231,14 @@ const myteam = userData.myteam || {};
         }
       };
 
-      // הוספה לכרטיס
+      // הרכבת הכרטיס
       card.appendChild(img);
       card.appendChild(title);
       card.appendChild(incRow);
       card.appendChild(costRow);
       card.appendChild(btn);
 
-      // הוספה לרשימה
+      // הוספה למסך
       container.appendChild(card);
     });
 
