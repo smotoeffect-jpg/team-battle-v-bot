@@ -959,13 +959,10 @@ app.post("/api/tap", (req, res) => {
   scores[team] = (scores[team] || 0) + tapPower;
   u.tapsToday += 1;
   u.xp = (u.xp || 0) + tapPower;
-
-  // ===== תגמול טאפים — הכול נכנס *רק* ל-battleBalance =====
-  u.battleBalance = Number(
-    (u.battleBalance || 0) +
-    (BATTLE_RULES.PER_TAP || 0) +
-    (u.level || 0)
-  );
+  
+  // תגמול טאפס — הכול נכנס רק ל-battleBalance
+u.battleBalance = Number((u.battleBalance || 0) + (BATTLE_RULES.PER_TAP || 0));
+u.battleBalance = Number(u.battleBalance || 0) + u.level;
 
   // ===== שמירה =====
   writeJSON(SCORES_FILE, scores);
@@ -2385,7 +2382,7 @@ app.get("/api/earnings/:id", (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing userId" });
     }
 
-    // טוען משתמש
+    // טוען משתמשים
     const users = readJSON(USERS_FILE, {});
     const u = users[userId];
 
@@ -2402,27 +2399,27 @@ app.get("/api/earnings/:id", (req, res) => {
       vip: u.upgrades?.vip || {}
     });
 
-    // 🟦 Tap Earnings (היתרה האמיתית של המשחק)
+    // 🟦 רווחים מלחיצות (Tap Earnings)
     const tapEarnings = Number(u.battleBalance || 0);
 
-    // 🟨 Partner Program Earnings
+    // 🟨 רווחים מתוכנית שותפים
     const partners = Array.isArray(u.partners) ? u.partners : [];
     const partnerEarnings = partners.reduce(
       (sum, p) => sum + (p.earnedBattle || 0),
       0
     );
 
-    // 🟩 Passive from Partners (incomePerSec)
+    // 🟩 רווחים פסיביים בסיסיים משותפים
     let passiveFromPartners = partners.reduce(
       (sum, p) => sum + (p.incomePerSec || 0),
       0
     );
 
-    // 🟪 Passive from MyTeam
+    // 🟪 רווחים פסיביים מה־MyTeam
     const myteamIncome = myTeamIncomeCalc(u.myteam || {});
     let passiveFromMyTeam = Number(myteamIncome || 0);
 
-    // 💎 VIP BOOST
+    // 💎 VIP check
     const now = Date.now();
     let vipActive = false;
 
@@ -2435,29 +2432,28 @@ app.get("/api/earnings/:id", (req, res) => {
       (u.isVIP && expires > now)
     ) {
       vipActive = true;
-
-      // ⭐ VIP = פסיבי ×5
+      // ⭐ VIP Passive ×5
       passiveFromPartners *= 5;
       passiveFromMyTeam *= 5;
     }
 
-    // סה״כ פסיבי
+    // 🟪 חיבור סך כל הפסיביים
     const passiveTotal = Number(
       (passiveFromPartners + passiveFromMyTeam).toFixed(3)
     );
 
-    // 🟧 XP Bonus Earnings
+    // 🟧 בונוסי XP
     const bonusEarnings =
-      Number(u.bonusBattle || 0) + (Number(u.xp || 0) * 0.1);
+      Number(u.bonusBattle || 0) + Number(u.xp || 0) * 0.1;
 
-    // ⭐⭐⭐ TOTAL ⭐⭐⭐
+    // ⭐⭐⭐ חישוב כולל ⭐⭐⭐
     const totalBattle =
       tapEarnings +
       partnerEarnings +
       bonusEarnings +
       passiveTotal;
 
-    // 📤 תשובה מסודרת
+    // 📤 תשובה ללקוח (פירוט מלא)
     return res.json({
       ok: true,
       userId,
@@ -2469,10 +2465,9 @@ app.get("/api/earnings/:id", (req, res) => {
         passiveFromPartners,
         passiveFromMyTeam,
         passiveTotal,
-        bonusEarnings
-      }
+        bonusEarnings,
+      },
     });
-
   } catch (e) {
     console.error("❌ /api/earnings critical error:", e);
     res.status(500).json({ ok: false, error: "Server error" });
