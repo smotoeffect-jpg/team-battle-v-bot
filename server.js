@@ -2486,10 +2486,10 @@ app.get("/api/earnings/:id", (req, res) => {
   }
 });
 
-// ===== TB_V19 — MyTeam Buy API (Step 3.1 — FIXED ENV USER ID + LEVEL FIX) =====
+// ===== TB_V19 — MyTeam Buy API (Step 3.1 — FIXED ENV USER ID) =====
 app.post("/api/user/:id/myteam/buy", (req, res) => {
   try {
-    // 🟢 זיהוי userId בצורה נכונה (ENV + Headers + Params)
+    // 🟢 FIX: זיהוי userId בצורה נכונה (ENV + Headers + Params)
     const userId = String(
       req.params.id ||
       req.headers["x-telegram-userid"] ||
@@ -2515,12 +2515,12 @@ app.post("/api/user/:id/myteam/buy", (req, res) => {
       return res.status(400).json({ ok: false, error: "Unknown itemId" });
     }
 
-    // 🧩 ודא שקיים אובייקט myteam
+    // 🧩 יצירת אובייקט MyTeam אם חסר
     if (!user.myteam) {
-      user.myteam = {};
+      user.myteam = initMyTeam ? initMyTeam() : {};
     }
 
-    // 🟢 **FIX קריטי** — יצירת הפריט אם הוא לא קיים
+    // 🧩 ודא שיש אובייקט לפריט עצמו
     if (!user.myteam[itemId]) {
       user.myteam[itemId] = { level: 0 };
     }
