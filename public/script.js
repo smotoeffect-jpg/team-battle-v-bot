@@ -26,7 +26,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ===== GLOBAL INIT-DATA (Fix for MyTeam & secure endpoints) =====
 window.TB_INIT_DATA = Telegram?.WebApp?.initData || "";
 
+// ===== TB_V19 — GLOBAL USER ID FIX =====
+let telegramUserId = null;
 
+try {
+  telegramUserId =
+    Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+    Telegram?.WebApp?.initData?.user?.id ||
+    window?.TB_INIT_DATA?.user?.id ||
+    null;
+} catch (e) {
+  console.warn("Failed to read telegramUserId:", e);
+}
+
+if (!telegramUserId) {
+  console.warn("⚠️ telegramUserId is NULL — client cannot call authenticated APIs");
+}
+
+  
  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
 if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   const params = new URLSearchParams(window.location.search);
