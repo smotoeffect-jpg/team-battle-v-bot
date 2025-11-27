@@ -1220,7 +1220,7 @@ app.post("/api/successful_payment", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
-// ====== Me (referrals + stats + daily bonus + VIP + Battery ×3) ======
+// ====== Me (referrals + stats + daily bonus + VIP + Battery ×3 + MyTeam) ======
 app.get("/api/me", (req, res) => {
   const { userId: hdrUser } = parseInitDataHeader(req);
   const userId = String(hdrUser || req.query.userId || req.query.user_id || "");
@@ -1231,6 +1231,15 @@ app.get("/api/me", (req, res) => {
   // ✅ ודא שמשתמש קיים ומסונכרן
   const u = ensureUser(userId);
   normalizeUserUpgrades(u);
+
+  // ✅ ודא שיש אובייקט MyTeam תקין
+  if (!u.myteam) {
+    if (typeof initMyTeam === "function") {
+      u.myteam = initMyTeam();
+    } else {
+      u.myteam = {};
+    }
+  }
 
   // 🎖 בדיקת תוקף VIP – תואם לכל מבני הנתונים (ישן / חדש)
   const vipObj = u.upgrades.vip || {};
@@ -1359,6 +1368,9 @@ app.get("/api/me", (req, res) => {
       // 🔗 Link
       refLink,
     },
+
+    // 🆕 פה הקסם – כך ה־script.js מקבל את המצב האמיתי של MyTeam
+    myteam: u.myteam || {},
 
     limit: DAILY_TAPS,
     doubleXP: { on: isDoubleXPOn(), endsAt: doubleXP.endTs },
