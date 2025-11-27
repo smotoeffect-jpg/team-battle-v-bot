@@ -31,18 +31,32 @@ let telegramUserId = null;
 
 try {
   telegramUserId =
-    Telegram?.WebApp?.initDataUnsafe?.user?.id ||
-    Telegram?.WebApp?.initData?.user?.id ||
-    window?.TB_INIT_DATA?.user?.id ||
-    null;
+    Telegram?.WebApp?.initDataUnsafe?.user?.id ||      // רוב המכשירים
+    Telegram?.WebApp?.initData?.user?.id ||            // fallback
+    (() => {                                           // פענוח ידני מה-string של initData
+      try {
+        const params = new URLSearchParams(window.TB_INIT_DATA);
+        const rawUser = params.get("user");
+        if (rawUser) {
+          const parsed = JSON.parse(rawUser);
+          return parsed?.id || null;
+        }
+      } catch (_) {}
+      return null;
+    })();
 } catch (e) {
   console.warn("Failed to read telegramUserId:", e);
 }
 
 if (!telegramUserId) {
   console.warn("⚠️ telegramUserId is NULL — client cannot call authenticated APIs");
+} else {
+  console.log("✅ telegramUserId detected:", telegramUserId);
 }
 
+// שמירה גלובלית
+window.telegramUserId = telegramUserId;
+localStorage.setItem("telegram_userId", telegramUserId);
   
  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
 if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
