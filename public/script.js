@@ -1191,18 +1191,18 @@ async function loadMyTeamItems(categoryId, lang) {
     // שימוש בשפה תקינה
     lang = lang || getLang();
 
-    // 🔥 טעינת נתוני משתמש מהשרת (ENV תקין)
-    const userRes = await fetch(`${API_BASE}/api/me`, {
-      headers: {
-        "X-Init-Data": Telegram.WebApp.initData || "",
-        "X-Telegram-UserId": String(telegramUserId)
-      }
-    });
+  // טעינת נתוני משתמש המלאים כולל myteam
+const userRes = await fetch(`${API_BASE}/api/user/${telegramUserId}`, {
+  headers: {
+    "X-Init-Data": window.TB_INIT_DATA || Telegram.WebApp.initData || "",
+    "X-Telegram-UserId": String(telegramUserId)
+  }
+});
 
-    const userData = await userRes.json();
+const userJson = await userRes.json();
 
-    // 🔥 התיקון הקריטי — משיכת המידע הנכון!!
-    const myteam = userData.user?.myteam || {};
+// בשרת: /api/user/:id מחזיר { ok: true, user: { ... } }
+const myteam = (userJson.user && userJson.user.myteam) || {};
 
     // שליפת כל הפריטים של אותה קטגוריה
     const items = MYTEAM_ITEMS.filter(i => i.category === categoryId);
