@@ -1,5 +1,10 @@
+
 // ===== Auto-detect API base (Render / local / Telegram) =====
 const API_BASE = window.API_BASE_FROM_SERVER || window.location.origin;
+
+// 🔑 Telegram user (shared across the whole script)
+let telegramUserId = null;
+
 // === WAIT FOR TELEGRAM WEBAPP TO LOAD ===
 console.log("⏳ Waiting for Telegram WebApp...");
 function waitForWebApp(maxWait = 2000) {
@@ -20,45 +25,49 @@ function waitForWebApp(maxWait = 2000) {
     }, 100);
   });
 }
+
 document.addEventListener("DOMContentLoaded", async () => {
   const WebApp = await waitForWebApp();
   console.log("🔑 initData:", WebApp?.initData);
-// ===== GLOBAL INIT-DATA (Fix for MyTeam & secure endpoints) =====
-window.TB_INIT_DATA = Telegram?.WebApp?.initData || "";
 
-// ===== Detect Telegram user or create fallback ID =====
-async function waitForTelegramUser() {
-  for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
-    const id =
-      Telegram?.WebApp?.initDataUnsafe?.user?.id ||
-      WebApp?.initDataUnsafe?.user?.id;
-    if (id) return id;
-    await new Promise(r => setTimeout(r, 100));
+  // ===== GLOBAL INIT-DATA (Fix for MyTeam & secure endpoints) =====
+  window.TB_INIT_DATA =
+    Telegram?.WebApp?.initData ||
+    WebApp?.initData ||
+    "";
+
+  // ===== Detect Telegram user or create fallback ID =====
+  async function waitForTelegramUser() {
+    for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
+      const id =
+        Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+        WebApp?.initDataUnsafe?.user?.id;
+      if (id) return id;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return null;
   }
-  return null;
-}
 
-// אם בבלוק הראשון למעלה כבר הצלחנו לקרוא userId – נשארים איתו.
-// אם לא – ננסה לחכות שה־WebApp יסיים להיטען.
-if (!telegramUserId) {
-  telegramUserId = await waitForTelegramUser();
-}
+  if (!telegramUserId) {
+    telegramUserId = await waitForTelegramUser();
+  }
 
-if (!telegramUserId) {
-  console.warn("⚠️ Telegram userId not found — using fallback guest ID");
-  telegramUserId =
-    localStorage.getItem("tb_fallback_id") ||
-    "guest_" + Math.floor(Math.random() * 9999999);
-  localStorage.setItem("tb_fallback_id", telegramUserId);
-}
+  if (!telegramUserId) {
+    console.warn("⚠️ Telegram userId not found — using fallback guest ID");
+    telegramUserId =
+      localStorage.getItem("tb_fallback_id") ||
+      "guest_" + Math.floor(Math.random() * 9999999);
+    localStorage.setItem("tb_fallback_id", telegramUserId);
+  }
 
-console.log("✅ Active userId:", telegramUserId);
+  console.log("✅ Active userId:", telegramUserId);
 
-// ✅ חשוב: לחשוף את ה־userId ל־window + לשמור בלוקאל
-window.telegramUserId = telegramUserId;
-localStorage.setItem("telegram_userId", telegramUserId);
-  
- // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
+  // ✅ לחשוף את ה־userId ל־window + לשמור בלוקאל
+  window.telegramUserId = telegramUserId;
+  localStorage.setItem("telegram_userId", telegramUserId);
+
+  // ===== FORCE SEND initData header if missing (Telegram Android/iOS fallback) =====
+  // מפה והלאה תשאיר את הקוד שלך כמו שהוא...
 if (!WebApp?.initData && window.location.search.includes("tgWebAppData=")) {
   const params = new URLSearchParams(window.location.search);
   const data = params.get("tgWebAppData");
