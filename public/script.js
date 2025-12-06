@@ -26,35 +26,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 // ===== GLOBAL INIT-DATA (Fix for MyTeam & secure endpoints) =====
 window.TB_INIT_DATA = Telegram?.WebApp?.initData || "";
 
-// ===== TB_V19 — GLOBAL USER ID FIX =====
-let telegramUserId = null;
+// ===== Detect Telegram user or create fallback ID =====
+async function waitForTelegramUser() {
+  for (let i = 0; i < 20; i++) { // ננסה עד 2 שניות
+    const id =
+      Telegram?.WebApp?.initDataUnsafe?.user?.id ||
+      WebApp?.initDataUnsafe?.user?.id;
+    if (id) return id;
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return null;
+}
 
-try {
-  telegramUserId =
-    Telegram?.WebApp?.initDataUnsafe?.user?.id ||      // רוב המכשירים
-    Telegram?.WebApp?.initData?.user?.id ||            // fallback
-    (() => {                                           // פענוח ידני מה-string של initData
-      try {
-        const params = new URLSearchParams(window.TB_INIT_DATA);
-        const rawUser = params.get("user");
-        if (rawUser) {
-          const parsed = JSON.parse(rawUser);
-          return parsed?.id || null;
-        }
-      } catch (_) {}
-      return null;
-    })();
-} catch (e) {
-  console.warn("Failed to read telegramUserId:", e);
+// אם בבלוק הראשון למעלה כבר הצלחנו לקרוא userId – נשארים איתו.
+// אם לא – ננסה לחכות שה־WebApp יסיים להיטען.
+if (!telegramUserId) {
+  telegramUserId = await waitForTelegramUser();
 }
 
 if (!telegramUserId) {
-  console.warn("⚠️ telegramUserId is NULL — client cannot call authenticated APIs");
-} else {
-  console.log("✅ telegramUserId detected:", telegramUserId);
+  console.warn("⚠️ Telegram userId not found — using fallback guest ID");
+  telegramUserId =
+    localStorage.getItem("tb_fallback_id") ||
+    "guest_" + Math.floor(Math.random() * 9999999);
+  localStorage.setItem("tb_fallback_id", telegramUserId);
 }
 
-// שמירה גלובלית
+console.log("✅ Active userId:", telegramUserId);
+
+// ✅ חשוב: לחשוף את ה־userId ל־window + לשמור בלוקאל
 window.telegramUserId = telegramUserId;
 localStorage.setItem("telegram_userId", telegramUserId);
   
